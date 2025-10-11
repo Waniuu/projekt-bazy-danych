@@ -138,7 +138,7 @@
 // Funkcje JS dla studentów
 // ===============================
 async function fetchStudents() {
-    const res = await fetch('/studenci');
+    const res = await fetch('/Uzytkownik');
     const data = await res.json();
     renderStudentTable(data);
 }
@@ -238,3 +238,4 @@ fetchStudents();
 
 </body>
 </html>
+
