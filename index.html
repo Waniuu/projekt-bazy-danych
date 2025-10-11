@@ -138,10 +138,12 @@
 // Funkcje JS dla studentów
 // ===============================
 async function fetchStudents() {
-    const res = await fetch('/Uzytkownik');
+    const res = await fetch('https://projekt-bazy-danych-backend.onrender.com/studenci');
+    const res = await fetch('http://localhost:3000/studenci/search?q=' + encodeURIComponent(q));
     const data = await res.json();
     renderStudentTable(data);
 }
+
 
 function renderStudentTable(students) {
     const tbody = document.querySelector('#studentTable tbody');
@@ -238,4 +240,5 @@ fetchStudents();
 
 </body>
 </html>
+
 
