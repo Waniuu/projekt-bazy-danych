@@ -21,7 +21,7 @@ app.get("/Uzytkownik", async (req, res) => {
 // ==================================
 // 1. Przeglądanie danych czytelnie
 // ==================================
-app.get('/studenci', (req, res) => {
+app.get("/Uzytkownik", (req, res) => {
     const sql = `SELECT s.id_uzytkownika, u.imie, u.nazwisko, s.numer_indeksu
                  FROM Student s
                  JOIN Uzytkownik u ON s.id_uzytkownika = u.id_uzytkownika`;
@@ -34,7 +34,7 @@ app.get('/studenci', (req, res) => {
 // ==================================
 // 2. Wyszukiwanie studentów po imieniu/nazwisku
 // ==================================
-app.get('/studenci/search', (req, res) => {
+app.get('/Uzytkownik/search', (req, res) => {
     const { q } = req.query;
     const sql = `SELECT s.id_uzytkownika, u.imie, u.nazwisko, s.numer_indeksu
                  FROM Student s
@@ -49,7 +49,7 @@ app.get('/studenci/search', (req, res) => {
 // ==================================
 // 3. Dodawanie studenta bez podawania id
 // ==================================
-app.post('/studenci', (req, res) => {
+app.post('/Uzytkownik', (req, res) => {
     const { imie, nazwisko, email, haslo, numer_indeksu } = req.body;
 
     db.run(`INSERT INTO Uzytkownik (imie, nazwisko, email, haslo, typ_konta) 
@@ -110,6 +110,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server działa na porcie ${PORT}`);
 });
+
 
 
 
