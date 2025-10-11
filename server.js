@@ -10,7 +10,7 @@ app.use(express.json());
 
 // Połączenie z bazą danych SQLite
 const db = await open({
-  filename: "./system_generowania_testow.sqlite",
+  filename: "./baza.sqlite",
   driver: sqlite3.Database
 });
 
@@ -30,6 +30,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server działa na porcie ${PORT}`);
 });
+
 
 
 
