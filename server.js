@@ -15,8 +15,8 @@ const db = await open({
 });
 
 app.get("/Uzytkownik", async (req, res) => {
-  const users = await db.all("SELECT * FROM Uzytkownik");
-  res.json(users);
+  const rows = await db.all("SELECT id, imie, nazwisko, email FROM Uzytkownik");
+  res.json(rows);
 });
 
 // Endpoint testowy
@@ -30,5 +30,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server działa na porcie ${PORT}`);
 });
+
 
 
