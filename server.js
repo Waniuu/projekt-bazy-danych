@@ -3,6 +3,8 @@ import express from "express";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 import cors from "cors";
+const cors = require('cors');
+app.use(cors());
 
 const app = express();
 app.use(cors());
@@ -13,6 +15,9 @@ const db = await open({
   filename: "./baza.sqlite",
   driver: sqlite3.Database
 });
+
+const cors = require('cors');
+app.use(cors());
 
 app.get("/Uzytkownik", async (req, res) => {
   const rows = await db.all("SELECT imie, nazwisko, email FROM Uzytkownik");
@@ -110,6 +115,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server działa na porcie ${PORT}`);
 });
+
 
 
 
