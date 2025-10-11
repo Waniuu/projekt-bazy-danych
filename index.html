@@ -1,53 +1,79 @@
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SQLite API – Frontend</title>
+  <title>Baza użytkowników – SQLite + Render</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-  <div class="max-w-xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-    <h1 class="text-2xl font-bold mb-4 text-center">📦 Lista użytkowników (SQLite + Render)</h1>
+  <div class="max-w-3xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
+    <h1 class="text-2xl font-bold mb-6 text-center">👥 Baza użytkowników (SQLite + Render)</h1>
 
-   <button id="loadBtn">Załaduj testy</button>
+    <div class="flex justify-center mb-6">
+      <button id="loadBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+        🔄 Pobierz dane
+      </button>
+    </div>
 
-  <table id="testTable">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Tytuł</th>
-        <th>Data utworzenia</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <script>
-    document.getElementById("loadBtn").addEventListener("click", async () => {
-      const response = await fetch("/api/tests");
-      const data = await response.json();
-
-      const tbody = document.querySelector("#testTable tbody");
-      tbody.innerHTML = "";
-
-      data.forEach(Uzytkowik => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${Uzytkowik.imie}</td>
-          <td>${Uzytkowik.nazwisko}</td>
-          <td>${Uzytkowik.email}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    });
-  </script>
-
-    <ul id="userList" class="divide-y divide-gray-300"></ul>
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-300 text-left">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="py-2 px-4 border-b">ID</th>
+            <th class="py-2 px-4 border-b">Imię</th>
+            <th class="py-2 px-4 border-b">Nazwisko</th>
+            <th class="py-2 px-4 border-b">Email</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <tr>
+            <td colspan="4" class="text-center py-4 text-gray-500">Kliknij „Pobierz dane”, aby załadować użytkowników.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <script src="./script.js"></script>
+  <script>
+    const API_URL = "https://projekt-bazy-danych-backend.onrender.com"; // 🔗 ZMIEŃ NA SWÓJ ADRES API z Rendera
+
+    const loadBtn = document.getElementById("loadBtn");
+    const tableBody = document.getElementById("userTableBody");
+
+    async function loadUsers() {
+      tableBody.innerHTML = `
+        <tr><td colspan="4" class="text-center py-4 text-gray-500">Ładowanie danych...</td></tr>
+      `;
+
+      try {
+        const response = await fetch(\`\${API_URL}/Uzytkownik\`);
+        if (!response.ok) throw new Error("Błąd połączenia z API");
+        const Uzytkownik = await response.json();
+
+        if (Uzytkownik.length === 0) {
+          tableBody.innerHTML = "<tr><td colspan='4' class='text-center py-4 text-gray-500'>Brak użytkowników w bazie.</td></tr>";
+          return;
+        }
+
+        tableBody.innerHTML = Uzytkownik.map(Uzytkownik => `
+          <tr class="hover:bg-gray-50">
+            <td class="py-2 px-4 border-b">${Uzytkownik.id}</td>
+            <td class="py-2 px-4 border-b">${Uzytkownik.imie}</td>
+            <td class="py-2 px-4 border-b">${Uzytkownik.nazwisko}</td>
+            <td class="py-2 px-4 border-b">${Uzytkownik.email}</td>
+          </tr>
+        `).join("");
+
+      } catch (err) {
+        console.error(err);
+        tableBody.innerHTML = "<tr><td colspan='4' class='text-center py-4 text-red-500'>❌ Błąd połączenia z bazą danych.</td></tr>";
+      }
+    }
+
+    loadBtn.addEventListener("click", loadUsers);
+  </script>
 </body>
 </html>
-
