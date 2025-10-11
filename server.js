@@ -14,6 +14,10 @@ const db = await open({
   driver: sqlite3.Database
 });
 
+app.get("/Uzytkownik", async (req, res) => {
+  const users = await db.all("SELECT * FROM Uzytkownik");
+  res.json(users);
+});
 
 // Endpoint testowy
 app.get("/", (req, res) => {
@@ -26,4 +30,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server działa na porcie ${PORT}`);
 });
+
 
