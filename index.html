@@ -1,80 +1,240 @@
-
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Baza użytkowników – SQLite + Render</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
-</head>
-<body class="bg-gray-100 text-gray-800">
-
-  <div class="max-w-3xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-    <h1 class="text-2xl font-bold mb-6 text-center">👥 Baza użytkowników (SQLite + Render)</h1>
-
-    <div class="flex justify-center mb-6">
-      <button id="loadBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
-        🔄 Pobierz dane
-      </button>
-    </div>
-
-    <div class="overflow-x-auto">
-      <table class="min-w-full border border-gray-300 text-left">
-        <thead class="bg-gray-200">
-          <tr>
-            <th class="py-2 px-4 border-b">ID</th>
-            <th class="py-2 px-4 border-b">Imię</th>
-            <th class="py-2 px-4 border-b">Nazwisko</th>
-            <th class="py-2 px-4 border-b">Email</th>
-          </tr>
-        </thead>
-        <tbody id="userTableBody">
-          <tr>
-            <td colspan="4" class="text-center py-4 text-gray-500">Kliknij „Pobierz dane”, aby załadować użytkowników.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <script>
-    const API_URL = "https://projekt-bazy-danych-backend.onrender.com"; // 🔗 ZMIEŃ NA SWÓJ ADRES API z Rendera
-
-    const loadBtn = document.getElementById("loadBtn");
-    const tableBody = document.getElementById("userTableBody");
-
-    async function loadUsers() {
-      tableBody.innerHTML = `
-        <tr><td colspan="4" class="text-center py-4 text-gray-500">Ładowanie danych...</td></tr>
-      `;
-
-      try {
-        const response = await fetch(API_URL + "/Uzytkownik");
-        if (!response.ok) throw new Error("Błąd połączenia z API");
-        const Uzytkownik = await response.json();
-
-        if (Uzytkownik.length === 0) {
-          tableBody.innerHTML = "<tr><td colspan='4' class='text-center py-4 text-gray-500'>Brak użytkowników w bazie.</td></tr>";
-          return;
-        }
-
-        tableBody.innerHTML = Uzytkownik.map(Uzytkownik => `
-          <tr class="hover:bg-gray-50">
-            <td class="py-2 px-4 border-b">${Uzytkownik.id}</td>
-            <td class="py-2 px-4 border-b">${Uzytkownik.imie}</td>
-            <td class="py-2 px-4 border-b">${Uzytkownik.nazwisko}</td>
-            <td class="py-2 px-4 border-b">${Uzytkownik.email}</td>
-          </tr>
-        `).join("");
-
-      } catch (err) {
-        console.error(err);
-        tableBody.innerHTML = "<tr><td colspan='4' class='text-center py-4 text-red-500'>❌ Błąd połączenia z bazą danych.</td></tr>";
-      }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Generowania Testów</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f9f9f9;
+        color: #333;
     }
+    header {
+        background-color: #4CAF50;
+        color: white;
+        padding: 1rem 2rem;
+        text-align: center;
+    }
+    h2 {
+        color: #4CAF50;
+        margin-top: 1.5rem;
+    }
+    main {
+        max-width: 1200px;
+        margin: auto;
+        padding: 2rem;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+    }
+    table, th, td {
+        border: 1px solid #ddd;
+    }
+    th, td {
+        padding: 0.75rem;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
+    }
+    tr:hover {background-color: #f1f1f1;}
+    input, select, button {
+        padding: 0.5rem;
+        margin: 0.25rem 0;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        font-size: 1rem;
+    }
+    button {
+        background-color: #4CAF50;
+        color: white;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    form > div {
+        flex: 1 1 200px;
+        display: flex;
+        flex-direction: column;
+    }
+</style>
+</head>
+<body>
 
-    loadBtn.addEventListener("click", loadUsers);
-  </script>
+<header>
+    <h1>System Generowania Testów</h1>
+</header>
+
+<main>
+    <!-- ========================= -->
+    <!-- Sekcja Studenci -->
+    <!-- ========================= -->
+    <h2>Studenci</h2>
+
+    <!-- Wyszukiwanie -->
+    <input type="text" id="searchStudent" placeholder="Szukaj po imieniu lub nazwisku">
+    <button onclick="searchStudents()">Szukaj</button>
+
+    <!-- Tabela studentów -->
+    <table id="studentTable">
+        <thead>
+            <tr>
+                <th>Imię</th>
+                <th>Nazwisko</th>
+                <th>Numer indeksu</th>
+                <th>Akcje</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- wiersze generowane dynamicznie -->
+        </tbody>
+    </table>
+
+    <!-- Formularz dodawania studenta -->
+    <h3>Dodaj nowego studenta</h3>
+    <form id="studentForm">
+        <div>
+            <label>Imię</label>
+            <input type="text" name="imie" required>
+        </div>
+        <div>
+            <label>Nazwisko</label>
+            <input type="text" name="nazwisko" required>
+        </div>
+        <div>
+            <label>Email</label>
+            <input type="email" name="email" required>
+        </div>
+        <div>
+            <label>Hasło</label>
+            <input type="password" name="haslo" required>
+        </div>
+        <div>
+            <label>Numer indeksu</label>
+            <input type="text" name="numer_indeksu" required>
+        </div>
+        <div style="align-self:flex-end;">
+            <button type="submit">Dodaj studenta</button>
+        </div>
+    </form>
+
+</main>
+
+<script>
+// ===============================
+// Funkcje JS dla studentów
+// ===============================
+async function fetchStudents() {
+    const res = await fetch('/studenci');
+    const data = await res.json();
+    renderStudentTable(data);
+}
+
+function renderStudentTable(students) {
+    const tbody = document.querySelector('#studentTable tbody');
+    tbody.innerHTML = '';
+    students.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${s.imie}</td>
+            <td>${s.nazwisko}</td>
+            <td>${s.numer_indeksu}</td>
+            <td>
+                <button onclick="deleteStudent(${s.id_uzytkownika})">Usuń</button>
+                <button onclick="editStudent(${s.id_uzytkownika}, '${s.imie}', '${s.nazwisko}', '${s.email}', '${s.numer_indeksu}')">Edytuj</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// ===============================
+// Wyszukiwanie studentów
+// ===============================
+async function searchStudents() {
+    const q = document.getElementById('searchStudent').value;
+    const res = await fetch('/studenci/search?q=' + encodeURIComponent(q));
+    const data = await res.json();
+    renderStudentTable(data);
+}
+
+// ===============================
+// Dodawanie studenta
+// ===============================
+document.getElementById('studentForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const obj = Object.fromEntries(formData.entries());
+    const res = await fetch('/studenci', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(obj)
+    });
+    const data = await res.json();
+    alert(data.message);
+    e.target.reset();
+    fetchStudents();
+});
+
+// ===============================
+// Usuwanie studenta
+// ===============================
+async function deleteStudent(id) {
+    if(confirm('Czy na pewno chcesz usunąć tego studenta?')) {
+        const res = await fetch('/studenci/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        alert(data.message);
+        fetchStudents();
+    }
+}
+
+// ===============================
+// Edycja studenta
+// ===============================
+function editStudent(id, imie, nazwisko, email, numer_indeksu) {
+    const imieNew = prompt('Imię:', imie);
+    if(!imieNew) return;
+    const nazwiskoNew = prompt('Nazwisko:', nazwisko);
+    if(!nazwiskoNew) return;
+    const emailNew = prompt('Email:', email);
+    if(!emailNew) return;
+    const numerNew = prompt('Numer indeksu:', numer_indeksu);
+    if(!numerNew) return;
+
+    fetch('/studenci/' + id, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            imie: imieNew,
+            nazwisko: nazwiskoNew,
+            email: emailNew,
+            numer_indeksu: numerNew,
+            haslo: 'bez zmian'
+        })
+    }).then(res => res.json()).then(data => {
+        alert(data.message);
+        fetchStudents();
+    });
+}
+
+// ===============================
+// Inicjalne pobranie studentów
+// ===============================
+fetchStudents();
+</script>
+
 </body>
 </html>
-
