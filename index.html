@@ -11,14 +11,38 @@
   <div class="max-w-xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
     <h1 class="text-2xl font-bold mb-4 text-center">📦 Lista użytkowników (SQLite + Render)</h1>
 
-    <form id="userForm" class="flex gap-2 mb-4">
-      <input id="username" type="text" placeholder="Nowy użytkownik" class="flex-grow border p-2 rounded">
-      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Dodaj</button>
-    </form>
+   <button id="loadBtn">Załaduj testy</button>
 
-    <button id="refreshBtn" class="bg-green-500 text-white px-4 py-2 rounded mb-4 hover:bg-green-600 w-full">
-      🔄 Odśwież listę
-    </button>
+  <table id="testTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Tytuł</th>
+        <th>Data utworzenia</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    document.getElementById("loadBtn").addEventListener("click", async () => {
+      const response = await fetch("/api/tests");
+      const data = await response.json();
+
+      const tbody = document.querySelector("#testTable tbody");
+      tbody.innerHTML = "";
+
+      data.forEach(Uzytkowik => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${Uzytkowik.imie}</td>
+          <td>${Uzytkowik.nazwisko}</td>
+          <td>${Uzytkowik.email}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    });
+  </script>
 
     <ul id="userList" class="divide-y divide-gray-300"></ul>
   </div>
@@ -26,3 +50,4 @@
   <script src="./script.js"></script>
 </body>
 </html>
+
