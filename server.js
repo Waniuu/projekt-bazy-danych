@@ -15,7 +15,7 @@ const db = await open({
 });
 
 app.get("/Uzytkownik", async (req, res) => {
-  const rows = await db.all("SELECT id, imie, nazwisko, email FROM Uzytkownik");
+  const rows = await db.all("SELECT imie, nazwisko, email FROM Uzytkownik");
   res.json(rows);
 });
 
@@ -30,6 +30,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server działa na porcie ${PORT}`);
 });
+
 
 
 
