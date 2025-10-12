@@ -1,20 +1,80 @@
-// server.js
-import express from "express";
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
-import cors from "cors";
+// --- server.js ---
+const express = require('express')
+const bodyParser = require('body-parser')
+const cors = require('cors')
+const Database = require('better-sqlite3')
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const DB_PATH = process.env.DB_PATH || './baza.sqlite'
+const db = new Database(DB_PATH, { readonly: false })
 
-// Połączenie z bazą danych SQLite
-const db = await open({
-  filename: "./baza.sqlite",
-  driver: sqlite3.Database
-});
+const app = express()
+app.use(cors())
+app.use(bodyParser.json())
 
+// helper: map row to user object (kolumny z twojej bazy)
+function mapUser(row){
+  if(!row) return null
+  return {
+    id: row.id_uzytkownika !== undefined ? row.id_uzytkownika : row.id,
+    imie: row.imie || '',
+    nazwisko: row.nazwisko || '',
+    email: row.email || '',
+    data_dolaczenia: row.data_dolaczenia || row.data || '',
+    komentarz: row.komentarz || row.notatki || ''
+  }
+}
 
+// GET all users
+app.get('/api/uzytkownicy', (req, res) => {
+  try{
+    const rows = db.prepare('SELECT * FROM Uzytkownik ORDER BY id_uzytkownika DESC').all()
+    res.json(rows.map(mapUser))
+  }catch(err){ console.error(err); res.status(500).json({error:err.message}) }
+})
+
+// GET single
+app.get('/api/uzytkownicy/:id', (req,res)=>{
+  try{
+    const row = db.prepare('SELECT * FROM Uzytkownik WHERE id_uzytkownika = ?').get(req.params.id)
+    res.json(mapUser(row))
+  }catch(err){ console.error(err); res.status(500).json({error:err.message}) }
+})
+
+// POST create
+app.post('/api/uzytkownicy', (req,res)=>{
+  try{
+    const { imie, nazwisko, email, data_dolaczenia, komentarz } = req.body
+    const stmt = db.prepare('INSERT INTO Uzytkownik (imie,nazwisko,email,data_dolaczenia,komentarz) VALUES (?,?,?,?,?)')
+    const info = stmt.run(imie||'', nazwisko||'', email||'', data_dolaczenia||'', komentarz||'')
+    const row = db.prepare('SELECT * FROM Uzytkownik WHERE id_uzytkownika = ?').get(info.lastInsertRowid)
+    res.status(201).json(mapUser(row))
+  }catch(err){ console.error(err); res.status(500).json({error:err.message}) }
+})
+
+// PUT update
+app.put('/api/uzytkownicy/:id', (req,res)=>{
+  try{
+    const id = req.params.id
+    const { imie, nazwisko, email, data_dolaczenia, komentarz } = req.body
+    const stmt = db.prepare('UPDATE Uzytkownik SET imie=?, nazwisko=?, email=?, data_dolaczenia=?, komentarz=? WHERE id_uzytkownika = ?')
+    const info = stmt.run(imie||'', nazwisko||'', email||'', data_dolaczenia||'', komentarz||'', id)
+    const row = db.prepare('SELECT * FROM Uzytkownik WHERE id_uzytkownika = ?').get(id)
+    res.json(mapUser(row))
+  }catch(err){ console.error(err); res.status(500).json({error:err.message}) }
+})
+
+// DELETE
+app.delete('/api/uzytkownicy/:id', (req,res)=>{
+  try{
+    const id = req.params.id
+    const stmt = db.prepare('DELETE FROM Uzytkownik WHERE id_uzytkownika = ?')
+    const info = stmt.run(id)
+    res.json({ok:true,changes:info.changes})
+  }catch(err){ console.error(err); res.status(500).json({error:err.message}) }
+})
+
+const PORT = process.env.PORT || 3000
+app.listen(PORT, ()=> console.log('Server listening on',PORT))
 app.get("/Uzytkownik", async (req, res) => {
   const rows = await db.all("SELECT imie, nazwisko, email FROM Uzytkownik");
   res.json(rows);
@@ -111,6 +171,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server działa na porcie ${PORT}`);
 });
+
 
 
 
