@@ -4,6 +4,8 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 const Database = require('better-sqlite3')
 
+import cors from "cors";
+
 const DB_PATH = process.env.DB_PATH || './baza.sqlite'
 const db = new Database(DB_PATH, { readonly: false })
 
@@ -171,6 +173,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server działa na porcie ${PORT}`);
 });
+
 
 
 
