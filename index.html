@@ -1,243 +1,303 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>System Generowania Testów</title>
-<style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f9f9f9;
-        color: #333;
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aplikacja kliencka — Użytkownicy (API + motyw)</title>
+  <style>
+    :root{
+      --bg:#0f1724;--card:#0b1220;--muted:#94a3b8;--accent:#7c3aed;--accent-2:#06b6d4;--glass: rgba(255,255,255,0.04);
+      --text:#e6eef8; --muted-2:#9aa8bf;
     }
-    header {
-        background-color: #4CAF50;
-        color: white;
-        padding: 1rem 2rem;
-        text-align: center;
-    }
-    h2 {
-        color: #4CAF50;
-        margin-top: 1.5rem;
-    }
-    main {
-        max-width: 1200px;
-        margin: auto;
-        padding: 2rem;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 1rem;
-        margin-bottom: 2rem;
-    }
-    table, th, td {
-        border: 1px solid #ddd;
-    }
-    th, td {
-        padding: 0.75rem;
-        text-align: left;
-    }
-    th {
-        background-color: #f2f2f2;
-    }
-    tr:hover {background-color: #f1f1f1;}
-    input, select, button {
-        padding: 0.5rem;
-        margin: 0.25rem 0;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-        font-size: 1rem;
-    }
-    button {
-        background-color: #4CAF50;
-        color: white;
-        cursor: pointer;
-    }
-    button:hover {
-        background-color: #45a049;
-    }
-    form {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-    form > div {
-        flex: 1 1 200px;
-        display: flex;
-        flex-direction: column;
-    }
-</style>
+    [data-theme="light"]{--bg:#f6f8fb;--card:#ffffff;--text:#0b1220;--muted:#475569;--glass: rgba(2,6,23,0.02);--accent:#4f46e5;--accent-2:#0891b2}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;margin:0;background:linear-gradient(180deg,var(--bg),#031021);color:var(--text);min-height:100vh}
+    header{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:1px solid rgba(0,0,0,0.06);background:linear-gradient(90deg, rgba(255,255,255,0.02), transparent)}
+    .logo{display:flex;align-items:center;gap:12px}
+    .badge{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
+    .title{font-size:18px}
+    .container{display:grid;grid-template-columns:260px 1fr;gap:18px;padding:18px}
+    nav.sidebar{background:var(--card);padding:14px;border-radius:12px;min-height:72vh;border:1px solid rgba(0,0,0,0.05)}
+    .menu{display:flex;flex-direction:column;gap:6px}
+    .menu button{background:transparent;border:0;padding:10px 12px;text-align:left;border-radius:8px;color:var(--text);cursor:pointer}
+    .menu button:hover{background:var(--glass)}
+    .menu button.active{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(6,182,212,0.06));box-shadow:0 6px 18px rgba(3,6,23,0.06)}
+    main.card{background:var(--card);padding:18px;border-radius:12px;min-height:72vh;border:1px solid rgba(0,0,0,0.04)}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .searchbar{display:flex;gap:8px;align-items:center}
+    input, select, textarea{padding:10px 12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(0,0,0,0.06);color:var(--text)}
+    [data-theme="light"] input,[data-theme="light"] select,[data-theme="light"] textarea{background:rgba(2,6,23,0.02);border:1px solid rgba(0,0,0,0.06)}
+    .btn{padding:9px 12px;border-radius:8px;border:0;background:var(--accent);color:white;cursor:pointer}
+    .btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.06)}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    .list{background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);padding:12px;border-radius:10px}
+    .cardItem{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;margin-bottom:8px;background:rgba(255,255,255,0.02)}
+    .meta{font-size:13px;color:var(--muted)}
+    .chip{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03);font-size:12px}
+    form.addForm{display:flex;flex-direction:column;gap:8px;padding:12px}
+    label{font-size:13px;color:var(--muted)}
+    .report{padding:12px}
+    footer{padding:12px 20px;color:var(--muted);font-size:13px}
+    .themeToggle{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:999px;border:1px solid rgba(0,0,0,0.06);cursor:pointer}
+    @media (max-width:880px){.container{grid-template-columns:1fr}nav.sidebar{display:none}.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
+  <header>
+    <div class="logo"><div class="badge">AK</div><div class="title">Aplikacja kliencka — Użytkownicy</div></div>
+    <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+      <div id="themeToggle" class="themeToggle" title="Przełącz motyw">🌙 <span id="themeLabel">Ciemny</span></div>
+      <button id="btnAddOpen" class="btn">Dodaj</button>
+    </div>
+  </header>
 
-<header>
-    <h1>System Generowania Testów</h1>
-</header>
+  <div class="container" id="appRoot">
+    <nav class="sidebar" aria-label="Główne menu">
+      <div class="sectionTitle">Nawigacja</div>
+      <div class="menu">
+        <button data-view="browse" class="active">Przeglądaj użytkowników</button>
+        <button data-view="search">Wyszukaj (kryteria)</button>
+        <button data-view="add">Dodaj nowego</button>
+        <button data-view="report">Raport</button>
+      </div>
+      <hr style="margin:12px 0;border-color:rgba(0,0,0,0.04)">
+      <div class="sectionTitle">Szybkie filtry</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+        <button class="chip" data-filter="all">Wszystkie</button>
+      </div>
+    </nav>
 
-<main>
-    <!-- ========================= -->
-    <!-- Sekcja Studenci -->
-    <!-- ========================= -->
-    <h2>Studenci</h2>
-
-    <!-- Wyszukiwanie -->
-    <input type="text" id="searchStudent" placeholder="Szukaj po imieniu lub nazwisku">
-    <button onclick="searchStudents()">Szukaj</button>
-
-    <!-- Tabela studentów -->
-    <table id="studentTable">
-        <thead>
-            <tr>
-                <th>Imię</th>
-                <th>Nazwisko</th>
-                <th>Numer indeksu</th>
-                <th>Akcje</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- wiersze generowane dynamicznie -->
-        </tbody>
-    </table>
-
-    <!-- Formularz dodawania studenta -->
-    <h3>Dodaj nowego studenta</h3>
-    <form id="studentForm">
-        <div>
-            <label>Imię</label>
-            <input type="text" name="imie" required>
+    <main class="card" id="main">
+      <div class="topbar">
+        <div class="searchbar">
+          <input id="q" placeholder="Szukaj po imieniu, nazwisku...">
+          <input id="dateFrom" type="date">
+          <input id="dateTo" type="date">
+          <button id="btnSearch" class="btn ghost">Szukaj</button>
+          <button id="btnClear" class="btn">Wyczyść</button>
         </div>
-        <div>
-            <label>Nazwisko</label>
-            <input type="text" name="nazwisko" required>
+        <div class="controls" aria-hidden>
+          <div class="meta">Znaleziono: <span id="count">0</span></div>
         </div>
-        <div>
-            <label>Email</label>
-            <input type="email" name="email" required>
+      </div>
+
+      <div class="grid">
+        <section class="list" id="listArea">
+          <h3>Lista użytkowników</h3>
+          <div id="items">Ładowanie...</div>
+        </section>
+
+        <aside style="background:rgba(255,255,255,0.02);padding:12px;border-radius:10px">
+          <h4>Dodaj / Edytuj</h4>
+          <form id="addForm" class="addForm" autocomplete="off">
+            <input type="hidden" id="itemId">
+            <label>Imię<input id="imie" required placeholder="Imię..."></label>
+            <label>Nazwisko<input id="nazwisko" required placeholder="Nazwisko..."></label>
+            <label>Email<input id="email" type="email" placeholder="adres@example.com"></label>
+            <label>Data dołączenia<input id="data_dolaczenia" type="date" required></label>
+            <label>Komentarz<textarea id="komentarz" rows="3" placeholder="Notatki..."></textarea></label>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button type="reset" class="btn ghost">Wyczyść</button>
+              <button type="submit" class="btn">Zapisz</button>
+            </div>
+          </form>
+        </aside>
+      </div>
+
+      <section id="reportSection" class="report" style="margin-top:12px;display:none">
+        <h3>Raport — użytkownicy</h3>
+        <div class="summary">
+          <div class="stat"><div class="meta">Liczba użytkowników</div><div id="statCount" style="font-weight:700;font-size:20px">0</div></div>
         </div>
-        <div>
-            <label>Hasło</label>
-            <input type="password" name="haslo" required>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+          <button id="btnDownloadCSV" class="btn">Pobierz CSV</button>
+          <button id="btnPrintReport" class="btn ghost">Drukuj raport</button>
         </div>
-        <div>
-            <label>Numer indeksu</label>
-            <input type="text" name="numer_indeksu" required>
-        </div>
-        <div style="align-self:flex-end;">
-            <button type="submit">Dodaj studenta</button>
-        </div>
-    </form>
+      </section>
 
-</main>
+    </main>
+  </div>
 
-<script>
-// ===============================
-// Funkcje JS dla studentów
-// ===============================
-async function fetchStudents() {
-    const res = await fetch('/studenci');
-    const data = await res.json();
-    renderStudentTable(data);
-}
+  <footer>Wersja z API • Backend: Node.js + Express + sqlite3</footer>
 
+  <script>
+    /* ---------- Konfiguracja ---------- */
+    const API_ROOT = '/api/uzytkownicy'
+    const STORAGE_FALLBACK_KEY = 'app_demo_items_v1'
 
-function renderStudentTable(students) {
-    const tbody = document.querySelector('#studentTable tbody');
-    tbody.innerHTML = '';
-    students.forEach(s => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${s.imie}</td>
-            <td>${s.nazwisko}</td>
-            <td>${s.numer_indeksu}</td>
-            <td>
-                <button onclick="deleteStudent(${s.id_uzytkownika})">Usuń</button>
-                <button onclick="editStudent(${s.id_uzytkownika}, '${s.imie}', '${s.nazwisko}', '${s.email}', '${s.numer_indeksu}')">Edytuj</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
+    /* ---------- Motyw (light/dark) ---------- */
+    const root = document.documentElement
+    const themeToggle = document.getElementById('themeToggle')
+    const themeLabel = document.getElementById('themeLabel')
 
-// ===============================
-// Wyszukiwanie studentów
-// ===============================
-async function searchStudents() {
-    const q = document.getElementById('searchStudent').value;
-    const res = await fetch('/studenci/search?q=' + encodeURIComponent(q));
-    const data = await res.json();
-    renderStudentTable(data);
-}
-
-// ===============================
-// Dodawanie studenta
-// ===============================
-document.getElementById('studentForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const obj = Object.fromEntries(formData.entries());
-    const res = await fetch('/studenci', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(obj)
-    });
-    const data = await res.json();
-    alert(data.message);
-    e.target.reset();
-    fetchStudents();
-});
-
-// ===============================
-// Usuwanie studenta
-// ===============================
-async function deleteStudent(id) {
-    if(confirm('Czy na pewno chcesz usunąć tego studenta?')) {
-        const res = await fetch('/studenci/' + id, { method: 'DELETE' });
-        const data = await res.json();
-        alert(data.message);
-        fetchStudents();
+    function applyTheme(theme){
+      if(theme==='light'){
+        document.body.setAttribute('data-theme','light')
+        themeLabel.textContent = 'Jasny'
+        themeToggle.textContent = '☀️ Jasny'
+      } else {
+        document.body.removeAttribute('data-theme')
+        themeLabel.textContent = 'Ciemny'
+        themeToggle.textContent = '🌙 Ciemny'
+      }
+      localStorage.setItem('theme', theme)
     }
-}
+    themeToggle.addEventListener('click', ()=>{
+      const cur = localStorage.getItem('theme') === 'light' ? 'dark' : 'light'
+      applyTheme(cur)
+    })
+    // inicjalizacja
+    applyTheme(localStorage.getItem('theme') || 'dark')
 
-// ===============================
-// Edycja studenta
-// ===============================
-function editStudent(id, imie, nazwisko, email, numer_indeksu) {
-    const imieNew = prompt('Imię:', imie);
-    if(!imieNew) return;
-    const nazwiskoNew = prompt('Nazwisko:', nazwisko);
-    if(!nazwiskoNew) return;
-    const emailNew = prompt('Email:', email);
-    if(!emailNew) return;
-    const numerNew = prompt('Numer indeksu:', numer_indeksu);
-    if(!numerNew) return;
+    /* ---------- Storage + fallback ---------- */
+    async function fetchApi(path = '', opts = {}){
+      try{
+        const res = await fetch(path, opts)
+        if(!res.ok) throw new Error('API error '+res.status)
+        return await res.json()
+      }catch(err){
+        console.warn('API unavailable, using fallback:', err)
+        return null
+      }
+    }
 
-    fetch('/studenci/' + id, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            imie: imieNew,
-            nazwisko: nazwiskoNew,
-            email: emailNew,
-            numer_indeksu: numerNew,
-            haslo: 'bez zmian'
-        })
-    }).then(res => res.json()).then(data => {
-        alert(data.message);
-        fetchStudents();
-    });
-}
+    function loadFallback(){
+      try{ return JSON.parse(localStorage.getItem(STORAGE_FALLBACK_KEY) || 'null') || [] }catch(e){return []}
+    }
+    function saveFallback(data){ localStorage.setItem(STORAGE_FALLBACK_KEY, JSON.stringify(data)) }
 
-// ===============================
-// Inicjalne pobranie studentów
-// ===============================
-fetchStudents();
-</script>
+    /* ---------- Operacje CRUD (uzytkownicy) ---------- */
+    async function getUsers(){
+      const data = await fetchApi(API_ROOT)
+      if(data) return data
+      return loadFallback()
+    }
+    async function createUser(payload){
+      const data = await fetchApi(API_ROOT, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      if(data) return data
+      const local = loadFallback(); payload.id = 'loc_'+Math.random().toString(36).slice(2,9); local.unshift(payload); saveFallback(local); return payload
+    }
+    async function updateUser(id,payload){
+      const data = await fetchApi(API_ROOT+'/'+id, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      if(data) return data
+      const local = loadFallback(); const idx = local.findIndex(x=>x.id==id); if(idx>-1){local[idx]=payload; saveFallback(local)}; return payload
+    }
+    async function deleteUser(id){
+      const data = await fetchApi(API_ROOT+'/'+id, {method:'DELETE'})
+      if(data) return data
+      const local = loadFallback(); const rest = local.filter(x=>x.id!=id); saveFallback(rest); return {ok:true}
+    }
 
+    /* ---------- UI: render, form, wyszukiwanie ---------- */
+    const itemsEl = document.getElementById('items')
+    const countEl = document.getElementById('count')
+    const qEl = document.getElementById('q')
+    const dateFromEl = document.getElementById('dateFrom')
+    const dateToEl = document.getElementById('dateTo')
+    const btnSearch = document.getElementById('btnSearch')
+    const btnClear = document.getElementById('btnClear')
+    const addForm = document.getElementById('addForm')
+    const imieEl = document.getElementById('imie')
+    const nazwiskoEl = document.getElementById('nazwisko')
+    const emailEl = document.getElementById('email')
+    const dataDolEl = document.getElementById('data_dolaczenia')
+    const komentarzEl = document.getElementById('komentarz')
+    const itemIdEl = document.getElementById('itemId')
+    const reportSection = document.getElementById('reportSection')
+
+    let items = []
+
+    function escapeHtml(s){return String(s||'').replace(/[&<>\"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+    function formatDate(d){if(!d) return ''; try{const dt=new Date(d); if(isNaN(dt)) return d; return dt.toLocaleDateString('pl-PL')}catch(e){return d}}
+
+    function renderList(list){
+      itemsEl.innerHTML = ''
+      if(!list || list.length===0){ itemsEl.innerHTML = '<div class="meta">Brak rekordów</div>'; countEl.textContent = 0; return }
+      list.forEach(it=>{
+        const div = document.createElement('div'); div.className='cardItem'
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:600">${escapeHtml(it.imie+' '+(it.nazwisko||''))}</div>
+            <div class="meta">${it.email||''} • ${formatDate(it.data_dolaczenia)} • ${escapeHtml(it.komentarz||'')}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn ghost" data-edit="${it.id}">Edytuj</button>
+            <button class="btn" data-del="${it.id}">Usuń</button>
+          </div>`
+        itemsEl.appendChild(div)
+      })
+      countEl.textContent = list.length
+    }
+
+    async function loadAndRender(){
+      items = await getUsers()
+      renderList(items)
+      updateStats()
+    }
+
+    function applyFilters(){
+      let list = [...items]
+      const q = qEl.value.trim().toLowerCase()
+      const df = dateFromEl.value
+      const dtv = dateToEl.value
+      if(q){ list = list.filter(i=> (i.imie||'').toLowerCase().includes(q) || (i.nazwisko||'').toLowerCase().includes(q) || (i.email||'').toLowerCase().includes(q) || (i.komentarz||'').toLowerCase().includes(q)) }
+      if(df){ list = list.filter(i=> new Date(i.data_dolaczenia) >= new Date(df+'T00:00:00')) }
+      if(dtv){ list = list.filter(i=> new Date(i.data_dolaczenia) <= new Date(dtv+'T23:59:59')) }
+      renderList(list)
+      return list
+    }
+
+    btnSearch.addEventListener('click', ()=>applyFilters())
+    btnClear.addEventListener('click', ()=>{ qEl.value=''; dateFromEl.value=''; dateToEl.value=''; renderList(items) })
+
+    addForm.addEventListener('submit', async (e)=>{
+      e.preventDefault()
+      const payload = { imie: imieEl.value.trim(), nazwisko: nazwiskoEl.value.trim(), email: emailEl.value.trim(), data_dolaczenia: dataDolEl.value, komentarz: komentarzEl.value.trim() }
+      if(!payload.imie || !payload.nazwisko || !payload.data_dolaczenia){ alert('Uzupełnij wymagane pola'); return }
+      const id = itemIdEl.value
+      if(id){ payload.id = id; await updateUser(id,payload) }
+      else { await createUser(payload) }
+      addForm.reset(); itemIdEl.value=''; await loadAndRender()
+    })
+
+    itemsEl.addEventListener('click', async (e)=>{
+      const edit = e.target.dataset.edit
+      const del = e.target.dataset.del
+      if(edit){ const it = items.find(x=>String(x.id)===String(edit)); if(it){ itemIdEl.value = it.id; imieEl.value = it.imie||''; nazwiskoEl.value = it.nazwisko||''; emailEl.value = it.email||''; dataDolEl.value = it.data_dolaczenia||''; komentarzEl.value = it.komentarz||''; window.scrollTo({top:0,behavior:'smooth'}) } }
+      if(del){ if(!confirm('Czy na pewno usunąć użytkownika?')) return; await deleteUser(del); await loadAndRender() }
+    })
+
+    document.querySelectorAll('.menu button').forEach(b=>b.addEventListener('click', ()=>{
+      document.querySelectorAll('.menu button').forEach(x=>x.classList.remove('active'))
+      b.classList.add('active')
+      const view = b.dataset.view
+      if(view==='report'){ reportSection.style.display='block' } else { reportSection.style.display='none' }
+      if(view==='add'){ window.scrollTo({top:document.getElementById('addForm').offsetTop,behavior:'smooth'}) }
+    }))
+
+    document.getElementById('btnAddOpen').addEventListener('click', ()=>{ window.scrollTo({top:document.getElementById('addForm').offsetTop,behavior:'smooth'}) })
+
+    function updateStats(){
+      const list = items || []
+      document.getElementById('statCount').textContent = list.length
+    }
+
+    document.getElementById('btnDownloadCSV').addEventListener('click', ()=>{
+      const rows = [['id','imie','nazwisko','email','data_dolaczenia','komentarz']]
+      items.forEach(i=> rows.push([i.id,i.imie,i.nazwisko,i.email,i.data_dolaczenia,i.komentarz]))
+      const csv = rows.map(r=> r.map(c=> '"'+String(c||'').replace(/ "/g,'""')+'"').join(',')).join('');
+      const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='uzytkownicy.csv'; a.click(); URL.revokeObjectURL(url);
+    })
+
+    document.getElementById('btnPrintReport').addEventListener('click', ()=>{
+      const w = window.open('','_blank')
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>Raport użytkowników</title><style>body{font-family:Arial;padding:20px;color:#111}table{width:100%;border-collapse:collapse}th,td{padding:8px;border:1px solid #ddd}</style></head><body><h1>Raport użytkowników</h1><p>Liczba: ${items.length}</p><table><thead><tr><th>Imię</th><th>Nazwisko</th><th>Email</th><th>Data dołączenia</th><th>Komentarz</th></tr></thead><tbody>${items.map(i=>`<tr><td>${escapeHtml(i.imie)}</td><td>${escapeHtml(i.nazwisko)}</td><td>${escapeHtml(i.email)}</td><td>${escapeHtml(i.data_dolaczenia)}</td><td>${escapeHtml(i.komentarz)}</td></tr>`).join('')}</tbody></table></body></html>`
+      w.document.write(html); w.document.close(); w.focus(); w.print()
+    })
+
+    // inicjalne załadowanie
+    loadAndRender()
+  </script>
 </body>
 </html>
-
-
