@@ -222,7 +222,6 @@
     btnSearch.addEventListener('click', ()=>applyFilters())
     btnClear.addEventListener('click', ()=>{ qEl.value=''; dateFromEl.value=''; dateToEl.value=''; renderList(items) })
 
-    -------------------------------
 addForm.addEventListener('submit', async (e)=>{
   e.preventDefault()
   const payload = {
@@ -282,6 +281,7 @@ document.getElementById('btnDownloadCSV').addEventListener('click', ()=>{
   </script>
 </body>
 </html>
+
 
 
 
