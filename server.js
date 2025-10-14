@@ -8,7 +8,10 @@ const DB_PATH = process.env.DB_PATH || "./baza.sqlite";
 const db = new Database(DB_PATH, { readonly: false });
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ["https://waniuu.github.io"],
+  credentials: false // true tylko jeśli używasz cookies/autoryzacji
+}));
 app.use(bodyParser.json());
 
 function mapUser(row) {
@@ -80,5 +83,6 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}`));
+
 
 
