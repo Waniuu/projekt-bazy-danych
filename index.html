@@ -222,15 +222,25 @@
     btnSearch.addEventListener('click', ()=>applyFilters())
     btnClear.addEventListener('click', ()=>{ qEl.value=''; dateFromEl.value=''; dateToEl.value=''; renderList(items) })
 
-    addForm.addEventListener('submit', async (e)=>{
-      e.preventDefault()
-      const payload = { imie: imieEl.value.trim(), nazwisko: nazwiskoEl.value.trim(), email: emailEl.value.trim(), data_dolaczenia: dataDolEl.value, komentarz: komentarzEl.value.trim() }
-      if(!payload.imie || !payload.nazwisko || !payload.data_dolaczenia){ alert('Uzupełnij wymagane pola'); return }
-      const id = itemIdEl.value
-      if(id){ payload.id = id; await updateUser(id,payload) }
-      else { await createUser(payload) }
-      addForm.reset(); itemIdEl.value=''; await loadAndRender()
-    })
+    -------------------------------
+addForm.addEventListener('submit', async (e)=>{
+  e.preventDefault()
+  const payload = {
+    imie: imieEl.value.trim(),
+    nazwisko: nazwiskoEl.value.trim(),
+    email: emailEl.value.trim(),
+    haslo: hasloEl.value,
+    typ_konta: typKontaEl.value
+  }
+  if(!payload.imie || !payload.nazwisko || !payload.email || !payload.haslo || !payload.typ_konta){
+    alert('Uzupełnij wymagane pola');
+    return;
+  }
+  const id = itemIdEl.value
+  if(id){ payload.id = id; await updateUser(id,payload) }
+  else { await createUser(payload) }
+  addForm.reset(); itemIdEl.value=''; await loadAndRender()
+})
 
     itemsEl.addEventListener('click', async (e)=>{
       const edit = e.target.dataset.edit
@@ -272,6 +282,7 @@ document.getElementById('btnDownloadCSV').addEventListener('click', ()=>{
   </script>
 </body>
 </html>
+
 
 
 
