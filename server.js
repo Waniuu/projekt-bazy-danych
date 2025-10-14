@@ -34,15 +34,18 @@ app.get("/api/uzytkownicy", (req, res) => {
 
 app.post("/api/uzytkownicy", (req, res) => {
   try {
-    console.log("Request body:", req.body); // dodaj to!
-    const { imie, nazwisko, email, data_dolaczenia, komentarz } = req.body;
+    const { imie, nazwisko, email, haslo, typ_konta } = req.body;
+    if (!imie || !nazwisko || !email || !haslo || !typ_konta) {
+      return res.status(400).json({ error: "Brak wymaganych pól!" });
+    }
     const stmt = db.prepare(
-      "INSERT INTO Uzytkownik (imie, nazwisko, email, data_dolaczenia, komentarz) VALUES (?, ?, ?, ?, ?)"
+      "INSERT INTO Uzytkownik (imie, nazwisko, email, haslo, typ_konta) VALUES (?, ?, ?, ?, ?)"
     );
-    const info = stmt.run(imie || "", nazwisko || "", email || "", data_dolaczenia || "", komentarz || "");
+    const info = stmt.run(imie, nazwisko, email, haslo, typ_konta);
     const row = db.prepare("SELECT * FROM Uzytkownik WHERE id_uzytkownika = ?").get(info.lastInsertRowid);
     res.status(201).json(mapUser(row));
   } catch (err) {
+    console.error("POST /api/uzytkownicy error:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -77,4 +80,5 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}`));
+
 
