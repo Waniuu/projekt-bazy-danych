@@ -34,6 +34,7 @@ app.get("/api/uzytkownicy", (req, res) => {
 
 app.post("/api/uzytkownicy", (req, res) => {
   try {
+    console.log("Request body:", req.body); // dodaj to!
     const { imie, nazwisko, email, data_dolaczenia, komentarz } = req.body;
     const stmt = db.prepare(
       "INSERT INTO Uzytkownik (imie, nazwisko, email, data_dolaczenia, komentarz) VALUES (?, ?, ?, ?, ?)"
@@ -76,3 +77,4 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}`));
+
