@@ -53,16 +53,24 @@
 
         <aside style="background:rgba(255,255,255,0.02);padding:12px;border-radius:10px">
           <h4>Dodaj / Edytuj</h4>
-          <form id="addForm" class="addForm" autocomplete="off">
-            <input type="hidden" id="itemId">
-<label>Hasło<input id="haslo" type="password" required></label>
-<label>Typ konta
-  <select id="typ_konta" required>
-    <option value="student">Student</option>
-    <option value="nauczyciel">Nauczyciel</option>
-    <option value="administrator">Administrator</option>
-  </select>
-</label>
+<form id="addForm" class="addForm" autocomplete="off">
+  <input type="hidden" id="itemId">
+  <label>Imię<input id="imie" required placeholder="Imię..."></label>
+  <label>Nazwisko<input id="nazwisko" required placeholder="Nazwisko..."></label>
+  <label>Email<input id="email" type="email" placeholder="adres@example.com"></label>
+  <label>Hasło<input id="haslo" type="password" required placeholder="Hasło..."></label>
+  <label>Typ konta
+    <select id="typ_konta" required>
+      <option value="student">Student</option>
+      <option value="nauczyciel">Nauczyciel</option>
+      <option value="administrator">Administrator</option>
+    </select>
+  </label>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button type="reset" class="btn ghost">Wyczyść</button>
+    <button type="submit" class="btn">Zapisz</button>
+  </div>
+</form>
             <div style="display:flex;gap:8px;justify-content:flex-end">
               <button type="reset" class="btn ghost">Wyczyść</button>
               <button type="submit" class="btn">Zapisz</button>
