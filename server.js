@@ -6,11 +6,6 @@ import Database from "better-sqlite3";
 const db = new sqlite3.Database(path.join(__dirname, 'system_testow.sqlite'));
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-const cors = require('cors');
-app.use(cors());
-
 const app = express();
 app.use(cors({
   origin: ["https://waniuu.github.io"],
@@ -312,4 +307,5 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
+
 
