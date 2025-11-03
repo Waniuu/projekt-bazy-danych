@@ -2,8 +2,14 @@
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import Database from "better-sqlite3";
-const sqlite3 = require('sqlite3').verbose();
+import sqlite3 from "sqlite3";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const db = new sqlite3.Database(path.join(__dirname, 'system_testow.sqlite'));
 const PORT = process.env.PORT || 3000;
 
@@ -308,6 +314,3 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
-
-
-
