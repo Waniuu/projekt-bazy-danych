@@ -1,8 +1,8 @@
 // server.js
-const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const app = express();
+import express from "express";
+import bodyParser from "body-parser";
+import cors from "cors";
+import Database from "better-sqlite3";
 const db = new sqlite3.Database(path.join(__dirname, 'system_testow.sqlite'));
 const PORT = process.env.PORT || 3000;
 
@@ -10,6 +10,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const cors = require('cors');
 app.use(cors());
+
+const app = express();
+app.use(cors({
+  origin: ["https://waniuu.github.io"],
+  credentials: false // true tylko jeśli używasz cookies/autoryzacji
+}));
+app.use(bodyParser.json());
 
 // Serve static files (HTML + client JS + CSS)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -305,3 +312,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
+
