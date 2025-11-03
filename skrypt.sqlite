@@ -1,0 +1,586 @@
+-- SQLite script: system_generowania_testow.sql
+PRAGMA foreign_keys = ON;
+
+-- ====== SCHEMA ======
+
+-- 1) users (Użytkownik) - baza dla specjalizacji
+CREATE TABLE IF NOT EXISTS users (
+    user_id     INTEGER PRIMARY KEY,  -- explicit IDs will be used
+    first_name  TEXT NOT NULL,
+    last_name   TEXT NOT NULL,
+    email       TEXT NOT NULL UNIQUE,
+    role        TEXT NOT NULL CHECK (role IN ('teacher','student','admin')),
+    created_at  TEXT DEFAULT (datetime('now'))
+);
+
+-- Atrybut wielowartościowy: user_phones
+CREATE TABLE IF NOT EXISTS user_phones (
+    user_phone_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    phone_number  TEXT NOT NULL,
+    UNIQUE(user_id, phone_number)
+);
+
+-- teachers (specjalizacja)
+CREATE TABLE IF NOT EXISTS teachers (
+    user_id INTEGER PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+    academic_title TEXT
+);
+
+-- students (specjalizacja)
+CREATE TABLE IF NOT EXISTS students (
+    user_id INTEGER PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+    student_index TEXT NOT NULL UNIQUE,
+    group_id INTEGER REFERENCES groups(group_id) ON DELETE SET NULL  -- dodamy groups poniżej; SQLite allows forward ref
+);
+
+-- groups (Grupa)
+CREATE TABLE IF NOT EXISTS groups (
+    group_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name     TEXT NOT NULL UNIQUE,
+    teacher_id INTEGER NOT NULL REFERENCES teachers(user_id) ON DELETE RESTRICT
+);
+
+-- categories (Kategoria)
+CREATE TABLE IF NOT EXISTS categories (
+    category_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT
+);
+
+-- tests (Test)
+CREATE TABLE IF NOT EXISTS tests (
+    test_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    created_by_teacher_id INTEGER NOT NULL REFERENCES teachers(user_id) ON DELETE RESTRICT
+);
+
+-- questions (Pytanie)
+CREATE TABLE IF NOT EXISTS questions (
+    question_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    points REAL NOT NULL DEFAULT 1.0,
+    category_id INTEGER NOT NULL REFERENCES categories(category_id) ON DELETE RESTRICT
+);
+
+-- answers (Odpowiedź)
+CREATE TABLE IF NOT EXISTS answers (
+    answer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id INTEGER NOT NULL REFERENCES questions(question_id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    is_correct INTEGER NOT NULL DEFAULT 0  -- 0/1 boolean
+);
+
+-- test_questions (relacja Test <-> Question) z atrybutem question_order
+CREATE TABLE IF NOT EXISTS test_questions (
+    test_question_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_id INTEGER NOT NULL REFERENCES tests(test_id) ON DELETE CASCADE,
+    question_id INTEGER NOT NULL REFERENCES questions(question_id) ON DELETE RESTRICT,
+    question_order INTEGER NOT NULL,
+    UNIQUE(test_id, question_id),
+    UNIQUE(test_id, question_order)
+);
+
+-- test_sessions (Sesja_Testowa) z unarnym parent_session_id
+CREATE TABLE IF NOT EXISTS test_sessions (
+    session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL REFERENCES students(user_id) ON DELETE CASCADE,
+    test_id INTEGER NOT NULL REFERENCES tests(test_id) ON DELETE CASCADE,
+    started_at TEXT DEFAULT (datetime('now')),
+    finished_at TEXT,
+    parent_session_id INTEGER REFERENCES test_sessions(session_id) ON DELETE SET NULL
+);
+
+-- results (Wynik)
+CREATE TABLE IF NOT EXISTS results (
+    result_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id INTEGER NOT NULL REFERENCES test_sessions(session_id) ON DELETE CASCADE,
+    student_id INTEGER NOT NULL REFERENCES students(user_id) ON DELETE CASCADE,
+    points_earned REAL NOT NULL DEFAULT 0,
+    achieved_at TEXT DEFAULT (datetime('now')),
+    graded_by_teacher_id INTEGER REFERENCES teachers(user_id)
+);
+
+-- ====== DANE (INSERTS) ======
+BEGIN TRANSACTION;
+
+-- USERS: create 30 users: IDs 1..30 (15 teachers 1..15, 15 students 16..30)
+INSERT INTO users(user_id, first_name, last_name, email, role) VALUES
+(1,'Anna','Nowak','anna.nowak@example.com','teacher'),
+(2,'Piotr','Kowalski','piotr.kowalski@example.com','teacher'),
+(3,'Maria','Wiśniewska','maria.wisniewska@example.com','teacher'),
+(4,'Jan','Wójcik','jan.wojcik@example.com','teacher'),
+(5,'Katarzyna','Krawczyk','kat.krawczyk@example.com','teacher'),
+(6,'Tomasz','Zieliński','t.zielinski@example.com','teacher'),
+(7,'Ewa','Szymańska','ewa.szymanska@example.com','teacher'),
+(8,'Marek','Woźniak','marek.wozniak@example.com','teacher'),
+(9,'Agnieszka','Kozłowska','agnieszka.kozlowska@example.com','teacher'),
+(10,'Łukasz','Jankowski','lukasz.jankowski@example.com','teacher'),
+(11,'Magdalena','Mazur','magdalena.mazur@example.com','teacher'),
+(12,'Adam','Kubiak','adam.kubiak@example.com','teacher'),
+(13,'Joanna','Piotrowska','joanna.piotrowska@example.com','teacher'),
+(14,'Paweł','Grabowski','pawel.grabowski@example.com','teacher'),
+(15,'Monika','Pawłowska','monika.pawlowska@example.com','teacher'),
+(16,'Kamil','Lewandowski','kamil.lewandowski@example.com','student'),
+(17,'Natalia','Dudek','natalia.dudek@example.com','student'),
+(18,'Bartłomiej','Sikora','bartek.sikora@example.com','student'),
+(19,'Dorota','Zawadzka','dorota.zawadzka@example.com','student'),
+(20,'Michał','Sadowski','michal.sadowski@example.com','student'),
+(21,'Patrycja','Michalak','patrycja.michalak@example.com','student'),
+(22,'Krzysztof','Ostrowski','krzysztof.ostrowski@example.com','student'),
+(23,'Sylwia','Wojciechowska','sylwia.wojciechowska@example.com','student'),
+(24,'Rafał','Nowicki','rafal.nowicki@example.com','student'),
+(25,'Beata','Kaczmarek','beata.kaczmarek@example.com','student'),
+(26,'Grzegorz','Pawlak','grzegorz.pawlak@example.com','student'),
+(27,'Paulina','Górska','paulina.gorska@example.com','student'),
+(28,'Szymon','Kubiak','szymon.kubiak@example.com','student'),
+(29,'Aleksandra','Malinowska','aleksandra.malinowska@example.com','student'),
+(30,'Dawid','Malik','dawid.malik@example.com','student');
+
+-- TEACHERS: user_id 1..15
+INSERT INTO teachers(user_id, academic_title) VALUES
+(1,'Dr'),(2,'Mgr'),(3,'Dr'),(4,'Mgr'),(5,'Prof'),(6,'Mgr'),(7,'Dr'),(8,'Mgr'),
+(9,'Mgr'),(10,'Dr'),(11,'Mgr'),(12,'Prof'),(13,'Mgr'),(14,'Dr'),(15,'Mgr');
+
+-- GROUPS: create 15 groups (each with teacher as guardian)
+INSERT INTO groups(group_id, name, teacher_id) VALUES
+(1,'GroupA',1),(2,'GroupB',2),(3,'GroupC',3),(4,'GroupD',4),(5,'GroupE',5),
+(6,'GroupF',6),(7,'GroupG',7),(8,'GroupH',8),(9,'GroupI',9),(10,'GroupJ',10),
+(11,'GroupK',11),(12,'GroupL',12),(13,'GroupM',13),(14,'GroupN',14),(15,'GroupO',15);
+
+-- STUDENTS: user_id 16..30, assign to groups 1..15
+INSERT INTO students(user_id, student_index, group_id) VALUES
+(16,'s1601',1),(17,'s1702',2),(18,'s1803',3),(19,'s1904',4),(20,'s2005',5),
+(21,'s2106',6),(22,'s2207',7),(23,'s2308',8),(24,'s2409',9),(25,'s2510',10),
+(26,'s2611',11),(27,'s2712',12),(28,'s2813',13),(29,'s2914',14),(30,'s3015',15);
+
+-- CATEGORIES: 15 categories
+INSERT INTO categories(category_id, name, description) VALUES
+(1,'Algebra','Podstawy algebry'),
+(2,'Analiza','Analiza matematyczna'),
+(3,'BazaDanych','SQL i bazy danych'),
+(4,'Programowanie','Algorytmy i struktury danych'),
+(5,'Sieci','Sieci komputerowe'),
+(6,'Fizyka','Mechanika i termodynamika'),
+(7,'Chemia','Podstawy chemii'),
+(8,'Historia','Historia powszechna'),
+(9,'Geografia','Geografia fizyczna'),
+(10,'Język','Język angielski'),
+(11,'Logika','Logika matematyczna'),
+(12,'Statystyka','Statystyka opisowa'),
+(13,'Sztuka','Historia sztuki'),
+(14,'Prawo','Podstawy prawa'),
+(15,'Filozofia','Wstęp do filozofii');
+
+-- TESTS: 15 tests, created_by_teacher_id in 1..15
+INSERT INTO tests(test_id, title, description, created_by_teacher_id) VALUES
+(1,'Algebra I','Test z algebry','1'),
+(2,'Analiza I','Test z analizy','2'),
+(3,'SQL Basics','Test z SQL','3'),
+(4,'Algorytmy','Test z algorytmów','4'),
+(5,'Sieci 101','Podstawy sieci','5'),
+(6,'Fizyka I','Mechanika 1','6'),
+(7,'Chemia I','Reakcje chemiczne','7'),
+(8,'Historia 20w','Historia XX wieku','8'),
+(9,'Geografia - klimat','Klimatologia','9'),
+(10,'English Basics','Podstawy angielskiego','10'),
+(11,'Logika I','Zadania logiczne','11'),
+(12,'Statystyka','Podstawy statystyki','12'),
+(13,'Sztuka nowoczesna','Sztuka XX wieku','13'),
+(14,'Prawo konstytucyjne','Konstytucje świata','14'),
+(15,'Filozofia I','Wprowadzenie do filozofii','15');
+
+-- QUESTIONS: 15 questions (each assigned to some category)
+INSERT INTO questions(question_id, content, points, category_id) VALUES
+(1,'Rozwiąż równanie 2x+3=7',2,1),
+(2,'Pochodna sin(x) to?',1,2),
+(3,'Co robi SELECT w SQL?',1,3),
+(4,'Co to jest złożoność O(n log n)?',2,4),
+(5,'Co to jest adres IP?',1,5),
+(6,'I zasada dynamiki Newtona?',2,6),
+(7,'Podaj wzór sumy atomowej wody',1,7),
+(8,'Kiedy rozpoczęła się I wojna światowa?',1,8),
+(9,'Co to jest strefa klimatyczna?',1,9),
+(10,'Jak po angielsku: "dzień dobry"?',1,10),
+(11,'Prawo wyłączonego środka - opis',1,11),
+(12,'Średnia arytmetyczna - wzór',1,12),
+(13,'Kto malował Guernicę?',1,13),
+(14,'Co to jest trójpodział władzy?',2,14),
+(15,'Co to jest etyka?',1,15);
+
+-- ANSWERS: >=15 answers; kilka pytań ma po kilka odpowiedzi
+INSERT INTO answers(question_id, content, is_correct) VALUES
+(1,'x=2',1),(1,'x=5',0),
+(2,'cos(x)',0),(2,'cos(x)?',1),
+(3,'wybiera dane z tabeli',1),
+(4,'złożoność sortowania mergesort',1),
+(5,'identyfikator hosta w sieci',1),
+(6,'ciało pozostaje w spoczynku',0),(6,'siła równa masie razy przyspieszenie',1),
+(7,'H2O',1),
+(8,'1914',1),
+(9,'region o podobnym klimacie',1),
+(10,'Good morning',1),(10,'Hello',0),
+(11,'każde zdanie jest prawdziwe albo fałszywe',1),
+(12,'(suma wartości)/n',1),
+(13,'Pablo Picasso',1),
+(14,'podział władzy na ustawodawczą, wykonawczą i sądowniczą',1),
+(15,'dział filozofii badający dobro i zło',1);
+
+-- TEST_QUESTIONS: przypisania pytań do testów (co najmniej 15 wierszy)
+INSERT INTO test_questions(test_id, question_id, question_order) VALUES
+(1,1,1),(1,2,2),(2,2,1),(2,3,2),(3,3,1),(3,4,2),(4,4,1),(4,5,2),
+(5,5,1),(6,6,1),(7,7,1),(8,8,1),(9,9,1),(10,10,1),(11,11,1);
+
+-- TEST_SESSIONS: 15 sessions (student_id 16..30, test_id 1..15)
+INSERT INTO test_sessions(session_id, student_id, test_id, started_at, finished_at, parent_session_id) VALUES
+(1,16,1,'2025-10-01 10:00:00','2025-10-01 10:30:00',NULL),
+(2,17,2,'2025-10-02 11:00:00','2025-10-02 11:25:00',NULL),
+(3,18,3,'2025-10-03 09:00:00','2025-10-03 09:40:00',NULL),
+(4,19,4,'2025-10-04 12:00:00','2025-10-04 12:45:00',NULL),
+(5,20,5,'2025-10-05 13:00:00','2025-10-05 13:30:00',NULL),
+(6,21,6,'2025-10-06 14:00:00','2025-10-06 14:40:00',NULL),
+(7,22,7,'2025-10-07 15:00:00','2025-10-07 15:30:00',NULL),
+(8,23,8,'2025-10-08 08:00:00','2025-10-08 08:35:00',NULL),
+(9,24,9,'2025-10-09 10:00:00','2025-10-09 10:20:00',NULL),
+(10,25,10,'2025-10-10 11:00:00','2025-10-10 11:30:00',NULL),
+(11,26,11,'2025-10-11 09:30:00','2025-10-11 10:00:00',NULL),
+(12,27,12,'2025-10-12 14:00:00','2025-10-12 14:30:00',NULL),
+(13,28,13,'2025-10-13 16:00:00','2025-10-13 16:35:00',NULL),
+(14,29,14,'2025-10-14 17:00:00','2025-10-14 17:45:00',NULL),
+(15,30,15,'2025-10-15 18:00:00','2025-10-15 18:30:00',NULL);
+
+-- RESULTS: 15 results corresponding to sessions
+INSERT INTO results(session_id, student_id, points_earned, achieved_at, graded_by_teacher_id) VALUES
+(1,16,2.0,'2025-10-01 10:40:00',1),
+(2,17,1.0,'2025-10-02 11:35:00',2),
+(3,18,1.0,'2025-10-03 09:50:00',3),
+(4,19,2.0,'2025-10-04 12:50:00',4),
+(5,20,1.0,'2025-10-05 13:35:00',5),
+(6,21,2.0,'2025-10-06 14:50:00',6),
+(7,22,1.0,'2025-10-07 15:40:00',7),
+(8,23,1.0,'2025-10-08 08:45:00',8),
+(9,24,1.0,'2025-10-09 10:25:00',9),
+(10,25,1.0,'2025-10-10 11:45:00',10),
+(11,26,1.0,'2025-10-11 10:10:00',11),
+(12,27,1.0,'2025-10-12 14:45:00',12),
+(13,28,1.0,'2025-10-13 16:45:00',13),
+(14,29,2.0,'2025-10-14 17:55:00',14),
+(15,30,1.0,'2025-10-15 18:40:00',15);
+
+-- USER_PHONES: min 15 rows (wielowartościowy attr)
+INSERT INTO user_phones(user_id, phone_number) VALUES
+(1,'+48100100101'),(2,'+48100200202'),(3,'+48100300303'),
+(4,'+48100400404'),(5,'+48100500505'),(6,'+48100600606'),
+(7,'+48100700707'),(8,'+48100800808'),(9,'+48100900909'),
+(10,'+48101001010'),(11,'+48101101111'),(12,'+48101201212'),
+(13,'+48101301313'),(14,'+48101401414'),(15,'+48101501515');
+
+COMMIT;
+
+-- ====== WYZWALACZE (TRIGGERS) ======
+-- Trigger 1: przed INSERTem do results: upewnij się, że points_earned <= możliwa suma punktów testu
+-- Jeżeli przekraczają -> RAISE(ABORT)
+CREATE TRIGGER IF NOT EXISTS trg_results_check_points
+BEFORE INSERT ON results
+FOR EACH ROW
+BEGIN
+    -- oblicz maks możliwą sumę punktów dla testu powiązanego z sesją
+    -- uzyskujemy session_id z NEW.session_id
+    -- jeżeli NEW.points_earned > suma -> abort
+    SELECT
+    CASE
+      WHEN (NEW.points_earned > (
+          SELECT IFNULL(SUM(q.points),0)
+          FROM test_sessions ts
+          JOIN test_questions tq ON tq.test_id = ts.test_id
+          JOIN questions q ON q.question_id = tq.question_id
+          WHERE ts.session_id = NEW.session_id
+      )) THEN
+        RAISE(ABORT, 'points_earned exceeds total possible points for the test/session')
+    END;
+END;
+
+-- Trigger 2: po INSERT test_sessions -> utwórz wynik domyślny 0 dla tej sesji (jeśli nie istnieje)
+CREATE TRIGGER IF NOT EXISTS trg_create_result_after_session
+AFTER INSERT ON test_sessions
+FOR EACH ROW
+BEGIN
+    INSERT INTO results(session_id, student_id, points_earned, achieved_at)
+    SELECT NEW.session_id, NEW.student_id, 0.0, datetime('now')
+    WHERE NOT EXISTS (SELECT 1 FROM results r WHERE r.session_id = NEW.session_id);
+END;
+
+-- ====== "PROCEDURY" (EMULOWANE SKRYPTY / TRANSAKCJE) ======
+-- PROCEDURE 1: finalize_session(session_id)
+-- - oblicza sumę punktów uzyskanych na podstawie poprawnych odpowiedzi (tu: symulujemy sumę)
+-- - aktualizuje results.points_earned
+-- - jeśli student osiągnął >= 50% -> zwraca wiersz z informacją (SELECT)
+-- Implementacja w SQLite jako transakcyjny blok (uruchom: .read finalise_session.sql albo skopiuj i uruchom poniżej)
+-- Uwaga: tu przyjmujemy, że ocena jest już obliczona z jakiegoś zewnętrznego procesu; dla demonstracji obliczymy sumę punktów pytań w teście
+-- oraz ustawimy points_earned na losową wartość symulującą punktację — w prawdziwym systemie trzeba by porównać odpowiedzi studenta.
+
+-- Przykładowy blok (uruchomić ręcznie, podając session_id):
+-- BEGIN;
+-- <zastąp :session_id odpowiednią liczbą>
+-- ... (kod poniżej)
+-- COMMIT;
+
+-- Tutaj zapisany jako parametryczny przykład:
+-- (Uwaga: SQLite nie wspiera parametrów w skrypcie samym; uruchom to zamieniając :session_id na liczbę)
+-- Przykład dla session_id = 1:
+-- BEGIN;
+--  ... (kod poniżej z :session_id => 1)
+-- COMMIT;
+
+-- Poniższy blok realizuje:
+-- 1) oblicza maks możliwe punkty dla testu powiązanego z daną sesją
+-- 2) symuluje obliczenie uzyskanych punktów (dla demo użyjemy jako 70% z max)
+-- 3) aktualizuje tabelę results i zwraca wiersz z informacją o progu zdania
+
+-- Uwaga: zamień :session_id na realne id zanim uruchomisz poniżej
+
+-- EXAMPLE_SCRIPT_FINALIZE_SESSION(session_id)
+-- (tu: zamień :session_id na np. 1)
+BEGIN;
+WITH max_points AS (
+  SELECT ts.session_id, IFNULL(SUM(q.points),0) AS total_points
+  FROM test_sessions ts
+  JOIN test_questions tq ON tq.test_id = ts.test_id
+  JOIN questions q ON q.question_id = tq.question_id
+  WHERE ts.session_id = :session_id
+  GROUP BY ts.session_id
+),
+computed AS (
+  SELECT
+    mp.session_id,
+    mp.total_points,
+    -- symulacja: ustawiamy earned = round(total_points * 0.7,2)
+    ROUND(mp.total_points * 0.7,2) AS simulated_earned
+  FROM max_points mp
+)
+-- update albo insert do results
+UPDATE results
+SET points_earned = (SELECT simulated_earned FROM computed WHERE computed.session_id = :session_id),
+    achieved_at = datetime('now')
+WHERE session_id = :session_id;
+
+-- zwracamy wynik informacyjny:
+SELECT r.session_id, r.student_id, r.points_earned, c.total_points,
+       CASE WHEN r.points_earned >= (c.total_points/2.0) THEN 'PASS' ELSE 'FAIL' END AS status
+FROM results r
+JOIN (SELECT * FROM max_points) c ON c.session_id = r.session_id
+WHERE r.session_id = :session_id;
+COMMIT;
+
+-- PROCEDURE 2: create_makeup_session(original_session_id, new_student_id)
+-- - tworzy sesję poprawkową powiązaną z oryginalną (parent_session_id)
+-- - kopiuje powiązany test, ustawia started_at i tworzy pusty wynik
+-- Implementacja jako skrypt; zamień :orig_id i :new_student_id na wartości
+
+BEGIN;
+-- parametry: :orig_id, :new_student_id
+-- 1) pobierz test_id z sesji oryginalnej
+INSERT INTO test_sessions(student_id, test_id, started_at, parent_session_id)
+SELECT :new_student_id, test_id, datetime('now'), :orig_id
+FROM test_sessions WHERE session_id = :orig_id;
+
+-- 2) utworzony session_id:
+-- zależnie od klienta możesz pobrać last_insert_rowid()
+-- 3) trigger automatycznie utworzy wynik (zgodnie z trg_create_result_after_session)
+
+SELECT last_insert_rowid() AS new_session_id;
+COMMIT;
+
+-- ====== SEKCJE: (a) SEKWENCJE INSERT - przykłady ======
+-- a.1: Dodanie nowego użytkownika-teachera i przypisanie do grupy
+BEGIN;
+INSERT INTO users(user_id, first_name, last_name, email, role) VALUES (31,'Iwona','Nowa','iwona.nowa@example.com','teacher');
+INSERT INTO teachers(user_id, academic_title) VALUES (31,'Mgr');
+INSERT INTO groups(name, teacher_id) VALUES ('GroupP',31);
+COMMIT;
+
+-- a.2: Dodanie nowego studenta i sesji testowej
+BEGIN;
+INSERT INTO users(user_id, first_name, last_name, email, role) VALUES (32,'Ola','Nowakowska','ola.nowakowska@example.com','student');
+INSERT INTO students(user_id, student_index, group_id) VALUES (32,'s3216',1);
+INSERT INTO test_sessions(student_id, test_id) VALUES (32,1);  -- trigger utworzy wynik
+COMMIT;
+
+-- ====== SEKCENCJE UPDATE / DELETE (b) ======
+-- b.1: Modyfikacja opisu testu
+UPDATE tests SET description = 'Zaktualizowany opis testu Algebra I' WHERE test_id = 1;
+
+-- b.2: Usuwanie pytania z testu (usuwa powiązanie test_questions, ale nie pytanie samo w sobie)
+DELETE FROM test_questions WHERE test_id = 1 AND question_id = 2;
+
+-- b.3: Usuwanie użytkownika (cascade usunie teacher/student oraz powiązane zależności)
+DELETE FROM users WHERE user_id = 31;
+
+-- ====== ZAPYTANIA (c) - ≥15 zapytań do pobierania danych, pogrupowane wg funkcjonalności ======
+-- 1) Lista testów wraz z autorem (INNER JOIN)
+SELECT t.test_id, t.title, t.description, u.first_name || ' ' || u.last_name AS teacher_name
+FROM tests t
+JOIN teachers th ON th.user_id = t.created_by_teacher_id
+JOIN users u ON u.user_id = th.user_id
+ORDER BY t.test_id;
+
+-- 2) Wszystkie pytania dla danego testu z kolejnością (INNER JOIN)
+SELECT tq.test_id, tq.question_order, q.question_id, q.content, q.points
+FROM test_questions tq
+JOIN questions q ON q.question_id = tq.question_id
+WHERE tq.test_id = 1
+ORDER BY tq.question_order;
+
+-- 3) Lista studentów w danej grupie (LEFT JOIN by pokazać brak przypisania)
+SELECT s.user_id, u.first_name, u.last_name, g.name AS group_name
+FROM students s
+LEFT JOIN users u ON u.user_id = s.user_id
+LEFT JOIN groups g ON g.group_id = s.group_id
+WHERE g.group_id = 1;
+
+-- 4) Wyniki studenta (JOIN wielotabelowy)
+SELECT r.result_id, r.session_id, u.first_name || ' ' || u.last_name AS student, t.title, r.points_earned
+FROM results r
+JOIN students s ON s.user_id = r.student_id
+JOIN users u ON u.user_id = s.user_id
+JOIN test_sessions ts ON ts.session_id = r.session_id
+JOIN tests t ON t.test_id = ts.test_id
+WHERE r.student_id = 16;
+
+-- 5) Sumaryczne punkty per test (GROUP BY + HAVING)
+SELECT t.test_id, t.title, IFNULL(SUM(r.points_earned),0) AS total_points_given, COUNT(r.result_id) AS results_count
+FROM tests t
+LEFT JOIN test_sessions ts ON ts.test_id = t.test_id
+LEFT JOIN results r ON r.session_id = ts.session_id
+GROUP BY t.test_id
+HAVING COUNT(r.result_id) >= 1
+ORDER BY total_points_given DESC;
+
+-- 6) Zapytanie z podzapytaniem nieskorelowanym: testy, których autor jest w liście nauczycieli z tytułem 'Dr'
+SELECT t.test_id, t.title
+FROM tests t
+WHERE t.created_by_teacher_id IN (
+    SELECT user_id FROM teachers WHERE academic_title = 'Dr'
+);
+
+-- 7) Podzapytanie skorelowane: dla każdego testu pokaż liczbę pytań (skorelowane)
+SELECT t.test_id, t.title,
+    (SELECT COUNT(*) FROM test_questions tq WHERE tq.test_id = t.test_id) AS question_count
+FROM tests t
+ORDER BY question_count DESC;
+
+-- 8) EXISTS: testy, które mają co najmniej jedno pytanie z kategorii 'BazaDanych'
+SELECT DISTINCT t.test_id, t.title
+FROM tests t
+WHERE EXISTS (
+    SELECT 1 FROM test_questions tq
+    JOIN questions q ON q.question_id = tq.question_id
+    JOIN categories c ON c.category_id = q.category_id
+    WHERE tq.test_id = t.test_id AND c.name = 'BazaDanych'
+);
+
+-- 9) LIKE: wyszukaj użytkowników według nazwiska zawierającego 'Now'
+SELECT user_id, first_name, last_name, email FROM users WHERE last_name LIKE 'Now%';
+
+-- 10) Złączenie zewnętrzne (LEFT JOIN): pokaż wszystkie pytania i ich odpowiedzi (jeśli brak odpowiedzi, NULL)
+SELECT q.question_id, q.content AS question, a.answer_id, a.content AS answer, a.is_correct
+FROM questions q
+LEFT JOIN answers a ON a.question_id = q.question_id
+ORDER BY q.question_id;
+
+-- 11) Złączenia wielostopniowe + agregacja: średnie punkty na kategorię
+SELECT c.name AS category, AVG(q.points) AS avg_points
+FROM categories c
+JOIN questions q ON q.category_id = c.category_id
+GROUP BY c.category_id
+ORDER BY avg_points DESC;
+
+-- 12) Zapytanie wykazujące uczniów, którzy nie mają wyników (LEFT JOIN + IS NULL)
+SELECT s.user_id, u.first_name || ' ' || u.last_name AS student
+FROM students s
+LEFT JOIN results r ON r.student_id = s.user_id
+LEFT JOIN users u ON u.user_id = s.user_id
+WHERE r.result_id IS NULL;
+
+-- 13) IN: testy utworzone przez konkretną listę nauczycieli
+SELECT t.test_id, t.title FROM tests t WHERE t.created_by_teacher_id IN (1,2,3);
+
+-- 14) Korzystając z agregatów i HAVING: nauczyciele, których testy zebrały łącznie > 2 wyników
+SELECT u.user_id, u.first_name || ' ' || u.last_name AS teacher,
+       COUNT(r.result_id) AS total_results
+FROM teachers th
+JOIN users u ON u.user_id = th.user_id
+JOIN tests t ON t.created_by_teacher_id = th.user_id
+LEFT JOIN test_sessions ts ON ts.test_id = t.test_id
+LEFT JOIN results r ON r.session_id = ts.session_id
+GROUP BY u.user_id
+HAVING total_results > 2;
+
+-- 15) Podzapytanie z ANY/ALL - uwaga: SQLite nie obsługuje w pełni ANY/ALL. 
+-- Zamiast tego pokazuję zapytanie równoważne: znajdź testy, których średnia punktów w wynikach jest >= średniej wszystkich testów
+SELECT t.test_id, t.title, AVG(r.points_earned) AS avg_points
+FROM tests t
+JOIN test_sessions ts ON ts.test_id = t.test_id
+JOIN results r ON r.session_id = ts.session_id
+GROUP BY t.test_id
+HAVING AVG(r.points_earned) >= (
+    SELECT AVG(points_earned) FROM results
+);
+
+-- 16) Złożone zapytanie z korelacją: lista studentów i ich najlepszy wynik (skorelowane)
+SELECT s.user_id, u.first_name || ' ' || u.last_name AS student,
+   (SELECT MAX(r2.points_earned) FROM results r2 WHERE r2.student_id = s.user_id) AS best_result
+FROM students s
+JOIN users u ON u.user_id = s.user_id
+ORDER BY best_result DESC;
+
+-- 17) Wykorzystanie podzapytania w FROM (nieskorelowane) oraz JOIN: top 5 testów wg średniej punktów
+SELECT sub.test_id, sub.title, sub.avg_points
+FROM (
+  SELECT t.test_id, t.title, AVG(r.points_earned) AS avg_points
+  FROM tests t
+  JOIN test_sessions ts ON ts.test_id = t.test_id
+  JOIN results r ON r.session_id = ts.session_id
+  GROUP BY t.test_id
+) sub
+ORDER BY sub.avg_points DESC
+LIMIT 5;
+
+-- 18) Lista numerów telefonów (wielowartościowy atrybut) wraz z imieniem i nazwiskiem
+SELECT u.user_id, u.first_name || ' ' || u.last_name AS name, up.phone_number
+FROM user_phones up
+JOIN users u ON u.user_id = up.user_id
+ORDER BY u.user_id;
+
+-- 19) Zapytanie pokazujące sesje poprawkowe (mają parent_session_id)
+SELECT s.session_id, s.student_id, s.parent_session_id, t.title
+FROM test_sessions s
+JOIN tests t ON t.test_id = s.test_id
+WHERE s.parent_session_id IS NOT NULL;
+
+-- 20) Zapytanie z użyciem EXISTS i NOT EXISTS dla demonstracji: testy bez żadnych wyników
+SELECT t.test_id, t.title
+FROM tests t
+WHERE NOT EXISTS (
+  SELECT 1 FROM test_sessions ts JOIN results r ON r.session_id = ts.session_id WHERE ts.test_id = t.test_id
+);
+
+-- To daje nam >= 20 zapytań SELECT — spełnione wymagania (min 15), użyte różne konstrukty SQL.
+
+-- ====== DODATKOWE: obsługa wyjątków i pętla (przykład w PL/SQL-style) ======
+-- Ponieważ SQLite nie ma PL/pgSQL, demonstruję pętlę (iterację) za pomocą RECURSIVE CTE w skrypcie:
+-- Przykład: iteracyjnie wypisz numbers 1..N (przykład pętli)
+WITH RECURSIVE seq(x) AS (
+  SELECT 1
+  UNION ALL
+  SELECT x+1 FROM seq WHERE x < 10
+)
+SELECT * FROM seq;
+
+-- Przykład użycia IF-like: CASE WHEN ... THEN ... w SELECT
+SELECT r.result_id,
+       CASE WHEN r.points_earned >= 1.0 THEN 'passed' ELSE 'failed' END AS pass_status
+FROM results r
+LIMIT 10;
