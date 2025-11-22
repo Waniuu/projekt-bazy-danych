@@ -167,11 +167,16 @@ app.get("/api/wyniki/:id", (req, res) => {
     const id = Number(req.params.id);
 
     const rows = db.prepare(`
-      SELECT W.*, T.nazwa AS nazwa_testu
-      FROM Wynik W 
+      SELECT 
+        W.id_wyniku,
+        W.data,
+        W.liczba_punktow,
+        W.ocena,
+        T.nazwa AS nazwa_testu
+      FROM WynikTestu W
       LEFT JOIN Test T ON T.id_testu = W.id_testu
-      WHERE W.id_uzytkownika = ?
-      ORDER BY W.data_wyniku DESC
+      WHERE W.id_studenta = ?
+      ORDER BY W.data DESC
     `).all(id);
 
     res.json(rows);
@@ -384,6 +389,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
