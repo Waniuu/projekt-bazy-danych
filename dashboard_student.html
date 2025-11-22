@@ -117,6 +117,7 @@ async function loadStudentData() {
 
 // 🔥 FUNKCJA BYŁA SCHOWANA — TERAZ NA ZEWNĄTRZ I WYWOŁYWANA
 async function loadResults(studentId) {
+
     const wyniki = await fetch(`https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${studentId}`)
         .then(r => r.json());
 
@@ -132,13 +133,13 @@ async function loadResults(studentId) {
         wynikiDiv.innerHTML += `
             <div class="score-box">
                 <b>${w.nazwa_testu || "Nieznany test"}</b><br>
-                Wynik:
-                <span style="color:#ff3366; font-weight:bold;">${w.procent}%</span>
+                Punkty: <span style="color:#ff3366; font-weight:bold;">${w.liczba_punktow}</span><br>
+                Ocena: <b>${w.ocena}</b><br>
+                Data: ${w.data}
             </div>
         `;
     });
 }
-
 loadStudentData();
 </script>
 
@@ -146,6 +147,7 @@ loadStudentData();
 
 </body>
 </html>
+
 
 
 
