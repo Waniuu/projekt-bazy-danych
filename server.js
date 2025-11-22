@@ -159,8 +159,9 @@ app.post("/api/nauczyciele", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 // -------------------------------------------
-// Wyniki studenta
+// Wyniki studenta - DZIAŁAJĄCE DLA TWOJEJ BAZY
 // -------------------------------------------
 app.get("/api/wyniki/:id", (req, res) => {
   try {
@@ -181,9 +182,11 @@ app.get("/api/wyniki/:id", (req, res) => {
 
     res.json(rows);
   } catch (err) {
+    console.error("BŁĄD W /api/wyniki:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 // -------------------------------------------
@@ -389,6 +392,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
