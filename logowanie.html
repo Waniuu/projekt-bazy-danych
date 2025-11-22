@@ -56,12 +56,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            localStorage.setItem("loggedUser", JSON.stringify(data.user));
-            localStorage.setItem("rola", data.rola);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("rola", data.rola);
 
-            alert("Zalogowano pomyślnie!");
-            window.location.href = `dashboard_${data.rola}.html`;
-
+        alert("Zalogowano pomyślnie!");
+        window.location.href = `dashboard_${data.rola}.html`
         } catch (err) {
             alert("Błąd połączenia z serwerem.");
         }
@@ -71,3 +70,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
+
