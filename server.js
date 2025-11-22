@@ -159,6 +159,27 @@ app.post("/api/nauczyciele", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// -------------------------------------------
+// Wyniki studenta
+// -------------------------------------------
+app.get("/api/wyniki/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    const rows = db.prepare(`
+      SELECT W.*, T.nazwa AS nazwa_testu
+      FROM Wynik W 
+      LEFT JOIN Test T ON T.id_testu = W.id_testu
+      WHERE W.id_uzytkownika = ?
+      ORDER BY W.data_wyniku DESC
+    `).all(id);
+
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // -------------------------------------------
 // Przedmioty: CRUD + listowanie (bez wymagania kluczy)
@@ -363,5 +384,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
