@@ -45,12 +45,35 @@
                 <span class="line"><span><span class="accent">Twoje</span></span></span>
                 <span class="line"><span>testy</span></span>
             </h1>
+            <p class="hero-description">
+                Masz wszystko pod swoją ręką
+            </p>
         </div>
         <div class="hero-right">
-            <p class="section-subtitle">Wybierz test z kategorii z bazy danych</p>
+
+            <div class="student-info-card"
+                 style="background:rgba(255,255,255,0.08);
+                padding:20px;
+                border-radius:15px;
+                backdrop-filter:blur(5px);
+                margin-bottom:20px;
+                color:white;">
+
+                <h3 style="margin-bottom:10px;">Twoje dane</h3>
+
+                <p><b>Imię:</b> <span id="studentImie"></span></p>
+                <p><b>Nazwisko:</b> <span id="studentNazwisko"></span></p>
+                <p><b>Email:</b> <span id="studentEmail"></span></p>
+                <p><b>Numer indeksu:</b> <span id="studentIndeks"></span></p>
+                <p><b>Średnia ocen:</b>
+                    <span id="studentSrednia" style="color:#ff3366;font-weight:bold;"></span>
+                </p>
+            </div>
+
+            <p class="section-subtitle"></p>
             <section class="collections" id="wyniki">
                 <div class="section-header">
-                    <h2 class="section-title">Ostatnie wyniki</h2>
+                    <h2 class="section-title"></h2>
                 </div>
             </section>
         </div>
@@ -164,6 +187,33 @@
     }
 
     loadStudentData();
+    async function loadStudentInfo(userId) {
+    const data = await fetch(
+        `https://projekt-bazy-danych-backend.onrender.com/api/uzytkownicy/${userId}`
+    ).then(r => r.json());
+
+    document.getElementById("studentImie").textContent = data.imie;
+    document.getElementById("studentNazwisko").textContent = data.nazwisko;
+    document.getElementById("studentEmail").textContent = data.email;
+    document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
+
+    // --- ŚREDNIA OCEN ---
+    const wyniki = await fetch(
+        `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
+    ).then(r => r.json());
+
+    if (!wyniki.length) {
+        document.getElementById("studentSrednia").textContent = "Brak danych";
+        return;
+    }
+
+    const avg = (
+        wyniki.reduce((sum, w) => sum + (w.ocena || 0), 0) / wyniki.length
+    ).toFixed(2);
+
+    document.getElementById("studentSrednia").textContent = avg;
+    }
+    loadStudentInfo();
 </script>
 
 
