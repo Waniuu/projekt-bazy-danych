@@ -286,6 +286,52 @@ app.post("/api/testy/generuj", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// -------------------------------------------
+// LOGIN (email + hasło → zwraca rolę i dane)
+// -------------------------------------------
+app.post("/api/login", (req, res) => {
+  try {
+    const { login, haslo } = req.body;
+
+    if (!login || !haslo) {
+      return res.status(400).json({ success: false, message: "Brak loginu lub hasła" });
+    }
+
+    // Szukamy po emailu lub imieniu+nazwisku jeśli login to email
+    const user = db.prepare(`
+      SELECT *
+      FROM Uzytkownik
+      WHERE email = ? OR imie || ' ' || nazwisko = ?
+    `).get(login, login);
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: "Nieprawidłowy login" });
+    }
+
+    // proste sprawdzenie hasła (bez hash)
+    if (user.haslo !== haslo) {
+      return res.status(401).json({ success: false, message: "Nieprawidłowe hasło" });
+    }
+
+    // zwracamy typ konta, np: student / nauczyciel / administrator
+    return res.json({
+      success: true,
+      message: "Zalogowano pomyślnie",
+      rola: user.typ_konta,
+      user: {
+        id: user.id_uzytkownika,
+        imie: user.imie,
+        nazwisko: user.nazwisko,
+        email: user.email,
+        typ_konta: user.typ_konta
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 // -------------------------------------------
 // Drobne endpointy pomocnicze (np. lista kategorii, banków)
@@ -317,4 +363,5 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
