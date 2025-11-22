@@ -23,41 +23,29 @@
             </svg>
             <span class="logo-text">Panel Studenta</span>
         </a>
+
         <ul class="nav-links">
             <li><a class="nav-link active">Dashboard</a></li>
             <li><a class="nav-cta" onclick="logout()">Wyloguj</a></li>
-
         </ul>
-        <div class="menu-toggle" id="menuToggle">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
     </div>
 </nav>
-
 
 <section class="hero" id="home">
     <div class="hero-bg"></div>
     <div class="hero-container">
+
         <div class="hero-left">
             <h1 class="hero-title">
                 <span class="line"><span><span class="accent">Twoje</span></span></span>
                 <span class="line"><span>testy</span></span>
             </h1>
-            <p class="hero-description">
-                Masz wszystko pod swoją ręką
-            </p>
+            <p class="hero-description">Masz wszystko pod ręką</p>
         </div>
-        <div class="hero-right">
 
+        <div class="hero-right">
             <div class="student-info-card"
-                 style="background:rgba(255,255,255,0.08);
-                padding:20px;
-                border-radius:15px;
-                backdrop-filter:blur(5px);
-                margin-bottom:20px;
-                color:white;">
+                 style="background:rgba(255,255,255,0.08);padding:20px;border-radius:15px;backdrop-filter:blur(5px);margin-bottom:20px;color:white;">
 
                 <h3 style="margin-bottom:10px;">Twoje dane</h3>
 
@@ -65,66 +53,47 @@
                 <p><b>Nazwisko:</b> <span id="studentNazwisko"></span></p>
                 <p><b>Email:</b> <span id="studentEmail"></span></p>
                 <p><b>Numer indeksu:</b> <span id="studentIndeks"></span></p>
-                <p><b>Średnia ocen:</b>
-                    <span id="studentSrednia" style="color:#ff3366;font-weight:bold;"></span>
-                </p>
-            </div>
+                <p><b>Średnia ocen:</b> <span id="studentSrednia" style="color:#ff3366;font-weight:bold;"></span></p>
 
-            <p class="section-subtitle"></p>
-            <section class="collections" id="wyniki">
-                <div class="section-header">
-                    <h2 class="section-title"></h2>
-                </div>
-            </section>
+            </div>
         </div>
-    </div>
+
     </div>
 </section>
 
 <section class="collections" id="collections">
     <div class="section-header">
-        <h2 class="section-title">Ostatnie wyniki</h2>
-        <p class="section-subtitle">Historia wyników z testów</p>
+        <h2 class="section-title">Kategorie testów</h2>
+        <p class="section-subtitle">Wybierz kategorię aby rozpocząć</p>
     </div>
 
-
-    <div class="grid" id="collectionsGrid">
-        <div class="collection-card" data-category="women">
-            <div class="collection-thumbnail">
-                <img src="images/urban-edge.avif" alt="Urban Edge Women's Collection">
-            </div>
-            <div class="card-content">
-                <span class="card-badge">New Arrival</span>
-                <h3 class="card-title">Matematyka</h3>
-                <p class="card-subtitle">Statystyka</p>
-                <p class="card-price">From $299</p>
-            </div>
-        </div>
-    </div>
+    <div class="grid" id="collectionsGrid"></div>
 </section>
+
 <section class="featured" id="featured">
     <div class="featured-container">
         <div class="featured-hero">
             <div class="featured-content">
                 <span class="label">Ucz się bez limitu</span>
                 <h2>Ostatnie wyniki</h2>
-                <p>Historia wyników z testów</p>
+                <p>Historia twoich testów</p>
 
                 <div class="testimonials">
-                    <div class="testimonials-grid" id="wynikiContainer">
-                        Ładowanie wyników...
-                    </div>
+                    <div class="testimonials-grid" id="wynikiContainer">Ładowanie wyników...</div>
                 </div>
+
             </div>
         </div>
     </div>
 </section>
+
 <script>
 function logout() {
     localStorage.removeItem("user");
     window.location.href = "logowanie.html";
 }
 
+// -------------------- ŁADOWANIE DANYCH STUDENTA --------------------
 async function loadStudentInfo(userId) {
     const data = await fetch(
         `https://projekt-bazy-danych-backend.onrender.com/api/uzytkownicy/${userId}`
@@ -135,6 +104,7 @@ async function loadStudentInfo(userId) {
     document.getElementById("studentEmail").textContent = data.email;
     document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
 
+    // Średnia ocen
     const wyniki = await fetch(
         `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
     ).then(r => r.json());
@@ -151,9 +121,10 @@ async function loadStudentInfo(userId) {
     document.getElementById("studentSrednia").textContent = avg;
 }
 
-async function loadResults(studentId) {
+// -------------------- ŁADOWANIE WYNIKÓW TESTÓW --------------------
+async function loadResults(userId) {
     const wyniki = await fetch(
-        `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${studentId}`
+        `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
     ).then(r => r.json());
 
     const wynikiDiv = document.getElementById("wynikiContainer");
@@ -166,39 +137,91 @@ async function loadResults(studentId) {
 
     wyniki.forEach(w => {
         wynikiDiv.innerHTML += `
-        <div class="testimonial-card">
-            <div class="testimonial-rating">⭐ ${w.ocena}/6</div>
-            <div class="testimonial-quote">
-                <b>${w.nazwa_testu || "Test"}</b><br>
-                Punkty: <span style="color:#ff3366; font-weight:bold;">${w.liczba_punktow}</span><br>
-                Data: ${w.data}
+            <div class="testimonial-card">
+                <div class="testimonial-rating">⭐ ${w.ocena}/6</div>
+                <div class="testimonial-quote">
+                    <b>${w.nazwa_testu || "Test"}</b><br>
+                    Punkty: <span style="color:#ff3366;font-weight:bold;">${w.liczba_punktow}</span><br>
+                    Data: ${w.data}
+                </div>
             </div>
-        </div>`;
+        `;
     });
 }
 
-async function loadStudentData() {
+// -------------------- KATEGORIE (3 + ROZWIJANIE) --------------------
+async function loadCategories() {
+    const categories = await fetch(
+        "https://projekt-bazy-danych-backend.onrender.com/api/kategorie"
+    ).then(r => r.json());
+
+    const grid = document.getElementById("collectionsGrid");
+    grid.innerHTML = "";
+
+    const first3 = categories.slice(0, 3);
+    const rest = categories.slice(3);
+
+    first3.forEach(cat => {
+        grid.innerHTML += `
+            <div class="collection-card">
+                <div class="collection-thumbnail">
+                    <img src="images/neo-classic.avif">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">${cat.nazwa}</h3>
+                    <p class="card-subtitle">${cat.opis || ""}</p>
+                    <a href="start-test.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+                </div>
+            </div>`;
+    });
+
+    grid.innerHTML += `
+        <div id="expandBtnCard" class="collection-card"
+            style="display:flex;align-items:center;justify-content:center;text-align:center;">
+            <button onclick="expandCategories()"
+                style="padding:15px 25px;font-size:18px;border-radius:10px;border:none;background:#ff3366;color:white;cursor:pointer;">
+                Zobacz więcej ↓
+            </button>
+        </div>`;
+
+    const hidden = document.createElement("div");
+    hidden.id = "extraCategories";
+    hidden.style.display = "none";
+
+    rest.forEach(cat => {
+        hidden.innerHTML += `
+            <div class="collection-card">
+                <div class="collection-thumbnail"><img src="images/neo-classic.avif"></div>
+                <div class="card-content">
+                    <h3 class="card-title">${cat.nazwa}</h3>
+                    <p class="card-subtitle">${cat.opis || ""}</p>
+                    <a href="start-test.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+                </div>
+            </div>`;
+    });
+
+    grid.appendChild(hidden);
+}
+
+function expandCategories() {
+    document.getElementById("extraCategories").style.display = "grid";
+    document.getElementById("expandBtnCard").remove();
+}
+
+// -------------------- GŁÓWNE ŁADOWANIE --------------------
+async function initDashboard() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return logout();
 
-    const studentId = user.id;
+    const id = user.id;
 
-    loadStudentInfo(studentId);  // ✔ POPRAWIONE
-    loadResults(studentId);      // ✔ wyniki będą działać
+    loadStudentInfo(id);
+    loadResults(id);
+    loadCategories();
 }
 
-loadStudentData();   // ✔ tylko jedno wywołanie
-
+initDashboard();
 </script>
-
-
 
 </body>
 </html>
-
-
-
-
-
-
-
