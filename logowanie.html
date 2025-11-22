@@ -29,32 +29,44 @@
 </div>
 
 <script>
-  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+const API_LOGIN = "https://projekt-bazy-danych-backend.onrender.com/api/login";
+
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const login = document.getElementById("login").value;
-    const password = document.getElementById("password").value;
+    const login = document.getElementById("email").value.trim();
+    const haslo = document.getElementById("haslo").value.trim();
 
-    // ⬇️ TU PODAJ SWÓJ backend URL (taki jak w index.html)
-    const API_URL = "https://projekt-bazy-danych-backend.onrender.com/api/login";
+    try {
+        const res = await fetch(API_LOGIN, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ login, haslo })
+        });
 
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ login, password })
-    });
+        const data = await res.json();
 
-    const data = await response.json();
+        if (!data.success) {
+            alert(data.message || "Niepoprawne dane logowania.");
+            return;
+        }
 
-    if (data.success) {
-      alert("Udało się zalogować!");
-      // przekierowanie na dashboard zależnie od roli
-      window.location.href = `dashboard_${data.role}.html`;
-    } else {
-      document.getElementById("loginMessage").innerText = data.message;
+        // Zapisujemy wynik logowania
+        localStorage.setItem("loggedUser", JSON.stringify(data.user));
+        localStorage.setItem("rola", data.rola);
+
+        alert("Zalogowano pomyślnie!");
+
+        // przekierowanie zależne od roli
+        window.location.href = `dashboard_${data.rola}.html`;
+
+    } catch (err) {
+        alert("Błąd połączenia z serwerem.");
     }
-  });
+});
 </script>
+
 
 </body>
 </html>
+
