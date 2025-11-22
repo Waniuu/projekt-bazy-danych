@@ -1,64 +1,181 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Studenta</title>
-    <!-- korzysta z tego samego CSS co index.html -->
     <link rel="stylesheet" href="templatemo-noir-fashion.css">
+
+    <style>
+        /* Lepszy przycisk wylogowania */
+        .logout-btn {
+            background: linear-gradient(45deg, #ff3366, #ff6688);
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .logout-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(45deg, #ff6688, #ff3366);
+        }
+
+        /* Karty testów – wyraźniejsze */
+        .collection-card {
+            transition: 0.3s;
+        }
+        .collection-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0px 15px 35px rgba(255, 51, 102, 0.3);
+        }
+
+        /* Wyniki–lepszy styl */
+        .score-box {
+            background: rgba(255,255,255,0.06);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid #ff3366;
+        }
+
+        .loader {
+            text-align: center;
+            font-size: 18px;
+            padding: 20px;
+            opacity: 0.7;
+        }
+    </style>
 </head>
+
 <body>
-<script>
-    const user = JSON.parse(localStorage.getItem('loggedUser')) || null;
-    const role = localStorage.getItem('rola') || (user && user.typ_konta) || null;
-    if (!user || role !== 'student') {
-// jeśli brak dostępu, przekieruj do logowania
-        window.location.href = 'login.html';
-    }
-</script>
-
-
-<header class="header">
+<nav id="navbar">
     <div class="nav-container">
-        <a href="index.html" class="logo-link">System generowania testów</a>
-        <div style="margin-left:auto;display:flex;gap:12px;align-items:center;">
-            <div style="color:#fff;padding-right:8px;">Zalogowany: <strong id="userName"></strong></div>
-            <button class="btn" onclick="logout()">Wyloguj</button>
+        <a href="index.html" class="logo-link">
+            <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#fff;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ff3366;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <polygon points="50,10 20,50 50,90 80,50" fill="none" stroke="url(#logoGrad)" stroke-width="3"/>
+                <circle cx="50" cy="50" r="5" fill="url(#logoGrad)"/>
+            </svg>
+            <span class="logo-text">Panel Studenta</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a class="nav-link active">Dashboard</a></li>
+            <li><a class="logout-btn" onclick="logout()">Wyloguj</a></li>
+        </ul>
+
+        <div class="menu-toggle" id="menuToggle">
+            <span></span><span></span><span></span>
         </div>
     </div>
-</header>
+</nav>
 
+<section class="collections" style="margin-top: 120px;">
+    <div class="section-header">
+        <h2 class="section-title">Twoje testy</h2>
+        <p class="section-subtitle">Wybierz test z kategorii z bazy danych</p>
+    </div>
 
-<main class="container">
-    <section class="hero">
-        <h1>Panel Studenta</h1>
-        <p>Witaj, <span id="greetName"></span> — masz dostęp do testów i wyników.</p>
+    <div id="studentTestsGrid" class="grid">
+        <div class="loader">Ładowanie kategorii...</div>
+    </div>
+</section>
 
+<section class="featured">
+    <div class="featured-container">
+        <div class="featured-hero">
+            <div class="featured-content">
+                <h2>Ostatnie wyniki</h2>
+                <p>Historia wyników z bazy danych</p>
 
-        <div class="card-grid">
-            <a class="card" href="#" id="takeTest">Rozwiąż test</a>
-            <a class="card" href="#" id="myResults">Moje wyniki</a>
-            <a class="card" href="#" id="browseQuestions">Przegląd pytań</a>
+                <div id="wynikiContainer">
+                    <div class="loader">Wczytywanie wyników...</div>
+                </div>
+            </div>
         </div>
-    </section>
-</main>
-
+    </div>
+</section>
 
 <script>
-    document.getElementById('userName').innerText = user.imie + ' ' + user.nazwisko;
-    document.getElementById('greetName').innerText = user.imie;
 
+// -----------------------------------
+// LOGOUT
+// -----------------------------------
+function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("student_id");
+    window.location.href = "logowanie.html";
+}
 
-    function logout(){
-        localStorage.clear();
-        window.location.href = 'login.html';
+// -----------------------------------
+// ŁADOWANIE DASHBOARDU
+// -----------------------------------
+async function loadStudentData() {
+    const studentId = localStorage.getItem("student_id");
+    const token = localStorage.getItem("token");
+
+    if (!studentId || !token) {
+        return logout();
     }
 
+    try {
+        // Pobranie kategorii
+        const categories = await fetch("http://localhost:3000/api/kategorie", {
+            headers: { "Authorization": "Bearer " + token }
+        }).then(r => r.json());
 
-    // przykładowe akcje — tutaj możesz podłączać API
-    document.getElementById('takeTest').addEventListener('click', ()=> alert('Tu będzie funkcja uruchomienia testu'));
-    document.getElementById('myResults').addEventListener('click', ()=> alert('Tu będzie widok wyników'));
-    document.getElementById('browseQuestions').addEventListener('click', ()=> alert('Tu będzie lista pytań'));
+        const grid = document.getElementById("studentTestsGrid");
+        grid.innerHTML = "";
+
+        categories.forEach(cat => {
+            grid.innerHTML += `
+                <div class="collection-card">
+                    <div class="collection-thumbnail">
+                        <img src="images/neo-classic.avif">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">${cat.nazwa}</h3>
+                        <p class="card-subtitle">${cat.opis}</p>
+                        <a href="start-test.html?id=${cat.id}" class="cta-button primary">Rozpocznij</a>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Pobranie wyników
+        const wyniki = await fetch(`http://localhost:3000/api/wyniki/${studentId}`, {
+            headers: { "Authorization": "Bearer " + token }
+        }).then(r => r.json());
+
+        const wynikiDiv = document.getElementById("wynikiContainer");
+        wynikiDiv.innerHTML = "";
+
+        wyniki.forEach(w => {
+            wynikiDiv.innerHTML += `
+                <div class="score-box">
+                    <b>${w.nazwa_testu}</b><br>
+                    Wynik: <span style="color:#ff3366; font-weight:bold;">${w.procent}%</span>
+                </div>
+            `;
+        });
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById("studentTestsGrid").innerHTML =
+            "<p style='color:red;'>Błąd połączenia z serwerem</p>";
+    }
+}
+
+loadStudentData();
+
 </script>
+
 </body>
 </html>
