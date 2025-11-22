@@ -116,19 +116,19 @@
         <p class="section-subtitle">Specjalnie przygoptoweane dla ciebie</p>
     </div>
 
-        <div class="grid" id="collectionsGrid">
-            <div class="collection-card" data-category="women">
-                <div class="collection-thumbnail">
-                    <img src="images/urban-edge.avif" alt="Urban Edge Women's Collection">
-                </div>
-                <div class="card-content">
-                    <span class="card-badge">New Arrival</span>
-                    <h3 class="card-title">Matematyka</h3>
-                    <p class="card-subtitle">Statystyka</p>
-                    <p class="card-price">From $299</p>
-                </div>
+    <div class="grid" id="collectionsGrid">
+        <div class="collection-card" data-category="women">
+            <div class="collection-thumbnail">
+                <img src="images/urban-edge.avif" alt="Urban Edge Women's Collection">
+            </div>
+            <div class="card-content">
+                <span class="card-badge">New Arrival</span>
+                <h3 class="card-title">Matematyka</h3>
+                <p class="card-subtitle">Statystyka</p>
+                <p class="card-price">From $299</p>
             </div>
         </div>
+    </div>
 </section>
 
 <section class="featured" id="featured">
@@ -319,7 +319,8 @@
 
 <script src="templatemo-noir-scripts.js"></script>
 <script>    // 🔹 POBIERANIE KATEGORII
-const categories = await fetch("http://localhost:3000/api/kategorie")
+// 🔹 ŁADOWANIE KATEGORII
+const categories = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/kategorie")
     .then(r => r.json());
 
 const grid = document.getElementById("collectionsGrid");
@@ -338,6 +339,7 @@ categories.forEach(cat => {
                 </div>
             </div>
         `;
-});</script>
+});
+</script>
 </body>
 </html>
