@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logowanie</title>
+  <link rel="stylesheet" href="templatemo-noir-fashion.css">
+</head>
+
+<body>
+<div class="login-container" style="max-width:420px;margin:80px auto;padding:30px;background:#1a1a1a;border-radius:15px;box-shadow:0 0 20px rgba(255,255,255,0.1);">
+  <h2 style="text-align:center;color:white;margin-bottom:20px;">Logowanie</h2>
+
+  <form id="loginForm">
+    <div class="form-group">
+      <label style="color:white" for="login">Login lub email</label>
+      <input type="text" id="login" required style="width:100%;padding:10px;border-radius:8px;margin-top:5px;">
+    </div>
+
+    <div class="form-group" style="margin-top:15px;">
+      <label style="color:white" for="password">Hasło</label>
+      <input type="password" id="password" required style="width:100%;padding:10px;border-radius:8px;margin-top:5px;">
+    </div>
+
+    <button type="submit" class="form-submit" style="width:100%;margin-top:25px;">Zaloguj się</button>
+  </form>
+
+  <p id="loginMessage" style="color:red;margin-top:15px;text-align:center;"></p>
+</div>
+
+<script>
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const login = document.getElementById("login").value;
+    const password = document.getElementById("password").value;
+
+    // ⬇️ TU PODAJ SWÓJ backend URL (taki jak w index.html)
+    const API_URL = "https://projekt-bazy-danych-backend.onrender.com/api/login";
+
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ login, password })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      alert("Udało się zalogować!");
+      // przekierowanie na dashboard zależnie od roli
+      window.location.href = `dashboard_${data.role}.html`;
+    } else {
+      document.getElementById("loginMessage").innerText = data.message;
+    }
+  });
+</script>
+
+</body>
+</html>
