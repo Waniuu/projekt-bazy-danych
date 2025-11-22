@@ -88,55 +88,55 @@
 </section>
 
 <script>
-function logout() {
-    localStorage.removeItem("user");
-    window.location.href = "logowanie.html";
-}
-
-// -------------------- ŁADOWANIE DANYCH STUDENTA --------------------
-async function loadStudentInfo(userId) {
-    const data = await fetch(
-        `https://projekt-bazy-danych-backend.onrender.com/api/uzytkownicy/${userId}`
-    ).then(r => r.json());
-
-    document.getElementById("studentImie").textContent = data.imie;
-    document.getElementById("studentNazwisko").textContent = data.nazwisko;
-    document.getElementById("studentEmail").textContent = data.email;
-    document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
-
-    // Średnia ocen
-    const wyniki = await fetch(
-        `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
-    ).then(r => r.json());
-
-    if (!wyniki.length) {
-        document.getElementById("studentSrednia").textContent = "Brak danych";
-        return;
+    function logout() {
+        localStorage.removeItem("user");
+        window.location.href = "logowanie.html";
     }
 
-    const avg = (
-        wyniki.reduce((sum, w) => sum + (w.ocena || 0), 0) / wyniki.length
-    ).toFixed(2);
+    // -------------------- ŁADOWANIE DANYCH STUDENTA --------------------
+    async function loadStudentInfo(userId) {
+        const data = await fetch(
+            `https://projekt-bazy-danych-backend.onrender.com/api/uzytkownicy/${userId}`
+        ).then(r => r.json());
 
-    document.getElementById("studentSrednia").textContent = avg;
-}
+        document.getElementById("studentImie").textContent = data.imie;
+        document.getElementById("studentNazwisko").textContent = data.nazwisko;
+        document.getElementById("studentEmail").textContent = data.email;
+        document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
 
-// -------------------- ŁADOWANIE WYNIKÓW TESTÓW --------------------
-async function loadResults(userId) {
-    const wyniki = await fetch(
-        `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
-    ).then(r => r.json());
+        // Średnia ocen
+        const wyniki = await fetch(
+            `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
+        ).then(r => r.json());
 
-    const wynikiDiv = document.getElementById("wynikiContainer");
-    wynikiDiv.innerHTML = "";
+        if (!wyniki.length) {
+            document.getElementById("studentSrednia").textContent = "Brak danych";
+            return;
+        }
 
-    if (!wyniki.length) {
-        wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
-        return;
+        const avg = (
+            wyniki.reduce((sum, w) => sum + (w.ocena || 0), 0) / wyniki.length
+        ).toFixed(2);
+
+        document.getElementById("studentSrednia").textContent = avg;
     }
 
-    wyniki.forEach(w => {
-        wynikiDiv.innerHTML += `
+    // -------------------- ŁADOWANIE WYNIKÓW TESTÓW --------------------
+    async function loadResults(userId) {
+        const wyniki = await fetch(
+            `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
+        ).then(r => r.json());
+
+        const wynikiDiv = document.getElementById("wynikiContainer");
+        wynikiDiv.innerHTML = "";
+
+        if (!wyniki.length) {
+            wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
+            return;
+        }
+
+        wyniki.forEach(w => {
+            wynikiDiv.innerHTML += `
             <div class="testimonial-card">
                 <div class="testimonial-rating">⭐ ${w.ocena}/6</div>
                 <div class="testimonial-quote">
@@ -146,23 +146,23 @@ async function loadResults(userId) {
                 </div>
             </div>
         `;
-    });
-}
+        });
+    }
 
-// -------------------- KATEGORIE (3 + ROZWIJANIE) --------------------
-async function loadCategories() {
-    const categories = await fetch(
-        "https://projekt-bazy-danych-backend.onrender.com/api/kategorie"
-    ).then(r => r.json());
+    // -------------------- KATEGORIE (3 + ROZWIJANIE) --------------------
+    async function loadCategories() {
+        const categories = await fetch(
+            "https://projekt-bazy-danych-backend.onrender.com/api/kategorie"
+        ).then(r => r.json());
 
-    const grid = document.getElementById("collectionsGrid");
-    grid.innerHTML = "";
+        const grid = document.getElementById("collectionsGrid");
+        grid.innerHTML = "";
 
-    const first3 = categories.slice(0, 3);
-    const rest = categories.slice(3);
+        // --- 1) Pokazujemy tylko 3 kategorie ---
+        const trzyKategorie = categories.slice(0, 3);
 
-    first3.forEach(cat => {
-        grid.innerHTML += `
+        trzyKategorie.forEach(cat => {
+            grid.innerHTML += `
             <div class="collection-card">
                 <div class="collection-thumbnail">
                     <img src="images/neo-classic.avif">
@@ -170,57 +170,46 @@ async function loadCategories() {
                 <div class="card-content">
                     <h3 class="card-title">${cat.nazwa}</h3>
                     <p class="card-subtitle">${cat.opis || ""}</p>
-                    <a href="start-test.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+                    <a href="logowanie.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
                 </div>
-            </div>`;
-    });
+            </div>
+        `;
+        });
 
-    grid.innerHTML += `
-        <div id="expandBtnCard" class="collection-card"
-            style="display:flex;align-items:center;justify-content:center;text-align:center;">
-            <button onclick="expandCategories()"
-                style="padding:15px 25px;font-size:18px;border-radius:10px;border:none;background:#ff3366;color:white;cursor:pointer;">
-                Zobacz więcej ↓
+        // --- 2) Dodajemy przycisk "Zobacz więcej" jako 4 karta ---
+        grid.innerHTML += `
+        <div class="collection-card" style="display:flex;align-items:center;justify-content:center;text-align:center;">
+            <button onclick="location.href='logowanie.html'"
+                style="
+                    padding: 15px 25px;
+                    font-size: 18px;
+                    border-radius: 10px;
+                    border: none;
+                    background:#ff3366;
+                    color:white;
+                    cursor:pointer;
+                    transition:0.3s;
+                "
+            >
+                Zobacz więcej →
             </button>
-        </div>`;
+        </div>
+    `;
+    }
 
-    const hidden = document.createElement("div");
-    hidden.id = "extraCategories";
-    hidden.style.display = "none";
+    // -------------------- GŁÓWNE ŁADOWANIE --------------------
+    async function initDashboard() {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) return logout();
 
-    rest.forEach(cat => {
-        hidden.innerHTML += `
-            <div class="collection-card">
-                <div class="collection-thumbnail"><img src="images/neo-classic.avif"></div>
-                <div class="card-content">
-                    <h3 class="card-title">${cat.nazwa}</h3>
-                    <p class="card-subtitle">${cat.opis || ""}</p>
-                    <a href="start-test.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-                </div>
-            </div>`;
-    });
+        const id = user.id;
 
-    grid.appendChild(hidden);
-}
+        loadStudentInfo(id);
+        loadResults(id);
+        loadCategories();
+    }
 
-function expandCategories() {
-    document.getElementById("extraCategories").style.display = "grid";
-    document.getElementById("expandBtnCard").remove();
-}
-
-// -------------------- GŁÓWNE ŁADOWANIE --------------------
-async function initDashboard() {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) return logout();
-
-    const id = user.id;
-
-    loadStudentInfo(id);
-    loadResults(id);
-    loadCategories();
-}
-
-initDashboard();
+    initDashboard();
 </script>
 
 </body>
