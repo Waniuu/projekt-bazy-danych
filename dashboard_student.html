@@ -48,14 +48,14 @@
         </div>
         <div class="hero-right">
             <p class="section-subtitle">Wybierz test z kategorii z bazy danych</p>
-            <section class="collections" id="wyniki">
-                <div class="section-header">
-                    <h2 class="section-title">Ostatnie wyniki</h2>
-                </div>
-                <div class="grid" id="wynikiContainer">Ładowanie wyników...</div>
-            </section>
-        </div>
+      <section class="collections" id="wyniki">
+    <div class="section-header">
+        <h2 class="section-title">Ostatnie wyniki</h2>
     </div>
+    <div class="grid" id="wynikiContainer">Ładowanie wyników...</div>
+</section>
+        </div>
+        </div>
     </div>
 </section>
 
@@ -81,68 +81,26 @@
     </div>
 </section>
 <script>
-    function logout() {
-        localStorage.removeItem("user");
-        window.location.href = "logowanie.html";
-    }
+function logout() {
+    localStorage.removeItem("user");
+    window.location.href = "logowanie.html";
+}
 
-    async function loadStudentData() {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) return logout();
+async function loadStudentData() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) return logout();
 
-        const studentId = user.id;
+    const studentId = user.id;
 
-        // ŁADOWANIE KATEGORII
-        const categories = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/kategorie")
-            .then(r => r.json());
+    // 🔹 ŁADOWANIE KATEGORII
+    const categories = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/kategorie")
+        .then(r => r.json());
 
-        const grid = document.getElementById("collectionsGrid");
-        grid.innerHTML = "";
+    const grid = document.getElementById("collectionsGrid");
+    grid.innerHTML = "";
 
-        // --- PIERWSZE 3 KATEGORIE ---
-        const first3 = categories.slice(0, 3);
-        const rest = categories.slice(3);
-
-        first3.forEach(cat => {
-            grid.innerHTML += `
-            <div class="collection-card">
-                <div class="collection-thumbnail">
-                    <img src="images/neo-classic.avif">
-                </div>
-                <div class="card-content">
-                    <h3 class="card-title">${cat.nazwa}</h3>
-                    <p class="card-subtitle">${cat.opis || ""}</p>
-                    <a href="start-test.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-                </div>
-            </div>`;
-        });
-
-        // --- PRZYCISK "ZOBACZ WIĘCEJ" ---
+    categories.forEach(cat => {
         grid.innerHTML += `
-        <div id="showMoreCard" class="collection-card"
-            style="display:flex;align-items:center;justify-content:center;text-align:center;">
-            <button onclick="expandCategories()"
-                style="
-                    padding: 15px 25px;
-                    font-size: 18px;
-                    border-radius: 10px;
-                    border: none;
-                    background:#ff3366;
-                    color:white;
-                    cursor:pointer;
-                ">
-                Zobacz więcej ↓
-            </button>
-        </div>
-    `;
-
-        // --- UKRYTY DIV NA DODATKOWE KATEGORIE ---
-        const hidden = document.createElement("div");
-        hidden.id = "extraCategories";
-        hidden.style.display = "none";
-
-        rest.forEach(cat => {
-            hidden.innerHTML += `
             <div class="collection-card">
                 <div class="collection-thumbnail">
                     <img src="images/neo-classic.avif">
@@ -152,61 +110,30 @@
                     <p class="card-subtitle">${cat.opis || ""}</p>
                     <a href="start-test.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
                 </div>
-            </div>`;
-        });
+            </div>
+        `;
+    });
 
-        grid.appendChild(hidden);
+    // 🔹 TERAZ ŁADUJEMY WYNIKI
+    loadResults(studentId);
+}
 
-        // --- ŁADOWANIE WYNIKÓW ---
-        loadResults(studentId);
+// 🔥 FUNKCJA BYŁA SCHOWANA — TERAZ NA ZEWNĄTRZ I WYWOŁYWANA
+async function loadResults(studentId) {
+
+    const wyniki = await fetch(`https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${studentId}`)
+        .then(r => r.json());
+
+    const wynikiDiv = document.getElementById("wynikiContainer");
+    wynikiDiv.innerHTML = "";
+
+    if (!wyniki.length) {
+        wynikiDiv.innerHTML = "<p>Brak wyników do wyświetlenia.</p>";
+        return;
     }
 
-    // --- FUNKCJA ROZWIJAJĄCA LISTĘ ---
-    function expandCategories() {
-        document.getElementById("extraCategories").style.display = "grid";
-        document.getElementById("showMoreCard").remove();
-    }
-
-    async function loadResults(studentId) {
-        const wyniki = await fetch(`https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${studentId}`)
-            .then(r => r.json());
-
-        const wynikiDiv = document.getElementById("wynikiContainer");
-        wynikiDiv.innerHTML = "";
-
-        if (!wyniki.length) {
-            wynikiDiv.innerHTML = "<p>Brak wyników do wyświetlenia.</p>";
-            return;
-        }
-
-        wyniki.forEach(w => {
-            wynikiDiv.innerHTML += `
-            <div class="score-box">
-                <b>${w.nazwa_testu || "Nieznany test"}</b><br>
-                Punkty: <span style="color:#ff3366; font-weight:bold;">${w.liczba_punktow}</span><br>
-                Ocena: <b>${w.ocena}</b><br>
-                Data: ${w.data}
-            </div>`;
-        });
-    }
-
-    loadStudentData();
-    // 🔥 FUNKCJA BYŁA SCHOWANA — TERAZ NA ZEWNĄTRZ I WYWOŁYWANA
-    async function loadResults(studentId) {
-
-        const wyniki = await fetch(`https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${studentId}`)
-            .then(r => r.json());
-
-        const wynikiDiv = document.getElementById("wynikiContainer");
-        wynikiDiv.innerHTML = "";
-
-        if (!wyniki.length) {
-            wynikiDiv.innerHTML = "<p>Brak wyników do wyświetlenia.</p>";
-            return;
-        }
-
-        wyniki.forEach(w => {
-            wynikiDiv.innerHTML += `
+    wyniki.forEach(w => {
+        wynikiDiv.innerHTML += `
             <div class="score-box">
                 <b>${w.nazwa_testu || "Nieznany test"}</b><br>
                 Punkty: <span style="color:#ff3366; font-weight:bold;">${w.liczba_punktow}</span><br>
@@ -214,9 +141,9 @@
                 Data: ${w.data}
             </div>
         `;
-        });
-    }
-    loadStudentData();
+    });
+}
+loadStudentData();
 </script>
 
 
