@@ -48,14 +48,13 @@
         </div>
         <div class="hero-right">
             <p class="section-subtitle">Wybierz test z kategorii z bazy danych</p>
-      <section class="collections" id="wyniki">
-    <div class="section-header">
-        <h2 class="section-title">Ostatnie wyniki</h2>
+            <section class="collections" id="wyniki">
+                <div class="section-header">
+                    <h2 class="section-title">Ostatnie wyniki</h2>
+                </div>
+            </section>
+        </div>
     </div>
-    <div class="grid" id="wynikiContainer">Ładowanie wyników...</div>
-</section>
-        </div>
-        </div>
     </div>
 </section>
 
@@ -80,27 +79,44 @@
         </div>
     </div>
 </section>
+<section class="featured" id="featured">
+    <div class="featured-container">
+        <div class="featured-hero">
+            <div class="featured-content">
+                <span class="label">Ucz się bez limitu</span>
+                <h2>Ostatnie wyniki</h2>
+                <p>Historia wyników z testów</p>
+
+                <div class="testimonials">
+                    <div class="testimonials-grid" id="wynikiContainer">
+                        Ładowanie wyników...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 <script>
-function logout() {
-    localStorage.removeItem("user");
-    window.location.href = "logowanie.html";
-}
+    function logout() {
+        localStorage.removeItem("user");
+        window.location.href = "logowanie.html";
+    }
 
-async function loadStudentData() {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) return logout();
+    async function loadStudentData() {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) return logout();
 
-    const studentId = user.id;
+        const studentId = user.id;
 
-    // 🔹 ŁADOWANIE KATEGORII
-    const categories = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/kategorie")
-        .then(r => r.json());
+        // 🔹 ŁADOWANIE KATEGORII
+        const categories = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/kategorie")
+            .then(r => r.json());
 
-    const grid = document.getElementById("collectionsGrid");
-    grid.innerHTML = "";
+        const grid = document.getElementById("collectionsGrid");
+        grid.innerHTML = "";
 
-    categories.forEach(cat => {
-        grid.innerHTML += `
+        categories.forEach(cat => {
+            grid.innerHTML += `
             <div class="collection-card">
                 <div class="collection-thumbnail">
                     <img src="images/neo-classic.avif">
@@ -112,38 +128,42 @@ async function loadStudentData() {
                 </div>
             </div>
         `;
-    });
+        });
 
-    // 🔹 TERAZ ŁADUJEMY WYNIKI
-    loadResults(studentId);
-}
-
-// 🔥 FUNKCJA BYŁA SCHOWANA — TERAZ NA ZEWNĄTRZ I WYWOŁYWANA
-async function loadResults(studentId) {
-
-    const wyniki = await fetch(`https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${studentId}`)
-        .then(r => r.json());
-
-    const wynikiDiv = document.getElementById("wynikiContainer");
-    wynikiDiv.innerHTML = "";
-
-    if (!wyniki.length) {
-        wynikiDiv.innerHTML = "<p>Brak wyników do wyświetlenia.</p>";
-        return;
+        // 🔹 TERAZ ŁADUJEMY WYNIKI
+        loadResults(studentId);
     }
 
-    wyniki.forEach(w => {
-        wynikiDiv.innerHTML += `
-            <div class="score-box">
-                <b>${w.nazwa_testu || "Nieznany test"}</b><br>
-                Punkty: <span style="color:#ff3366; font-weight:bold;">${w.liczba_punktow}</span><br>
-                Ocena: <b>${w.ocena}</b><br>
-                Data: ${w.data}
+    // 🔥 FUNKCJA BYŁA SCHOWANA — TERAZ NA ZEWNĄTRZ I WYWOŁYWANA
+    async function loadResults(studentId) {
+
+        const wyniki = await fetch(
+            `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${studentId}`
+        ).then(r => r.json());
+
+        const wynikiDiv = document.getElementById("wynikiContainer");
+        wynikiDiv.innerHTML = "";
+
+        if (!wyniki.length) {
+            wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
+            return;
+        }
+
+        wyniki.forEach(w => {
+            wynikiDiv.innerHTML += `
+            <div class="testimonial-card">
+                <div class="testimonial-rating">⭐ ${w.ocena}/6</div>
+                <div class="testimonial-quote">
+                    <b>${w.nazwa_testu || "Test"}</b><br>
+                    Punkty: <span style="color:#ff3366; font-weight:bold;">${w.liczba_punktow}</span><br>
+                    Data: ${w.data}
+                </div>
             </div>
         `;
-    });
-}
-loadStudentData();
+        });
+    }
+
+    loadStudentData();
 </script>
 
 
