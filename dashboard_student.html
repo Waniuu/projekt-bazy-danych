@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Panel Studenta</title>
+    <!-- korzysta z tego samego CSS co index.html -->
+    <link rel="stylesheet" href="templatemo-noir-fashion.css">
+</head>
+<body>
+<script>
+    const user = JSON.parse(localStorage.getItem('loggedUser')) || null;
+    const role = localStorage.getItem('rola') || (user && user.typ_konta) || null;
+    if (!user || role !== 'student') {
+// jeśli brak dostępu, przekieruj do logowania
+        window.location.href = 'login.html';
+    }
+</script>
+
+
+<header class="header">
+    <div class="nav-container">
+        <a href="index.html" class="logo-link">System generowania testów</a>
+        <div style="margin-left:auto;display:flex;gap:12px;align-items:center;">
+            <div style="color:#fff;padding-right:8px;">Zalogowany: <strong id="userName"></strong></div>
+            <button class="btn" onclick="logout()">Wyloguj</button>
+        </div>
+    </div>
+</header>
+
+
+<main class="container">
+    <section class="hero">
+        <h1>Panel Studenta</h1>
+        <p>Witaj, <span id="greetName"></span> — masz dostęp do testów i wyników.</p>
+
+
+        <div class="card-grid">
+            <a class="card" href="#" id="takeTest">Rozwiąż test</a>
+            <a class="card" href="#" id="myResults">Moje wyniki</a>
+            <a class="card" href="#" id="browseQuestions">Przegląd pytań</a>
+        </div>
+    </section>
+</main>
+
+
+<script>
+    document.getElementById('userName').innerText = user.imie + ' ' + user.nazwisko;
+    document.getElementById('greetName').innerText = user.imie;
+
+
+    function logout(){
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+
+    // przykładowe akcje — tutaj możesz podłączać API
+    document.getElementById('takeTest').addEventListener('click', ()=> alert('Tu będzie funkcja uruchomienia testu'));
+    document.getElementById('myResults').addEventListener('click', ()=> alert('Tu będzie widok wyników'));
+    document.getElementById('browseQuestions').addEventListener('click', ()=> alert('Tu będzie lista pytań'));
+</script>
+</body>
+</html>
