@@ -120,96 +120,12 @@
     </div>
 </section>
 <script>
-    function logout() {
-        localStorage.removeItem("user");
-        window.location.href = "logowanie.html";
-    }
+function logout() {
+    localStorage.removeItem("user");
+    window.location.href = "logowanie.html";
+}
 
-    async function loadStudentData() {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) return logout();
-
-        const studentId = user.id;
-
-        // 🔹 ŁADOWANIE KATEGORII
-        const categories = await fetch(
-            "https://projekt-bazy-danych-backend.onrender.com/api/kategorie"
-        ).then(r => r.json());
-
-        const grid = document.getElementById("collectionsGrid");
-        grid.innerHTML = "";
-
-        // --- 1) Pokazujemy tylko 3 kategorie ---
-        const trzyKategorie = categories.slice(0, 3);
-
-        trzyKategorie.forEach(cat => {
-            grid.innerHTML += `
-            <div class="collection-card">
-                <div class="collection-thumbnail">
-                    <img src="images/neo-classic.avif">
-                </div>
-                <div class="card-content">
-                    <h3 class="card-title">${cat.nazwa}</h3>
-                    <p class="card-subtitle">${cat.opis || ""}</p>
-                    <a href="start-test.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-                </div>
-            </div>
-        `;
-        });
-
-        // --- 2) Dodajemy przycisk "Zobacz więcej" jako 4 karta ---
-        grid.innerHTML += `
-        <div class="collection-card" style="display:flex;align-items:center;justify-content:center;text-align:center;">
-            <button onclick="location.href='logowanie.html'"
-                style="
-                    padding: 15px 25px;
-                    font-size: 18px;
-                    border-radius: 10px;
-                    border: none;
-                    background:#ff3366;
-                    color:white;
-                    cursor:pointer;
-                    transition:0.3s;
-                "
-            >
-                Zobacz więcej →
-            </button>
-        </div>
-    `;
-    }
-    loadStudentData();
-
-    // 🔥 FUNKCJA BYŁA SCHOWANA — TERAZ NA ZEWNĄTRZ I WYWOŁYWANA
-    async function loadResults(studentId) {
-
-        const wyniki = await fetch(
-            `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${studentId}`
-        ).then(r => r.json());
-
-        const wynikiDiv = document.getElementById("wynikiContainer");
-        wynikiDiv.innerHTML = "";
-
-        if (!wyniki.length) {
-            wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
-            return;
-        }
-
-        wyniki.forEach(w => {
-            wynikiDiv.innerHTML += `
-            <div class="testimonial-card">
-                <div class="testimonial-rating">⭐ ${w.ocena}/6</div>
-                <div class="testimonial-quote">
-                    <b>${w.nazwa_testu || "Test"}</b><br>
-                    Punkty: <span style="color:#ff3366; font-weight:bold;">${w.liczba_punktow}</span><br>
-                    Data: ${w.data}
-                </div>
-            </div>
-        `;
-        });
-    }
-
-    loadStudentData();
-    async function loadStudentInfo(userId) {
+async function loadStudentInfo(userId) {
     const data = await fetch(
         `https://projekt-bazy-danych-backend.onrender.com/api/uzytkownicy/${userId}`
     ).then(r => r.json());
@@ -219,7 +135,6 @@
     document.getElementById("studentEmail").textContent = data.email;
     document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
 
-    // --- ŚREDNIA OCEN ---
     const wyniki = await fetch(
         `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
     ).then(r => r.json());
@@ -234,14 +149,53 @@
     ).toFixed(2);
 
     document.getElementById("studentSrednia").textContent = avg;
+}
+
+async function loadResults(studentId) {
+    const wyniki = await fetch(
+        `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${studentId}`
+    ).then(r => r.json());
+
+    const wynikiDiv = document.getElementById("wynikiContainer");
+    wynikiDiv.innerHTML = "";
+
+    if (!wyniki.length) {
+        wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
+        return;
     }
-    loadStudentInfo();
+
+    wyniki.forEach(w => {
+        wynikiDiv.innerHTML += `
+        <div class="testimonial-card">
+            <div class="testimonial-rating">⭐ ${w.ocena}/6</div>
+            <div class="testimonial-quote">
+                <b>${w.nazwa_testu || "Test"}</b><br>
+                Punkty: <span style="color:#ff3366; font-weight:bold;">${w.liczba_punktow}</span><br>
+                Data: ${w.data}
+            </div>
+        </div>`;
+    });
+}
+
+async function loadStudentData() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) return logout();
+
+    const studentId = user.id;
+
+    loadStudentInfo(studentId);  // ✔ POPRAWIONE
+    loadResults(studentId);      // ✔ wyniki będą działać
+}
+
+loadStudentData();   // ✔ tylko jedno wywołanie
+
 </script>
 
 
 
 </body>
 </html>
+
 
 
 
