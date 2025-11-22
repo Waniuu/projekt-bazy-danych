@@ -33,14 +33,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const API_LOGIN = "https://projekt-bazy-danych-backend.onrender.com/api/login";
 
     const form = document.getElementById("loginForm");
-    const emailInput = document.getElementById("email");
-    const hasloInput = document.getElementById("haslo");
+    const loginInput = document.getElementById("login");
+    const passwordInput = document.getElementById("password");
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const login = emailInput.value.trim();
-        const haslo = hasloInput.value.trim();
+        const login = loginInput.value.trim();
+        const haslo = passwordInput.value.trim();
 
         try {
             const res = await fetch(API_LOGIN, {
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await res.json();
 
             if (!data.success) {
-                alert(data.message || "Niepoprawne dane logowania.");
+                document.getElementById("loginMessage").innerText = data.message || "Niepoprawne dane logowania.";
                 return;
             }
 
@@ -69,8 +69,5 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
-
 </body>
 </html>
-
-
