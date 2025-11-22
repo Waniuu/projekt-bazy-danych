@@ -29,44 +29,48 @@
 </div>
 
 <script>
-const API_LOGIN = "https://projekt-bazy-danych-backend.onrender.com/api/login";
+document.addEventListener("DOMContentLoaded", () => {
+    const API_LOGIN = "https://projekt-bazy-danych-backend.onrender.com/api/login";
 
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+    const form = document.getElementById("loginForm");
+    const emailInput = document.getElementById("email");
+    const hasloInput = document.getElementById("haslo");
 
-    const login = document.getElementById("email").value.trim();
-    const haslo = document.getElementById("haslo").value.trim();
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-    try {
-        const res = await fetch(API_LOGIN, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ login, haslo })
-        });
+        const login = emailInput.value.trim();
+        const haslo = hasloInput.value.trim();
 
-        const data = await res.json();
+        try {
+            const res = await fetch(API_LOGIN, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ login, haslo })
+            });
 
-        if (!data.success) {
-            alert(data.message || "Niepoprawne dane logowania.");
-            return;
+            const data = await res.json();
+
+            if (!data.success) {
+                alert(data.message || "Niepoprawne dane logowania.");
+                return;
+            }
+
+            localStorage.setItem("loggedUser", JSON.stringify(data.user));
+            localStorage.setItem("rola", data.rola);
+
+            alert("Zalogowano pomyślnie!");
+            window.location.href = `dashboard_${data.rola}.html`;
+
+        } catch (err) {
+            alert("Błąd połączenia z serwerem.");
         }
-
-        // Zapisujemy wynik logowania
-        localStorage.setItem("loggedUser", JSON.stringify(data.user));
-        localStorage.setItem("rola", data.rola);
-
-        alert("Zalogowano pomyślnie!");
-
-        // przekierowanie zależne od roli
-        window.location.href = `dashboard_${data.rola}.html`;
-
-    } catch (err) {
-        alert("Błąd połączenia z serwerem.");
-    }
+    });
 });
 </script>
 
 
 </body>
 </html>
+
 
