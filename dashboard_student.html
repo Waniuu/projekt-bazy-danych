@@ -197,7 +197,6 @@
     document.getElementById("studentEmail").textContent = data.email;
     document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
 
-    // --- ŚREDNIA OCEN ---
     const wyniki = await fetch(
         `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
     ).then(r => r.json());
@@ -212,14 +211,26 @@
     ).toFixed(2);
 
     document.getElementById("studentSrednia").textContent = avg;
-    }
-    loadStudentInfo();
+}
+
+async function loadStudentData() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) return logout();
+
+    const studentId = user.id;
+
+    loadStudentInfo(studentId);   // ✔ POPRAWIONE
+    loadResults(studentId);
+}
+
+loadStudentData();
 </script>
 
 
 
 </body>
 </html>
+
 
 
 
