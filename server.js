@@ -10,7 +10,7 @@ const ALLOWED_ORIGINS = [
   "https://waniuu.github.io",
   "http://localhost:5500",
   "http://localhost:3000",
-  process.env.CLIENT_ORIGIN || ""
+  process.env.CLIENT_ORIGIN || "https://waniuu.github.io/projekt-bazy-danych"
 ].filter(Boolean);
 
 const db = new Database(DB_PATH, { readonly: false });
@@ -317,3 +317,4 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
