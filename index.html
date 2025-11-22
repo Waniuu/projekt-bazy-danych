@@ -318,28 +318,6 @@
 </footer>
 
 <script src="templatemo-noir-scripts.js"></script>
-<script>    // 🔹 POBIERANIE KATEGORII
-// 🔹 ŁADOWANIE KATEGORII
-const categories = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/kategorie")
-    .then(r => r.json());
-
-const grid = document.getElementById("collectionsGrid");
-grid.innerHTML = "";
-
-categories.forEach(cat => {
-    grid.innerHTML += `
-            <div class="collection-card">
-                <div class="collection-thumbnail">
-                    <img src="images/neo-classic.avif">
-                </div>
-                <div class="card-content">
-                    <h3 class="card-title">${cat.nazwa}</h3>
-                    <p class="card-subtitle">${cat.opis || ""}</p>
-                    <a href="start-test.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-                </div>
-            </div>
-        `;
-});
-</script>
+<script src="dane.js"></script>
 </body>
 </html>
