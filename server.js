@@ -1,316 +1,319 @@
-// server.js
+// server.js (ESM) - poprawiona, rozszerzona wersja
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import sqlite3 from "sqlite3";
+import Database from "better-sqlite3";
 import path from "path";
-import { fileURLToPath } from "url";
 
-// ES module equivalent of __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const DB_PATH = process.env.DB_PATH || "./baza.sqlite";
+const ALLOWED_ORIGINS = [
+  "https://waniuu.github.io",
+  "http://localhost:5500",
+  "http://localhost:3000",
+  process.env.CLIENT_ORIGIN || ""
+].filter(Boolean);
 
-const db = new sqlite3.Database(path.join(__dirname, 'system_testow.sqlite'));
-const PORT = process.env.PORT || 3000;
+const db = new Database(DB_PATH, { readonly: false });
 
 const app = express();
+
 app.use(cors({
-  origin: ["https://waniuu.github.io"],
-  credentials: false // true tylko jeśli używasz cookies/autoryzacji
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    return cb(new Error("Not allowed by CORS"));
+  },
+  credentials: false
 }));
 app.use(bodyParser.json());
 
-// Serve static files (HTML + client JS + CSS)
-app.use(express.static(path.join(__dirname, 'public')));
-
-/* ---------- Utility helpers ---------- */
-function runSql(sql, params=[]) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
-      if (err) reject(err); else resolve({ lastID: this.lastID, changes: this.changes });
-    });
-  });
-}
-function allSql(sql, params=[]) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows));
-  });
-}
-function getSql(sql, params=[]) {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => err ? reject(err) : resolve(row));
-  });
+// Helper: map user row to client-friendly object
+function mapUser(row) {
+  if (!row) return null;
+  return {
+    id: row.id_uzytkownika ?? row.id,
+    imie: row.imie || "",
+    nazwisko: row.nazwisko || "",
+    email: row.email || "",
+    typ_konta: row.typ_konta || "",
+    // pola opcjonalne (jeśli istnieją)
+    numer_indeksu: row.numer_indeksu || null,
+    stopien_naukowy: row.stopien_naukowy || null
+  };
 }
 
-/* ---------- API: pomocnicze listy (dla selectów w formularzach) ---------- */
-// listuj nauczycieli (czytelna nazwa)
-app.get('/api/teachers', async (req, res) => {
+// -----------------------------
+// CRUD: Uzytkownicy (uniwersalne)
+// -----------------------------
+app.get("/api/uzytkownicy", (req, res) => {
   try {
-    // zakładamy: teachers.user_id -> users.user_id
-    const rows = await allSql(`
-      SELECT t.user_id AS teacher_id, u.first_name || ' ' || u.last_name AS name, u.email
-      FROM teachers t
-      JOIN users u ON u.user_id = t.user_id
-      ORDER BY u.last_name, u.first_name
-    `);
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// listuj grupy
-app.get('/api/groups', async (req, res) => {
-  try {
-    const rows = await allSql(`
-      SELECT g.group_id, g.name,
-             u.first_name || ' ' || u.last_name AS teacher_name
-      FROM groups g
-      LEFT JOIN teachers t ON g.teacher_id = t.user_id
-      LEFT JOIN users u ON t.user_id = u.user_id
-      ORDER BY g.name
-    `);
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// listuj użytkowników (opcjonalnie filtrowanych po roli)
-app.get('/api/users', async (req, res) => {
-  try {
-    const role = req.query.role;
-    if (role) {
-      const rows = await allSql(`SELECT user_id, first_name, last_name, email, role FROM users WHERE role = ? ORDER BY last_name`, [role]);
-      res.json(rows);
-    } else {
-      const rows = await allSql(`SELECT user_id, first_name, last_name, email, role FROM users ORDER BY last_name`);
-      res.json(rows);
-    }
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-/* ---------- CRUD: users ---------- */
-// GET list + optional search by name/email
-app.get('/api/users/list', async (req, res) => {
-  try {
-    const { q } = req.query;
-    if (q) {
-      const like = `%${q}%`;
-      const rows = await allSql(
-        `SELECT user_id, first_name, last_name, email, role, created_at FROM users
-         WHERE first_name LIKE ? OR last_name LIKE ? OR email LIKE ?
-         ORDER BY last_name LIMIT 200`,
-        [like, like, like]
-      );
-      res.json(rows);
-    } else {
-      const rows = await allSql(`SELECT user_id, first_name, last_name, email, role, created_at FROM users ORDER BY last_name LIMIT 200`);
-      res.json(rows);
-    }
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST add user
-app.post('/api/users/add', async (req, res) => {
-  try {
-    const { first_name, last_name, email, role } = req.body;
-    const r = await runSql(
-      `INSERT INTO users (first_name, last_name, email, role, created_at) VALUES (?, ?, ?, ?, datetime('now'))`,
-      [first_name||null, last_name||null, email||null, role||'user']
-    );
-    res.json({ success: true, id: r.lastID });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST delete user
-app.post('/api/users/delete', async (req, res) => {
-  try {
-    const { user_id } = req.body;
-    if (!user_id) return res.status(400).json({ error: 'user_id required' });
-    const r = await runSql(`DELETE FROM users WHERE user_id = ?`, [user_id]);
-    res.json({ success: true, changes: r.changes });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-/* ---------- CRUD: groups ---------- */
-app.get('/api/groups/list', async (req, res) => {
-  try {
-    const { q } = req.query;
-    if (q) {
-      const like = `%${q}%`;
-      const rows = await allSql(`
-        SELECT g.group_id, g.name, g.teacher_id, u.first_name || ' ' || u.last_name AS teacher_name
-        FROM groups g
-        LEFT JOIN teachers t ON t.user_id = g.teacher_id
-        LEFT JOIN users u ON u.user_id = t.user_id
-        WHERE g.name LIKE ? OR u.last_name LIKE ?
-        ORDER BY g.name
-      `, [like, like]);
-      res.json(rows);
-    } else {
-      const rows = await allSql(`
-        SELECT g.group_id, g.name, g.teacher_id, u.first_name || ' ' || u.last_name AS teacher_name
-        FROM groups g
-        LEFT JOIN teachers t ON t.user_id = g.teacher_id
-        LEFT JOIN users u ON u.user_id = t.user_id
-        ORDER BY g.name
-      `);
-      res.json(rows);
-    }
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/groups/add', async (req, res) => {
-  try {
-    const { name, teacher_id } = req.body;
-    const r = await runSql(`INSERT INTO groups (group_id, name, teacher_id) VALUES (NULL, ?, ?)`, [name||null, teacher_id||null]);
-    res.json({ success: true, id: r.lastID });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/groups/delete', async (req, res) => {
-  try {
-    const { group_id } = req.body;
-    if (!group_id) return res.status(400).json({ error: 'group_id required' });
-    const r = await runSql(`DELETE FROM groups WHERE group_id = ?`, [group_id]);
-    res.json({ success: true, changes: r.changes });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-/* ---------- CRUD: students ---------- */
-app.get('/api/students/list', async (req, res) => {
-  try {
-    const { q, group_id } = req.query;
+    // Obsługa prostego filtrowania / sortowania / paginacji
+    const { q, typ, sort = "id_uzytkownika", order = "DESC", limit = 50, offset = 0 } = req.query;
+    let where = [];
     let params = [];
-    let where = '1=1';
     if (q) {
-      where += ` AND (u.first_name LIKE ? OR u.last_name LIKE ? OR s.student_index LIKE ?)`;
+      where.push("(imie LIKE ? OR nazwisko LIKE ? OR email LIKE ?)");
       const like = `%${q}%`;
       params.push(like, like, like);
     }
-    if (group_id) {
-      where += ` AND s.group_id = ?`;
-      params.push(group_id);
+    if (typ) {
+      where.push("typ_konta = ?");
+      params.push(typ);
     }
-    const rows = await allSql(`
-      SELECT s.user_id, s.student_index, s.group_id,
-             u.first_name || ' ' || u.last_name AS student_name,
-             g.name AS group_name
-      FROM students s
-      JOIN users u ON u.user_id = s.user_id
-      LEFT JOIN groups g ON g.group_id = s.group_id
-      WHERE ${where} ORDER BY u.last_name LIMIT 500
-    `, params);
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/students/add', async (req, res) => {
-  try {
-    // assume if new student, we first create user then student row
-    const { first_name, last_name, email, student_index, group_id } = req.body;
-    // create user
-    const user = await runSql(`INSERT INTO users (first_name,last_name,email,role,created_at) VALUES (?, ?, ?, 'student', datetime('now'))`, [first_name||null, last_name||null, email||null]);
-    const user_id = user.lastID;
-    // create students row
-    const s = await runSql(`INSERT INTO students (user_id, student_index, group_id) VALUES (?, ?, ?)`, [user_id, student_index||null, group_id||null]);
-    res.json({ success: true, student_user_id: user_id, student_row_changes: s.changes });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/students/delete', async (req, res) => {
-  try {
-    const { user_id } = req.body;
-    if (!user_id) return res.status(400).json({ error: 'user_id required' });
-    // usuń wpis w students, potem (opcjonalnie) użytkownika — tu stosujemy kaskadę jeśli skonfigurowano, inaczej usuwamy ręcznie
-    await runSql(`DELETE FROM students WHERE user_id = ?`, [user_id]);
-    const r = await runSql(`DELETE FROM users WHERE user_id = ?`, [user_id]);
-    res.json({ success: true, changes: r.changes });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-/* ---------- CRUD: teachers (głównie lista i dodawanie) ---------- */
-app.get('/api/teachers/list', async (req, res) => {
-  try {
-    const rows = await allSql(`
-      SELECT t.user_id AS teacher_id, u.first_name || ' ' || u.last_name AS name, u.email
-      FROM teachers t
-      JOIN users u ON u.user_id = t.user_id
-      ORDER BY u.last_name
-    `);
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// add teacher: create user + teacher row
-app.post('/api/teachers/add', async (req, res) => {
-  try {
-    const { first_name, last_name, email } = req.body;
-    const user = await runSql(`INSERT INTO users (first_name,last_name,email,role,created_at) VALUES (?, ?, ?, 'teacher', datetime('now'))`, [first_name||null, last_name||null, email||null]);
-    const user_id = user.lastID;
-    const t = await runSql(`INSERT INTO teachers (teacher_id, user_id) VALUES (NULL, ?)`, [user_id])
-      .catch(async (err) => {
-        // jeśli tabela teachers ma inny schemat (np. teacher_id = user_id), spróbuj insert z user_id jako PK
-        await runSql(`INSERT OR IGNORE INTO teachers (user_id) VALUES (?)`, [user_id]);
-      });
-    res.json({ success: true, teacher_user_id: user_id });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/teachers/delete', async (req, res) => {
-  try {
-    const { user_id } = req.body;
-    if (!user_id) return res.status(400).json({ error: 'user_id required' });
-    await runSql(`DELETE FROM teachers WHERE user_id = ?`, [user_id]);
-    await runSql(`DELETE FROM users WHERE user_id = ?`, [user_id]);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-/* ---------- CRUD: tests ---------- */
-app.get('/api/tests/list', async (req, res) => {
-  try {
-    const { q } = req.query;
-    let sql = `
-      SELECT t.test_id, t.title, t.description, t.created_at,
-             u.first_name || ' ' || u.last_name AS teacher_name
-      FROM tests t
-      LEFT JOIN teachers te ON te.user_id = t.created_by_teacher_id
-      LEFT JOIN users u ON u.user_id = te.user_id
+    const sql = `
+      SELECT * FROM Uzytkownik
+      ${where.length ? "WHERE " + where.join(" AND ") : ""}
+      ORDER BY ${sort} ${order === "ASC" ? "ASC" : "DESC"}
+      LIMIT ? OFFSET ?
     `;
-    if (q) {
-      sql += ` WHERE t.title LIKE ? OR t.description LIKE ? ORDER BY t.created_at DESC`;
-      const like = `%${q}%`;
-      const rows = await allSql(sql, [like, like]);
-      res.json(rows);
-    } else {
-      sql += ` ORDER BY t.created_at DESC`;
-      const rows = await allSql(sql);
-      res.json(rows);
+    params.push(Number(limit), Number(offset));
+    const rows = db.prepare(sql).all(...params);
+    res.json(rows.map(mapUser));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/uzytkownicy", (req, res) => {
+  try {
+    const { imie, nazwisko, email, haslo, typ_konta } = req.body;
+    if (!imie || !nazwisko || !email || !haslo || !typ_konta) {
+      return res.status(400).json({ error: "Brak wymaganych pól: imie, nazwisko, email, haslo, typ_konta" });
     }
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    const stmt = db.prepare(
+      "INSERT INTO Uzytkownik (imie, nazwisko, email, haslo, typ_konta) VALUES (?, ?, ?, ?, ?)"
+    );
+    const info = stmt.run(imie, nazwisko, email, haslo, typ_konta);
+    const row = db.prepare("SELECT * FROM Uzytkownik WHERE id_uzytkownika = ?").get(info.lastInsertRowid);
+    res.status(201).json(mapUser(row));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/tests/add', async (req, res) => {
+app.put("/api/uzytkownicy/:id", (req, res) => {
   try {
-    const { title, description, created_by_teacher_id } = req.body;
-    const r = await runSql(`INSERT INTO tests (title, description, created_at, created_by_teacher_id) VALUES (?, ?, datetime('now'), ?)`, [title||null, description||null, created_by_teacher_id||null]);
-    res.json({ success: true, id: r.lastID });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    const id = Number(req.params.id);
+    const { imie, nazwisko, email, typ_konta } = req.body;
+    db.prepare(
+      "UPDATE Uzytkownik SET imie = COALESCE(?, imie), nazwisko = COALESCE(?, nazwisko), email = COALESCE(?, email), typ_konta = COALESCE(?, typ_konta) WHERE id_uzytkownika = ?"
+    ).run(imie, nazwisko, email, typ_konta, id);
+    const row = db.prepare("SELECT * FROM Uzytkownik WHERE id_uzytkownika = ?").get(id);
+    res.json(mapUser(row));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/tests/delete', async (req, res) => {
+app.delete("/api/uzytkownicy/:id", (req, res) => {
   try {
-    const { test_id } = req.body;
-    if (!test_id) return res.status(400).json({ error: 'test_id required' });
-    const r = await runSql(`DELETE FROM tests WHERE test_id = ?`, [test_id]);
-    res.json({ success: true, changes: r.changes });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    const id = Number(req.params.id);
+    const info = db.prepare("DELETE FROM Uzytkownik WHERE id_uzytkownika = ?").run(id);
+    res.json({ ok: true, changes: info.changes });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-/* ---------- Default route (serve index) ---------- */
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// -------------------------------------------
+// High-level: Tworzenie studenta bez kluczy obcych
+// (wstawia Uzytkownik + Student w transakcji)
+// -------------------------------------------
+app.post("/api/studenci", (req, res) => {
+  try {
+    const { imie, nazwisko, email, haslo, numer_indeksu } = req.body;
+    if (!imie || !nazwisko || !email || !haslo || !numer_indeksu) {
+      return res.status(400).json({ error: "Brak wymaganych pól" });
+    }
+    const insert = db.transaction(() => {
+      const info = db.prepare("INSERT INTO Uzytkownik (imie, nazwisko, email, haslo, typ_konta) VALUES (?, ?, ?, ?, 'student')").run(imie, nazwisko, email, haslo);
+      const newId = info.lastInsertRowid;
+      db.prepare("INSERT INTO Student (id_uzytkownika, numer_indeksu) VALUES (?, ?)").run(newId, numer_indeksu);
+      return db.prepare("SELECT * FROM Uzytkownik WHERE id_uzytkownika = ?").get(newId);
+    });
+    const row = insert();
+    res.status(201).json(mapUser(row));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-/* ---------- Start server ---------- */
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+// -------------------------------------------
+// Tworzenie nauczyciela (tworzy Uzytkownik + Nauczyciel)
+// -------------------------------------------
+app.post("/api/nauczyciele", (req, res) => {
+  try {
+    const { imie, nazwisko, email, haslo, stopien_naukowy } = req.body;
+    if (!imie || !nazwisko || !email || !haslo) {
+      return res.status(400).json({ error: "Brak wymaganych pól" });
+    }
+    const insert = db.transaction(() => {
+      const info = db.prepare("INSERT INTO Uzytkownik (imie, nazwisko, email, haslo, typ_konta) VALUES (?, ?, ?, ?, 'nauczyciel')").run(imie, nazwisko, email, haslo);
+      const id = info.lastInsertRowid;
+      db.prepare("INSERT INTO Nauczyciel (id_uzytkownika, stopien_naukowy) VALUES (?, ?)").run(id, stopien_naukowy || null);
+      return db.prepare("SELECT * FROM Uzytkownik WHERE id_uzytkownika = ?").get(id);
+    });
+    const row = insert();
+    res.status(201).json(mapUser(row));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
+
+// -------------------------------------------
+// Przedmioty: CRUD + listowanie (bez wymagania kluczy)
+// -------------------------------------------
+app.get("/api/przedmioty", (req, res) => {
+  try {
+    const rows = db.prepare(`
+      SELECT P.*, U.imie AS nauczyciel_imie, U.nazwisko AS nauczyciel_nazwisko
+      FROM Przedmiot P
+      LEFT JOIN Nauczyciel N ON P.id_nauczyciela = N.id_uzytkownika
+      LEFT JOIN Uzytkownik U ON N.id_uzytkownika = U.id_uzytkownika
+      ORDER BY P.id_przedmiotu DESC
+    `).all();
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/przedmioty", (req, res) => {
+  try {
+    // Można utworzyć przedmiot podając id_nauczyciela (opcjonalne), ale UI nie musi znać id - można wysłać email nauczyciela
+    const { nazwa, opis, nauczyciel_email } = req.body;
+    let id_nauczyciela = null;
+    if (nauczyciel_email) {
+      const nauc = db.prepare("SELECT id_uzytkownika FROM Uzytkownik WHERE email = ? AND typ_konta = 'nauczyciel'").get(nauczyciel_email);
+      if (nauc) id_nauczyciela = nauc.id_uzytkownika;
+    }
+    const info = db.prepare("INSERT INTO Przedmiot (nazwa, opis, id_nauczyciela) VALUES (?, ?, ?)").run(nazwa, opis || "", id_nauczyciela);
+    const row = db.prepare("SELECT * FROM Przedmiot WHERE id_przedmiotu = ?").get(info.lastInsertRowid);
+    res.status(201).json(row);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/przedmioty/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const info = db.prepare("DELETE FROM Przedmiot WHERE id_przedmiotu = ?").run(id);
+    res.json({ ok: true, changes: info.changes });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------
+// Pytania: CRUD + wyszukiwanie z kryteriami
+// -------------------------------------------
+app.get("/api/pytania", (req, res) => {
+  try {
+    const { q = "", id_banku, id_kategorii, page = 1, per_page = 20 } = req.query;
+    let where = [];
+    let params = [];
+    if (q) {
+      where.push("P.tresc LIKE ?");
+      params.push(`%${q}%`);
+    }
+    if (id_banku) {
+      where.push("P.id_banku = ?");
+      params.push(Number(id_banku));
+    }
+    if (id_kategorii) {
+      where.push("P.id_kategorii = ?");
+      params.push(Number(id_kategorii));
+    }
+    const offset = (Number(page) - 1) * Number(per_page);
+    const sql = `
+      SELECT P.*, B.nazwa AS bank_nazwa, K.nazwa AS kat_nazwa
+      FROM Pytanie P
+      LEFT JOIN BankPytan B ON P.id_banku = B.id_banku
+      LEFT JOIN Kategoria K ON P.id_kategorii = K.id_kategorii
+      ${where.length ? "WHERE " + where.join(" AND ") : ""}
+      ORDER BY P.id_pytania DESC
+      LIMIT ? OFFSET ?
+    `;
+    params.push(Number(per_page), offset);
+    const rows = db.prepare(sql).all(...params);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/pytania", (req, res) => {
+  try {
+    const { tresc, id_banku, id_kategorii, trudnosc } = req.body;
+    const info = db.prepare("INSERT INTO Pytanie (tresc, id_banku, id_kategorii, trudnosc) VALUES (?, ?, ?, ?)").run(tresc, id_banku || null, id_kategorii || null, trudnosc || 1);
+    const row = db.prepare("SELECT * FROM Pytanie WHERE id_pytania = ?").get(info.lastInsertRowid);
+    res.status(201).json(row);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/pytania/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const info = db.prepare("DELETE FROM Pytanie WHERE id_pytania = ?").run(id);
+    res.json({ ok: true, changes: info.changes });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------
+// Testy: generowanie testu z szablonu (prosty)
+// -------------------------------------------
+app.post("/api/testy/generuj", (req, res) => {
+  try {
+    const { id_szablonu, liczba_pytan = 5 } = req.body;
+    if (!id_szablonu) return res.status(400).json({ error: "id_szablonu wymagane" });
+
+    const tx = db.transaction(() => {
+      const info = db.prepare("INSERT INTO Test (id_szablonu, data_utworzenia) VALUES (?, DATE('now'))").run(id_szablonu);
+      const newTestId = info.lastInsertRowid;
+      db.prepare("INSERT INTO Test_Pytanie (id_testu, id_pytania) SELECT ?, id_pytania FROM Pytanie WHERE id_banku IN (SELECT id_banku FROM SzablonTestu WHERE id_szablonu = ?) ORDER BY RANDOM() LIMIT ?")
+        .run(newTestId, id_szablonu, liczba_pytan);
+      return db.prepare("SELECT * FROM Test WHERE id_testu = ?").get(newTestId);
+    });
+
+    const testRow = tx();
+    res.status(201).json(testRow);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------
+// Drobne endpointy pomocnicze (np. lista kategorii, banków)
+// -------------------------------------------
+app.get("/api/kategorie", (req, res) => {
+  try {
+    const rows = db.prepare("SELECT * FROM Kategoria ORDER BY nazwa").all();
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.get("/api/banki", (req, res) => {
+  try {
+    const rows = db.prepare("SELECT * FROM BankPytan ORDER BY nazwa").all();
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Root
+app.get("/", (req, res) => {
+  res.send("✅ API działa — dostępne endpointy: /api/uzytkownicy, /api/studenci, /api/nauczyciele, /api/przedmioty, /api/pytania, /api/testy/generuj");
+});
+
+// Error handler for CORS rejection
+app.use((err, req, res, next) => {
+  if (err && err.message && err.message.includes("CORS")) {
+    res.status(403).json({ error: "CORS error: origin not allowed" });
+  } else next(err);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
