@@ -41,6 +41,25 @@ function mapUser(row) {
     stopien_naukowy: row.stopien_naukowy || null
   };
 }
+app.get("/api/uzytkownicy/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const row = db.prepare("SELECT * FROM Uzytkownik WHERE id_uzytkownika = ?").get(id);
+
+    if (!row) return res.status(404).json({ error: "Użytkownik nie znaleziony" });
+
+    res.json({
+      id: row.id_uzytkownika,
+      imie: row.imie,
+      nazwisko: row.nazwisko,
+      email: row.email,
+      numer_indeksu: row.numer_indeksu,
+      typ_konta: row.typ_konta
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // -----------------------------
 // CRUD: Uzytkownicy (uniwersalne)
@@ -397,6 +416,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
