@@ -163,6 +163,9 @@ app.post("/api/nauczyciele", (req, res) => {
 // -------------------------------------------
 // Wyniki studenta - DZIAŁAJĄCE DLA TWOJEJ BAZY
 // -------------------------------------------
+// ------------------------------------------------------
+// Wyniki studenta – POPRAWIONE wg Twojej bazy SQLite
+// ------------------------------------------------------
 app.get("/api/wyniki/:id", (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -173,10 +176,9 @@ app.get("/api/wyniki/:id", (req, res) => {
         W.data,
         W.liczba_punktow,
         W.ocena,
-        S.nazwa AS nazwa_testu
+        T.tytul AS nazwa_testu
       FROM WynikTestu W
       LEFT JOIN Test T ON T.id_testu = W.id_testu
-      LEFT JOIN SzablonTestu S ON S.id_szablonu = T.id_szablonu
       WHERE W.id_studenta = ?
       ORDER BY W.data DESC
     `).all(id);
@@ -187,6 +189,7 @@ app.get("/api/wyniki/:id", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 
@@ -394,6 +397,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
