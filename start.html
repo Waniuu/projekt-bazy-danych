@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rozpocznij test</title>
+
+  <link rel="stylesheet" href="templatemo-noir-fashion.css">
+
+  <style>
+    .test-info-box {
+      background: rgba(255,255,255,0.08);
+      padding: 25px;
+      border-radius: 20px;
+      backdrop-filter: blur(6px);
+      color: white;
+      margin-top: 20px;
+    }
+
+    .start-btn {
+      padding: 14px 30px;
+      background: #ff3366;
+      color: white;
+      border: none;
+      font-size: 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: 0.3s;
+    }
+
+    .start-btn:hover {
+      background: #ff5580;
+    }
+
+    select, input {
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    #timerPreview {
+      font-size: 22px;
+      color: #ff3366;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<nav id="navbar">
+  <div class="nav-container">
+    <a href="index.html" class="logo-link">
+      <svg class="logo-svg" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#fff"/>
+            <stop offset="100%" style="stop-color:#ff3366"/>
+          </linearGradient>
+        </defs>
+        <polygon points="50,10 20,50 50,90 80,50" fill="none" stroke="url(#logoGrad)" stroke-width="3"/>
+        <circle cx="50" cy="50" r="5" fill="url(#logoGrad)"/>
+      </svg>
+      <span class="logo-text">SGT – Start Testu</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="dashboard_student.html" class="nav-link">Panel Studenta</a></li>
+      <li><a class="nav-cta" onclick="logout()">Wyloguj</a></li>
+    </ul>
+  </div>
+</nav>
+
+
+<section class="hero" id="startTestHero">
+  <div class="hero-bg"></div>
+
+  <div class="hero-container">
+    <div class="hero-left">
+      <h1 class="hero-title">
+        <span class="line"><span><span class="accent">Rozpocznij</span></span></span>
+        <span class="line"><span>swój</span></span>
+        <span class="line"><span>test</span></span>
+      </h1>
+      <p class="hero-description">
+        Wybierz ile pytań chcesz oraz sprawdź się!
+      </p>
+
+      <button id="startTestBtn" class="start-btn">Rozpocznij test</button>
+    </div>
+
+    <div class="hero-right">
+      <div class="test-info-box">
+        <h2 id="katNazwa">Ładowanie...</h2>
+        <p id="katOpis"></p>
+
+        <label><b>Wybierz liczbę pytań:</b></label>
+        <select id="questionCount">
+          <option value="5">5 pytań</option>
+          <option value="10">10 pytań</option>
+          <option value="15">15 pytań</option>
+        </select>
+
+        <label><b>Czas trwania testu (minuty):</b></label>
+        <input id="timeInput" type="number" value="5" min="1">
+
+        <p id="timerPreview"></p>
+
+        <p><b>ID kategorii:</b> <span id="katId"></span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function logout() {
+    localStorage.removeItem("user");
+    window.location.href = "logowanie.html";
+  }
+
+  function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+  }
+
+  async function loadCategory() {
+    const id = getQueryParam("id");
+    if (!id) {
+      document.getElementById("katNazwa").textContent = "Błąd – brak ID kategorii";
+      return;
+    }
+
+    document.getElementById("katId").textContent = id;
+
+    const categories = await fetch(
+            "https://projekt-bazy-danych-backend.onrender.com/api/kategorie"
+    ).then(r => r.json());
+
+    const kat = categories.find(k => k.id_kategorii == id);
+
+    if (!kat) {
+      document.getElementById("katNazwa").textContent = "Nie znaleziono kategorii";
+      return;
+    }
+
+    document.getElementById("katNazwa").textContent = kat.nazwa;
+    document.getElementById("katOpis").textContent = kat.opis || "Brak opisu";
+
+    // aktualizacja timera w podglądzie
+    updateTimerPreview();
+
+    document.getElementById("startTestBtn").onclick = () => startTest(id);
+  }
+
+  function updateTimerPreview() {
+    let min = Number(document.getElementById("timeInput").value);
+    document.getElementById("timerPreview").textContent = "Czas: " + min + " min";
+  }
+
+  document.getElementById("timeInput").oninput = updateTimerPreview;
+
+  // ---------------- START TESTU ------------------
+  async function startTest(id_kategorii) {
+    const count = Number(document.getElementById("questionCount").value);
+    const minutes = Number(document.getElementById("timeInput").value);
+
+    // idziemy do test.html z parametrami
+    window.location.href = `test.html?id=${id_kategorii}&count=${count}&time=${minutes}`;
+  }
+
+  loadCategory();
+</script>
+
+</body>
+</html>
