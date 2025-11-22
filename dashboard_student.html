@@ -114,11 +114,12 @@
             return;
         }
 
-        const avg = (
-            wyniki.reduce((sum, w) => sum + (w.ocena || 0), 0) / wyniki.length
-        ).toFixed(2);
+ let avgRaw = wyniki.reduce((sum, w) => sum + Number(w.ocena || 0), 0) / wyniki.length;
 
-        document.getElementById("studentSrednia").textContent = avg;
+// Usuń zbędne zera z końca
+let avg = Number(avgRaw.toFixed(2)).toString();
+
+document.getElementById("studentSrednia").textContent = avg;
     }
 
     // -------------------- ŁADOWANIE WYNIKÓW TESTÓW --------------------
@@ -214,3 +215,4 @@
 
 </body>
 </html>
+
