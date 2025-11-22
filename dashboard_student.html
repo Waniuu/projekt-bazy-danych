@@ -132,13 +132,17 @@
         const studentId = user.id;
 
         // 🔹 ŁADOWANIE KATEGORII
-        const categories = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/kategorie")
-            .then(r => r.json());
+        const categories = await fetch(
+            "https://projekt-bazy-danych-backend.onrender.com/api/kategorie"
+        ).then(r => r.json());
 
         const grid = document.getElementById("collectionsGrid");
         grid.innerHTML = "";
 
-        categories.forEach(cat => {
+        // --- 1) Pokazujemy tylko 3 kategorie ---
+        const trzyKategorie = categories.slice(0, 3);
+
+        trzyKategorie.forEach(cat => {
             grid.innerHTML += `
             <div class="collection-card">
                 <div class="collection-thumbnail">
@@ -153,9 +157,27 @@
         `;
         });
 
-        // 🔹 TERAZ ŁADUJEMY WYNIKI
-        loadResults(studentId);
+        // --- 2) Dodajemy przycisk "Zobacz więcej" jako 4 karta ---
+        grid.innerHTML += `
+        <div class="collection-card" style="display:flex;align-items:center;justify-content:center;text-align:center;">
+            <button onclick="location.href='logowanie.html'"
+                style="
+                    padding: 15px 25px;
+                    font-size: 18px;
+                    border-radius: 10px;
+                    border: none;
+                    background:#ff3366;
+                    color:white;
+                    cursor:pointer;
+                    transition:0.3s;
+                "
+            >
+                Zobacz więcej →
+            </button>
+        </div>
+    `;
     }
+    loadStudentData();
 
     // 🔥 FUNKCJA BYŁA SCHOWANA — TERAZ NA ZEWNĄTRZ I WYWOŁYWANA
     async function loadResults(studentId) {
@@ -197,6 +219,7 @@
     document.getElementById("studentEmail").textContent = data.email;
     document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
 
+    // --- ŚREDNIA OCEN ---
     const wyniki = await fetch(
         `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
     ).then(r => r.json());
@@ -211,26 +234,14 @@
     ).toFixed(2);
 
     document.getElementById("studentSrednia").textContent = avg;
-}
-
-async function loadStudentData() {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) return logout();
-
-    const studentId = user.id;
-
-    loadStudentInfo(studentId);   // ✔ POPRAWIONE
-    loadResults(studentId);
-}
-
-loadStudentData();
+    }
+    loadStudentInfo();
 </script>
 
 
 
 </body>
 </html>
-
 
 
 
