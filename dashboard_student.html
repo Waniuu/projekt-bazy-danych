@@ -197,24 +197,25 @@ async function loadCategories() {
 
     // --- 3 pierwsze kategorie ---
     pierwsze3.forEach(cat => {
-        grid.innerHTML += `
-        <div class="collection-card">
-            <div class="collection-thumbnail">
-                <img src="images/neo-classic.avif">
-            </div>
-            <div class="card-content">
-                <h3 class="card-title">${cat.nazwa}</h3>
-                <p class="card-subtitle">${cat.opis || ""}</p>
-                <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-            </div>
-        </div>`;
+  grid.innerHTML += `
+<div class="collection-card">
+    <div class="collection-thumbnail">
+        <img src="images/${cat.nazwa.replaceAll(' ', '_')}.jpg" onerror="this.src='images/default.jpg'">
+    </div>
+    <div class="card-content">
+        <h3 class="card-title">${cat.nazwa}</h3>
+        <p class="card-subtitle">${cat.opis || ""}</p>
+        <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+    </div>
+</div>
+`;
     });
 
     // --- karta rozwijania ---
     grid.innerHTML += `
     <div class="collection-card" id="expandCard" style="cursor:pointer;">
         <div class="collection-thumbnail">
-            <img src="images/neo-classic.avif">
+              <img src="images/${cat.nazwa.replaceAll(' ', '_')}.jpg" onerror="this.src='images/default.jpg'">
         </div>
         <div class="card-content">
             <h3 class="card-title" id="expandLabel">Rozwiń wszystkie kategorie ↓</h3>
@@ -226,18 +227,18 @@ async function loadCategories() {
     extraGrid.classList.add("grid");
     extraGrid.style.display = "none";
 
-    extraGrid.innerHTML = pozostale.map(cat => `
-        <div class="collection-card">
-            <div class="collection-thumbnail">
-                <img src="images/sql.png">
-            </div>
-            <div class="card-content">
-                <h3 class="card-title">${cat.nazwa}</h3>
-                <p class="card-subtitle">${cat.opis || ""}</p>
-                <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-            </div>
+extraGrid.innerHTML = pozostale.map(cat => `
+    <div class="collection-card">
+        <div class="collection-thumbnail">
+             <img src="images/expand.jpg">
         </div>
-    `).join("");
+        <div class="card-content">
+            <h3 class="card-title">${cat.nazwa}</h3>
+            <p class="card-subtitle">${cat.opis || ""}</p>
+            <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+        </div>
+    </div>
+`).join("");
 
     // --- obsługa rozwijania ---
     let expanded = false;
@@ -267,4 +268,5 @@ initDashboard();
 
 </body>
 </html>
+
 
