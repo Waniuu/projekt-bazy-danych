@@ -89,30 +89,36 @@ let timerInterval;
 let timeLeft = timeMinutes * 60;
 
 // -------------------------------------------------
-// GENEROWANIE TESTU W BACKENDZIE (OTRZYMANIE id_testu)
+// GENEROWANIE TESTU W BACKENDZIE
 // -------------------------------------------------
 async function createTest() {
     const res = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/testy/generuj", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-    id_szablonu: 1, // stały szablon albo pobierz z URL
-    liczba_pytan: questionCount
-})
+        body: JSON.stringify({
+            id_szablonu: 1,
+            liczba_pytan: questionCount
+        })
     });
 
     const data = await res.json();
     id_testu_global = data.id_testu;
 }
+
 // -------------------------------------------------
-// MAPOWANIE ODPOWIEDZI Z BACKENDU → format ABCD
+// MAPOWANIE PYTANIA (tekst + poprawność)
 // -------------------------------------------------
-function mapAnswers(answers) {
-    return answers.map(a => ({
-        tresc_odpowiedzi: a.tresc,        // nazwa z backendu
-        czy_poprawna: a.poprawna          // bool 0/1
-    }));
+function mapQuestion(q) {
+    const indices = q.odpowiedzi.map((_, i) => i);
+    const shuffled = shuffle(indices);
+
+    return {
+        ...q,
+        odpowiedzi: shuffled.map(i => q.odpowiedzi[i].tresc),
+        poprawne: shuffled.map(i => q.odpowiedzi[i].poprawna)
+    };
 }
+
 // -------------------------------------------------
 // TIMER
 // -------------------------------------------------
@@ -131,23 +137,14 @@ function startTimer() {
         }
     }, 1000);
 }
-// -------------------------------------------------
-// MAPOWANIE — widoczne odpowiedzi (tylko tekst)
-// -------------------------------------------------
-function mapAnswersOnlyText(answers) {
-    return answers.map(a => a.tresc); 
-}
 
-// -------------------------------------------------
-// MAPOWANIE — logika poprawności (wewnętrznie)
-// -------------------------------------------------
-function mapAnswersLogic(answers) {
-    return answers.map(a => a.poprawna); 
-}
 // -------------------------------------------------
 // WYŚWIETLANIE PYTANIA
 // -------------------------------------------------
 function showQuestion() {
+
+    if (!questions[currentIndex]) return; // bezpieczeństwo
+
     const q = questions[currentIndex];
     const box = document.getElementById("questionBox");
 
@@ -155,9 +152,9 @@ function showQuestion() {
         <div class="question-title">Pytanie ${currentIndex + 1}/${questions.length}</div>
         <p>${q.tresc}</p>
 
-        ${q.odpowiedzi.map((o, idx) => `
+        ${q.odpowiedzi.map((text, idx) => `
             <div class="answer-option" onclick="checkAnswer(${idx})">
-                ${String.fromCharCode(65 + idx)}) ${o.tresc_odpowiedzi}
+                ${String.fromCharCode(65 + idx)}) ${text}
             </div>
         `).join("")}
     `;
@@ -167,9 +164,12 @@ function showQuestion() {
 // SPRAWDZANIE ODPOWIEDZI
 // -------------------------------------------------
 function checkAnswer(answerIndex) {
+
     if (questions[currentIndex].poprawne[answerIndex] === 1) {
         points++;
     }
+
+    currentIndex++;
 
     if (currentIndex < questions.length) {
         showQuestion();
@@ -194,8 +194,7 @@ async function finishTest() {
         body: JSON.stringify({
             id_studenta: user.id,
             id_testu: id_testu_global,
-            liczba_punktow: score,
-            ocena: Math.round((score / total) * 6)
+            liczba_punktow: score
         })
     });
 
@@ -204,9 +203,10 @@ async function finishTest() {
 }
 
 // -------------------------------------------------
-// ŁADOWANIE PYTAŃ + ODPOWIEDZI
+// ŁADOWANIE PYTAŃ
 // -------------------------------------------------
 async function loadQuestions() {
+
     const res = await fetch(
         `https://projekt-bazy-danych-backend.onrender.com/api/pytania-z-odpowiedziami?id_kategorii=${katId}`
     );
@@ -218,19 +218,11 @@ async function loadQuestions() {
             "<p>Brak pytań w tej kategorii!</p>";
         return;
     }
-    function shuffleOrder(length) {
-    const arr = [...Array(length).keys()];
-    return arr.sort(() => Math.random() - 0.5);
-}
-questions = questions.map(q => {
-    const order = shuffleOrder(q.odpowiedzi.length);
 
-    return {
-        ...q,
-        odpowiedzi: order.map(i => q.odpowiedzi[i].tresc),   // teksty do wyświetlania
-        poprawne:   order.map(i => q.odpowiedzi[i].poprawna) // logika poprawności
-    };
-});
+    // losowanie + mapowanie poprawnych odpowiedzi
+    questions = shuffle(data)
+                .slice(0, questionCount)
+                .map(q => mapQuestion(q));
 
     showQuestion();
     startTimer();
@@ -240,13 +232,10 @@ questions = questions.map(q => {
 // START TESTU
 // -------------------------------------------------
 (async function init() {
-    await createTest();  // MUSI być jako pierwsze
+    await createTest();
     await loadQuestions();
 })();
 </script>
 
 </body>
 </html>
-
-
-
