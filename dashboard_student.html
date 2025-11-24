@@ -104,7 +104,6 @@
         document.getElementById("studentEmail").textContent = data.email;
         document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
 
-        // Średnia ocen
         const wyniki = await fetch(
             `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
         ).then(r => r.json());
@@ -114,15 +113,11 @@
             return;
         }
 
- let avgRaw = wyniki.reduce((sum, w) => sum + Number(w.ocena || 0), 0) / wyniki.length;
-
-// Usuń zbędne zera z końca
-let avg = Number(avgRaw.toFixed(2)).toString();
-
-document.getElementById("studentSrednia").textContent = avg;
+        let avg = (wyniki.reduce((s, w) => s + Number(w.ocena || 0), 0) / wyniki.length);
+        document.getElementById("studentSrednia").textContent = avg.toFixed(2);
     }
 
-    // -------------------- ŁADOWANIE WYNIKÓW TESTÓW --------------------
+    // -------------------- ŁADOWANIE WYNIKÓW + SORTOWANIE WG KATEGORII --------------------
     async function loadResults(userId) {
         const wyniki = await fetch(
             `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
@@ -136,18 +131,37 @@ document.getElementById("studentSrednia").textContent = avg;
             return;
         }
 
-        wyniki.forEach(w => {
+        // SORTOWANIE WG NAZWY KATEGORII (nazwa_testu)
+        wyniki.sort((a, b) => a.nazwa_testu.localeCompare(b.nazwa_testu));
+
+        // GRUPOWANIE WG KATEGORII
+        const grupy = {};
+        for (const w of wyniki) {
+            if (!grupy[w.nazwa_testu]) grupy[w.nazwa_testu] = [];
+            grupy[w.nazwa_testu].push(w);
+        }
+
+        // GENEROWANIE HTML
+        for (const [kategoria, lista] of Object.entries(grupy)) {
             wynikiDiv.innerHTML += `
-            <div class="testimonial-card">
-                <div class="testimonial-rating">⭐ ${w.ocena}/6</div>
-                <div class="testimonial-quote">
-                    <b>${w.nazwa_testu || "Test"}</b><br>
-                    Punkty: <span style="color:#ff3366;font-weight:bold;">${w.liczba_punktow}</span><br>
-                    Data: ${w.data}
+                <h3 style="margin-top:20px;color:#ff3366;border-bottom:1px solid #ff336666;padding-bottom:5px;">
+                    ${kategoria}
+                </h3>
+            `;
+
+            lista.forEach(w => {
+                wynikiDiv.innerHTML += `
+                <div class="testimonial-card">
+                    <div class="testimonial-rating">⭐ ${w.ocena}</div>
+                    <div class="testimonial-quote">
+                        <b>${w.nazwa_testu}</b><br>
+                        Punkty: <span style="color:#ff3366;font-weight:bold;">${w.liczba_punktow}</span><br>
+                        Data: ${w.data}
+                    </div>
                 </div>
-            </div>
-        `;
-        });
+                `;
+            });
+        }
     }
 
     // -------------------- KATEGORIE (3 + ROZWIJANIE) --------------------
@@ -159,10 +173,8 @@ document.getElementById("studentSrednia").textContent = avg;
         const grid = document.getElementById("collectionsGrid");
         grid.innerHTML = "";
 
-        // --- 1) Pokazujemy tylko 3 kategorie ---
-        const trzyKategorie = categories.slice(0, 3);
-
-        trzyKategorie.forEach(cat => {
+        const trzy = categories.slice(0, 3);
+        trzy.forEach(cat => {
             grid.innerHTML += `
             <div class="collection-card">
                 <div class="collection-thumbnail">
@@ -174,31 +186,19 @@ document.getElementById("studentSrednia").textContent = avg;
                     <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
                 </div>
             </div>
-        `;
+            `;
         });
 
-        // --- 2) Dodajemy przycisk "Zobacz więcej" jako 4 karta ---
         grid.innerHTML += `
-        <div class="collection-card" style="display:flex;align-items:center;justify-content:center;text-align:center;">
+        <div class="collection-card" style="display:flex;align-items:center;justify-content:center;">
             <button onclick="location.href='logowanie.html'"
-                style="
-                    padding: 15px 25px;
-                    font-size: 18px;
-                    border-radius: 10px;
-                    border: none;
-                    background:#ff3366;
-                    color:white;
-                    cursor:pointer;
-                    transition:0.3s;
-                "
-            >
+                style="padding:15px 25px;font-size:18px;border-radius:10px;background:#ff3366;color:white;border:none;cursor:pointer;">
                 Zobacz więcej →
             </button>
-        </div>
-    `;
+        </div>`;
     }
 
-    // -------------------- GŁÓWNE ŁADOWANIE --------------------
+    // -------------------- START DASHBOARDU --------------------
     async function initDashboard() {
         const user = JSON.parse(localStorage.getItem("user"));
         if (!user) return logout();
@@ -213,7 +213,9 @@ document.getElementById("studentSrednia").textContent = avg;
     initDashboard();
 </script>
 
+
 </body>
 </html>
+
 
 
