@@ -82,7 +82,28 @@ app.post("/api/wyniki", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.post("/api/zapisz-wynik", (req, res) => {
+  try {
+    const { id_studenta, id_testu, liczba_punktow, ocena } = req.body;
 
+    if (!id_studenta || !id_testu) {
+      return res.status(400).json({ error: "Brak wymaganych pól" });
+    }
+
+    const stmt = db.prepare(`
+      INSERT INTO WynikTestu (id_studenta, id_testu, data, liczba_punktow, ocena)
+      VALUES (?, ?, DATE('now'), ?, ?)
+    `);
+
+    const info = stmt.run(id_studenta, id_testu, liczba_punktow, ocena);
+
+    res.json({ success: true, id: info.lastInsertRowid });
+
+  } catch (err) {
+    console.log("ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // -----------------------------
 // CRUD: Uzytkownicy (uniwersalne)
@@ -439,6 +460,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
