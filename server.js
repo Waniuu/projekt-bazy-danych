@@ -5,7 +5,7 @@ import cors from "cors";
 import Database from "better-sqlite3";
 import path from "path";
 
-const DB_PATH = process.env.DB_PATH || "./test_baza.sqlite";
+const DB_PATH = process.env.DB_PATH || "./test2_baza.sqlite";
 const ALLOWED_ORIGINS = [
   "https://waniuu.github.io",
   "http://localhost:5500",
@@ -490,6 +490,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
