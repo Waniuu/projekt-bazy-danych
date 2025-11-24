@@ -24,7 +24,32 @@ app.use(cors({
   }
 }));
 app.use(bodyParser.json());
+app.get("/api/uzytkownicy/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const row = db.prepare(`
+      SELECT U.*, S.numer_indeksu
+      FROM Uzytkownik U
+      LEFT JOIN Student S ON S.id_uzytkownika = U.id_uzytkownika
+      WHERE U.id_uzytkownika = ?
+    `).get(id);
 
+    if (!row) {
+      return res.status(404).json({ error: "Użytkownik nie istnieje" });
+    }
+
+    res.json({
+      id: row.id_uzytkownika,
+      imie: row.imie,
+      nazwisko: row.nazwisko,
+      email: row.email,
+      typ_konta: row.typ_konta,
+      numer_indeksu: row.numer_indeksu || null
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 // ---------------------------------------------
 // UŻYTKOWNICY
 // ---------------------------------------------
@@ -232,3 +257,4 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
