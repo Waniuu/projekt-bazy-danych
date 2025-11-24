@@ -215,13 +215,58 @@ async function loadResults(userId) {
             `;
         });
 
-        grid.innerHTML += `
-        <div class="collection-card" style="display:flex;align-items:center;justify-content:center;">
-            <button onclick="location.href='logowanie.html'"
-                style="padding:15px 25px;font-size:18px;border-radius:10px;background:#ff3366;color:white;border:none;cursor:pointer;">
-                Zobacz więcej →
-            </button>
-        </div>`;
+       grid.innerHTML += `
+<div class="collection-card" id="expandCard" 
+     style="display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;">
+    <button id="expandButton"
+        style="
+            padding: 15px 25px;
+            font-size: 18px;
+            border-radius: 10px;
+            background:#ff3366;color:white;
+            cursor:pointer;">
+        Rozwiń wszystkie kategorie ↓
+    </button>
+</div>
+
+<div id="extraCategories" style="display:none;width:100%;margin-top:20px;"></div>
+`;
+        // --- LISTA POZOSTAŁYCH KATEGORII ---
+const extraBox = document.getElementById("extraCategories");
+const expandBtn = document.getElementById("expandButton");
+
+const pozostale = categories.slice(3);
+
+extraBox.innerHTML = pozostale.map(cat => `
+    <div class="collection-card">
+        <div class="collection-thumbnail">
+            <img src="images/neo-classic.avif">
+        </div>
+        <div class="card-content">
+            <h3 class="card-title">${cat.nazwa}</h3>
+            <p class="card-subtitle">${cat.opis || ""}</p>
+            <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+        </div>
+    </div>
+`).join("");
+
+// --- OBSŁUGA ROZWIJANIA ---
+let expanded = false;
+
+expandBtn.onclick = () => {
+    expanded = !expanded;
+
+    if (expanded) {
+        extraBox.style.display = "grid";
+        extraBox.style.gridTemplateColumns = "repeat(auto-fit, minmax(250px, 1fr))";
+        extraBox.style.gap = "20px";
+        expandBtn.textContent = "Zwiń kategorię ↑";
+    } else {
+        extraBox.style.display = "none";
+        expandBtn.textContent = "Rozwiń wszystkie kategorie ↓";
+    }
+};
+
     }
 
     // -------------------- START DASHBOARDU --------------------
@@ -242,6 +287,7 @@ async function loadResults(userId) {
 
 </body>
 </html>
+
 
 
 
