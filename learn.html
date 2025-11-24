@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nauka — Fiszki</title>
+
+    <!-- Ten sam CSS co index.html -->
+    <link rel="stylesheet" href="templatemo-noir-fashion.css">
+
+    <style>
+        .learn-section {
+            padding: 120px 40px 60px;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        #categorySelect {
+            padding: 14px 16px;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            width: 100%;
+            max-width: 420px;
+            border-radius: 8px;
+            margin: 20px auto 40px auto;
+            display: block;
+            font-size: 18px;
+        }
+
+        .flashcards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 30px;
+        }
+
+        /* Styl fiszek pod wygląd Noir Fashion */
+        .flashcard {
+            background: transparent;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            transition: transform 0.6s ease;
+            transform-style: preserve-3d;
+            border-radius: 16px;
+        }
+
+        .flashcard.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-side {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .flashcard-back {
+            transform: rotateY(180deg);
+            background: #ff3366;
+            color: black;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Ten sam NAVBAR co w index.html -->
+<nav id="navbar">
+    <div class="nav-container">
+        <a href="index.html" class="logo-link">
+            <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#fff;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ff3366;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <polygon points="50,10 20,50 50,90 80,50" fill="none" stroke="url(#logoGrad)" stroke-width="3"/>
+                <circle cx="50" cy="50" r="5" fill="url(#logoGrad)"/>
+            </svg>
+            <span class="logo-text">Panel Studenta</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a class="nav-link active">Dashboard</a></li>
+            <li><a class="nav-cta" onclick="logout()">Wyloguj</a></li>
+        </ul>
+    </div>
+</nav>
+<section class="hero" id="home">
+    <div class="hero-bg"></div>
+    <div class="hero-container">
+
+        <div class="hero-left">
+            <h1 class="hero-title">
+                <span class="line"><span><span class="accent">Twoje</span></span></span>
+                <span class="line"><span>testy</span></span>
+            </h1>
+            <p class="hero-description">Masz wszystko pod ręką</p>
+        </div>
+
+        <div class="hero-right">
+            <div class="student-info-card"
+                 style="background:rgba(255,255,255,0.08);padding:20px;border-radius:15px;backdrop-filter:blur(5px);margin-bottom:20px;color:white;">
+
+                <h3 style="margin-bottom:10px;">Twoje dane</h3>
+
+                <p><b>Imię:</b> <span id="studentImie"></span></p>
+                <p><b>Nazwisko:</b> <span id="studentNazwisko"></span></p>
+                <p><b>Email:</b> <span id="studentEmail"></span></p>
+                <p><b>Numer indeksu:</b> <span id="studentIndeks"></span></p>
+                <p><b>Średnia ocen:</b> <span id="studentSrednia" style="color:#ff3366;font-weight:bold;"></span></p>
+
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<section class="learn-section">
+    <div class="section-header">
+        <h2 class="section-title">Tryb Nauki — Fiszki</h2>
+        <p class="section-subtitle">Wybierz kategorię pytań i ucz się poprzez interaktywne karty</p>
+    </div>
+
+    <select id="categorySelect">
+        <option value="">Wybierz kategorię...</option>
+    </select>
+
+    <div id="flashcards" class="flashcards-grid"></div>
+</section>
+
+
+
+<script>
+    const API_URL = "https://projekt-bazy-danych-backend.onrender.com";
+
+    async function loadCategories() {
+        const res = await fetch(`${API_URL}/api/kategorie`);
+        const data = await res.json();
+
+        const select = document.getElementById("categorySelect");
+        data.forEach(cat => {
+            const o = document.createElement("option");
+            o.value = cat.id_kategorii;
+            o.textContent = cat.nazwa;
+            select.appendChild(o);
+        });
+    }
+
+    async function loadQuestions(id) {
+        const res = await fetch(`${API_URL}/api/pytania?id_kategorii=${id}`);
+        const data = await res.json();
+        renderFlashcards(data);
+    }
+
+    function renderFlashcards(questions) {
+        const box = document.getElementById("flashcards");
+        box.innerHTML = "";
+
+        questions.forEach(q => {
+            const card = document.createElement("div");
+            card.classList.add("flashcard");
+
+            card.innerHTML = `
+                    <div class="flashcard-inner">
+                        <div class="flashcard-side flashcard-front">${q.tresc}</div>
+                        <div class="flashcard-side flashcard-back">${q.odpowiedz ?? "Brak odpowiedzi"}</div>
+                    </div>
+                `;
+
+            card.addEventListener("click", () => {
+                card.classList.toggle("flipped");
+            });
+
+            box.appendChild(card);
+        });
+    }
+
+    document.getElementById("categorySelect").addEventListener("change", e => {
+        if (e.target.value) loadQuestions(e.target.value);
+    });
+
+    loadCategories();
+</script>
+
+<!-- Ten sam JS co index.html -->
+<script src="templatemo-noir-scripts.js"></script>
+
+</body>
+</html>
