@@ -87,7 +87,7 @@ app.post("/api/zapisz-wynik", (req, res) => {
     const { id_studenta, id_testu, liczba_punktow, ocena } = req.body;
 
     if (!id_studenta || !id_testu) {
-      return res.status(400).json({ error: "Brak wymaganych pól" });
+      return res.status(400).json({ error: "Brak wymaganych pól id_studenta lub id_testu" });
     }
 
     const stmt = db.prepare(`
@@ -96,11 +96,10 @@ app.post("/api/zapisz-wynik", (req, res) => {
     `);
 
     const info = stmt.run(id_studenta, id_testu, liczba_punktow, ocena);
-
     res.json({ success: true, id: info.lastInsertRowid });
 
   } catch (err) {
-    console.log("ERROR:", err);
+    console.log("BŁĄD zapis wyniku:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -460,6 +459,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
