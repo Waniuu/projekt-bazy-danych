@@ -94,28 +94,38 @@
     }
 
     // -------------------- ŁADOWANIE DANYCH STUDENTA --------------------
-    async function loadStudentInfo(userId) {
-        const data = await fetch(
-            `https://projekt-bazy-danych-backend.onrender.com/api/uzytkownicy/${userId}`
-        ).then(r => r.json());
+async function loadStudentInfo(userId) {
+    const data = await fetch(
+        `https://projekt-bazy-danych-backend.onrender.com/api/uzytkownicy/${userId}`
+    ).then(r => r.json());
 
-        document.getElementById("studentImie").textContent = data.imie;
-        document.getElementById("studentNazwisko").textContent = data.nazwisko;
-        document.getElementById("studentEmail").textContent = data.email;
-        document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
+    document.getElementById("studentImie").textContent = data.imie;
+    document.getElementById("studentNazwisko").textContent = data.nazwisko;
+    document.getElementById("studentEmail").textContent = data.email;
+    document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
 
-        const wyniki = await fetch(
-            `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
-        ).then(r => r.json());
+    const wyniki = await fetch(
+        `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
+    ).then(r => r.json());
 
-        if (!wyniki.length) {
-            document.getElementById("studentSrednia").textContent = "Brak danych";
-            return;
-        }
-
-        let avg = (wyniki.reduce((s, w) => s + Number(w.ocena || 0), 0) / wyniki.length);
-        document.getElementById("studentSrednia").textContent = avg.toFixed(2);
+    if (!wyniki.length) {
+        document.getElementById("studentSrednia").textContent = "Brak danych";
+        return;
     }
+
+    // FILTRUJEMY poprawne wartości
+    const oceny = wyniki
+        .map(w => Number(w.ocena))
+        .filter(n => !isNaN(n));
+
+    if (!oceny.length) {
+        document.getElementById("studentSrednia").textContent = "Brak danych";
+        return;
+    }
+
+    const avg = oceny.reduce((a, b) => a + b, 0) / oceny.length;
+    document.getElementById("studentSrednia").textContent = avg.toFixed(2);
+}
 
     // -------------------- ŁADOWANIE WYNIKÓW + SORTOWANIE WG KATEGORII --------------------
 async function loadResults(userId) {
@@ -232,6 +242,7 @@ async function loadResults(userId) {
 
 </body>
 </html>
+
 
 
 
