@@ -162,31 +162,29 @@ async function createTest() {
     }
 
     // ---------- ZAKOŃCZENIE TESTU ----------
-    async function finishTest() {
-        clearInterval(timerInterval);
+   async function finishTest() {
+    clearInterval(timerInterval);
 
-        const score = points;
-        const total = questions.length;
+    const score = points;
+    const total = questions.length;
 
-        const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user"));
 
-        // ZAPIS DO BAZY
     await fetch("https://projekt-bazy-danych-backend.onrender.com/api/zapisz-wynik", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                id_studenta: user.id,
-                id_kategorii: katId,
-                liczba_punktow: score,
-                max_punktow: total,
-                ocena: Math.round((score / total) * 6)  // skala 1–6
-            })
-        });
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            id_studenta: user.id,
+            id_testu: id_testu_global,
+            liczba_punktow: score,
+            ocena: Math.round((score / total) * 6)
+        })
+    });
 
-        alert(`Test zakończony!\nWynik: ${score}/${total}`);
+    alert(`Test zakończony! Wynik: ${score}/${total}`);
+    window.location.href = "dashboard_student.html";
+}
 
-        window.location.href = "dashboard_student.html";
-    }
 
     // ---------- ŁADOWANIE PYTAŃ ----------
     async function loadQuestions() {
@@ -218,5 +216,6 @@ async function createTest() {
 
 </body>
 </html>
+
 
 
