@@ -153,53 +153,71 @@ app.get("/api/wyniki/:id", (req, res) => {
 // ---------------------------------------------
 app.post("/api/testy/generuj", (req, res) => {
   try {
-    const { id_kategorii, liczba_pytan = 5 } = req.body;
-
-    if (!id_kategorii) {
-      return res.status(400).json({ error: "id_kategorii wymagane" });
+    const { id_szablonu, liczba_pytan = 5 } = req.body;
+  
+    if (!id_szablonu) {
+      return res.status(400).json({ error: "id_szablonu (id_kategorii) wymagane" });
     }
 
-    // Pobierz kategorię
-    const kat = db.prepare(`
-      SELECT nazwa 
-      FROM Kategoria 
+    // ============================================================
+    // 1. Pobranie NAZWY KATEGORII — POPRAWIONE
+    //    (wcześniej brałeś błędne id_szablonu → błędna kategoria)
+    // ============================================================
+    const kategoria = db.prepare(`
+      SELECT nazwa
+      FROM Kategoria
       WHERE id_kategorii = ?
-    `).get(id_kategorii);
+    `).get(id_szablonu);
 
-    if (!kat) {
+    if (!kategoria) {
       return res.status(404).json({ error: "Kategoria nie istnieje" });
     }
 
+    // ============================================================
+    // 2. Transakcja generowania testu
+    // ============================================================
     const tx = db.transaction(() => {
+     
 
-      // Utwórz test z nazwą kategorii
-      const info = db.prepare(`
-        INSERT INTO Test (tytul, id_szablonu, data_utworzenia)
-        VALUES (?, ?, DATE('now'))
-      `).run(kat.nazwa, id_kategorii);
+      // --------- tworzymy test z nazwą kategorii ---------
+      const testInsert = db.prepare(`
+        INSERT INTO Test (tytul, czas_trwania, id_szablonu, id_przedmiotu)
+        VALUES (?, 30, ?, 1)
+      `).run(kategoria.nazwa, id_szablonu);
 
-      const newTestId = info.lastInsertRowid;
+      const newTestId = testInsert.lastInsertRowid;
+   
 
-      // Pobierz pytania z kategorii
-      const questions = db.prepare(`
+      // --------- pobieramy pytania z kategorii ---------
+      const pytania = db.prepare(`
         SELECT id_pytania
         FROM Pytanie
         WHERE id_kategorii = ?
         ORDER BY RANDOM()
         LIMIT ?
-      `).all(id_kategorii, liczba_pytan);
+      `).all(id_szablonu, liczba_pytan);
 
-      // Połącz pytania z testem
-      const stmt = db.prepare(`
+      if (!pytania.length) {
+        throw new Error("Brak pytań w tej kategorii");
+      }
+
+      // --------- zapisujemy pytania do Test_Pytanie ---------
+      const insertTP = db.prepare(`
+  
         INSERT INTO Test_Pytanie (id_testu, id_pytania)
         VALUES (?, ?)
       `);
 
-      questions.forEach(q => stmt.run(newTestId, q.id_pytania));
+      for (const p of pytania) {
+        insertTP.run(newTestId, p.id_pytania);
+      }
 
       return newTestId;
     });
 
+    // ============================================================
+    // 3. Zwrócenie id testu
+    // ============================================================
     const id_testu = tx();
     res.status(201).json({ id_testu });
 
@@ -208,7 +226,8 @@ app.post("/api/testy/generuj", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
+@@ -278,3 +258,4 @@ const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
 // ---------------------------------------------
 // LOGIN
 // ---------------------------------------------
@@ -260,6 +279,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
