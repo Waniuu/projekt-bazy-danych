@@ -95,23 +95,15 @@ async function createTest() {
     const res = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/testy/generuj", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            id_szablonu: Number(katId),
-            liczba_pytan: questionCount
-        })
+   body: JSON.stringify({
+     id_szablonu: 1,
+    liczba_pytan: questionCount
+})
     });
 
     const data = await res.json();
-
-    if (!res.ok) {
-        console.error("Błąd tworzenia testu:", data);
-        alert("Błąd generowania testu: " + (data.error || "Nieznany błąd"));
-        return;
-    }
-
     id_testu_global = data.id_testu;
 }
-
 
 // -------------------------------------------------
 // MAPOWANIE PYTANIA (tekst + poprawność)
@@ -200,7 +192,7 @@ async function finishTest() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            id_studenta: user.id || user.id_uzytkownika, // poprawka!
+            id_studenta: user.id,
             id_testu: id_testu_global,
             liczba_punktow: score
         })
@@ -247,6 +239,3 @@ async function loadQuestions() {
 
 </body>
 </html>
-
-
-
