@@ -397,22 +397,44 @@ app.delete("/api/pytania/:id", (req, res) => {
 app.post("/api/testy/generuj", (req, res) => {
   try {
     const { id_szablonu, liczba_pytan = 5 } = req.body;
-    if (!id_szablonu) return res.status(400).json({ error: "id_szablonu wymagane" });
+
+    if (!id_szablonu) {
+      return res.status(400).json({ error: "id_szablonu wymagane" });
+    }
+
+    // Pobieramy kategorię dla szablonu (szablon nie ma powiązań z bankiem!)
+    const szablon = db.prepare("SELECT * FROM SzablonTestu WHERE id_szablonu = ?").get(id_szablonu);
+    if (!szablon) return res.status(404).json({ error: "Szablon nie istnieje" });
+
+    // Kategorie i pytania są połączone po id_kategorii – możemy pobierać pytania z losowej kategorii
+    const pytania = db.prepare(`
+        SELECT id_pytania FROM Pytanie 
+        WHERE id_kategorii = (SELECT id_kategorii FROM Pytanie ORDER BY RANDOM() LIMIT 1)
+        ORDER BY RANDOM() LIMIT ?
+    `).all(liczba_pytan);
 
     const tx = db.transaction(() => {
-      const info = db.prepare("INSERT INTO Test (id_szablonu, data_utworzenia) VALUES (?, DATE('now'))").run(id_szablonu);
+      const info = db.prepare(`
+          INSERT INTO Test (tytul, czas_trwania, id_szablonu, id_przedmiotu)
+          VALUES ('Test wygenerowany', 30, ?, 1)
+      `).run(id_szablonu);
+
       const newTestId = info.lastInsertRowid;
-      db.prepare("INSERT INTO Test_Pytanie (id_testu, id_pytania) SELECT ?, id_pytania FROM Pytanie WHERE id_banku IN (SELECT id_banku FROM SzablonTestu WHERE id_szablonu = ?) ORDER BY RANDOM() LIMIT ?")
-        .run(newTestId, id_szablonu, liczba_pytan);
-      return db.prepare("SELECT * FROM Test WHERE id_testu = ?").get(newTestId);
+
+      const insertTP = db.prepare("INSERT INTO Test_Pytanie (id_testu, id_pytania) VALUES (?, ?)");
+      pytania.forEach(p => insertTP.run(newTestId, p.id_pytania));
+
+      return newTestId;
     });
 
-    const testRow = tx();
-    res.status(201).json(testRow);
+    const id_testu = tx();
+    res.status(201).json({ id_testu });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 // -------------------------------------------
 // LOGIN (email + hasło → zwraca rolę i dane)
 // -------------------------------------------
@@ -490,6 +512,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
