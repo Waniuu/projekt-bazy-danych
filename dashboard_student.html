@@ -11,11 +11,11 @@
 <nav id="navbar">
     <div class="nav-container">
         <a href="index.html" class="logo-link">
-            <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <svg class="logo-svg" viewBox="0 0 100 100">
                 <defs>
                     <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#fff;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#ff3366;stop-opacity:1" />
+                        <stop offset="0%" style="stop-color:#fff" />
+                        <stop offset="100%" style="stop-color:#ff3366" />
                     </linearGradient>
                 </defs>
                 <polygon points="50,10 20,50 50,90 80,50" fill="none" stroke="url(#logoGrad)" stroke-width="3"/>
@@ -31,7 +31,7 @@
     </div>
 </nav>
 
-<section class="hero" id="home">
+<section class="hero">
     <div class="hero-bg"></div>
     <div class="hero-container">
 
@@ -47,7 +47,7 @@
             <div class="student-info-card"
                  style="background:rgba(255,255,255,0.08);padding:20px;border-radius:15px;backdrop-filter:blur(5px);margin-bottom:20px;color:white;">
 
-                <h3 style="margin-bottom:10px;">Twoje dane</h3>
+                <h3>Twoje dane</h3>
 
                 <p><b>Imię:</b> <span id="studentImie"></span></p>
                 <p><b>Nazwisko:</b> <span id="studentNazwisko"></span></p>
@@ -61,7 +61,7 @@
     </div>
 </section>
 
-<section class="collections" id="collections">
+<section class="collections">
     <div class="section-header">
         <h2 class="section-title">Kategorie testów</h2>
         <p class="section-subtitle">Wybierz kategorię aby rozpocząć</p>
@@ -69,10 +69,10 @@
 
     <div class="grid" id="collectionsGrid"></div>
 
-    <div class="grid" id="extraCategories" style="display:none; margin-top:20px;"></div>
+    <div class="grid" id="extraCategories" style="display:none;margin-top:20px;"></div>
 </section>
 
-<section class="featured" id="featured">
+<section class="featured">
     <div class="featured-container">
         <div class="featured-hero">
             <div class="featured-content">
@@ -90,12 +90,23 @@
 </section>
 
 <script>
-    function logout() {
-        localStorage.removeItem("user");
-        window.location.href = "logowanie.html";
-    }
+// -----------------------------------------
+// NORMALIZACJA NAZWY KATEGORII → PLIK PNG
+// -----------------------------------------
+function normalizeName(name) {
+    return name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")  // usuwa ogonki
+        .replaceAll(" ", "_");           // spacje → _
+}
 
-    // -------------------- ŁADOWANIE DANYCH STUDENTA --------------------
+// -----------------------------------------
+function logout() {
+    localStorage.removeItem("user");
+    window.location.href = "logowanie.html";
+}
+
+// -----------------------------------------
 async function loadStudentInfo(userId) {
     const data = await fetch(
         `https://projekt-bazy-danych-backend.onrender.com/api/uzytkownicy/${userId}`
@@ -115,34 +126,27 @@ async function loadStudentInfo(userId) {
         return;
     }
 
-    const oceny = wyniki
-        .map(w => Number(w.ocena))
-        .filter(n => !isNaN(n));
+    const oceny = wyniki.map(w => Number(w.ocena)).filter(n => !isNaN(n));
+    if (!oceny.length) return (document.getElementById("studentSrednia").textContent = "Brak danych");
 
-    if (!oceny.length) {
-        document.getElementById("studentSrednia").textContent = "Brak danych";
-        return;
-    }
-
-    const avg = oceny.reduce((a, b) => a + b, 0) / oceny.length;
+    const avg = oceny.reduce((a,b)=>a+b,0) / oceny.length;
     document.getElementById("studentSrednia").textContent = avg.toFixed(2);
 }
 
-    // -------------------- ŁADOWANIE WYNIKÓW --------------------
+// -----------------------------------------
 async function loadResults(userId) {
-    const wynikiDiv = document.getElementById("wynikiContainer");
-
     let response = await fetch(
         `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
     );
 
+    const wynikiDiv = document.getElementById("wynikiContainer");
+
     if (!response.ok) {
-        wynikiDiv.innerHTML = "<p>Nie udało się załadować wyników.</p>";
+        wynikiDiv.innerHTML = "<p>Błąd ładowania wyników.</p>";
         return;
     }
 
     const wyniki = await response.json();
-
     wynikiDiv.innerHTML = "";
 
     if (!wyniki.length) {
@@ -150,20 +154,19 @@ async function loadResults(userId) {
         return;
     }
 
-    wyniki.sort((a, b) => a.nazwa_testu.localeCompare(b.nazwa_testu));
+    wyniki.sort((a,b)=>a.nazwa_testu.localeCompare(b.nazwa_testu));
 
     const grupy = {};
-    for (const w of wyniki) {
+    wyniki.forEach(w => {
         if (!grupy[w.nazwa_testu]) grupy[w.nazwa_testu] = [];
         grupy[w.nazwa_testu].push(w);
-    }
+    });
 
-    for (const [kategoria, lista] of Object.entries(grupy)) {
+    for (const [kat, lista] of Object.entries(grupy)) {
         wynikiDiv.innerHTML += `
-            <h3 style="margin-top:20px;color:#ff3366;border-bottom:1px solid #ff336666;padding-bottom:5px;">
-                ${kategoria}
-            </h3>
-        `;
+        <h3 style="color:#ff3366;margin-top:20px;border-bottom:1px solid #ff336666;padding-bottom:5px;">
+            ${kat}
+        </h3>`;
 
         lista.forEach(w => {
             wynikiDiv.innerHTML += `
@@ -171,16 +174,15 @@ async function loadResults(userId) {
                     <div class="testimonial-rating">⭐ ${w.ocena}</div>
                     <div class="testimonial-quote">
                         <b>${w.nazwa_testu}</b><br>
-                        Punkty: <span style="color:#ff3366;font-weight:bold;">${w.liczba_punktow}</span><br>
+                        Punkty: <span style="color:#ff3366;">${w.liczba_punktow}</span><br>
                         Data: ${w.data}
                     </div>
-                </div>
-            `;
+                </div>`;
         });
     }
 }
 
-    // -------------------- KATEGORIE --------------------
+// -----------------------------------------
 async function loadCategories() {
     const categories = await fetch(
         "https://projekt-bazy-danych-backend.onrender.com/api/kategorie"
@@ -192,30 +194,31 @@ async function loadCategories() {
     grid.innerHTML = "";
     extraGrid.innerHTML = "";
 
-    const pierwsze3 = categories.slice(0, 3);
-    const pozostale = categories.slice(3);
+    const first3 = categories.slice(0,3);
+    const rest = categories.slice(3);
 
-    // --- 3 pierwsze kategorie ---
-    pierwsze3.forEach(cat => {
-  grid.innerHTML += `
-<div class="collection-card">
-    <div class="collection-thumbnail">
-        <img src="images/${cat.nazwa.replaceAll(' ', '_')}.png" onerror="this.src='images/default.png'">
-    </div>
-    <div class="card-content">
-        <h3 class="card-title">${cat.nazwa}</h3>
-        <p class="card-subtitle">${cat.opis || ""}</p>
-        <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-    </div>
-</div>
-`;
+    // ---- pierwsze 3 kategorie ----
+    first3.forEach(cat => {
+        const imgName = normalizeName(cat.nazwa);
+
+        grid.innerHTML += `
+        <div class="collection-card">
+            <div class="collection-thumbnail">
+                <img src="images/${imgName}.png" onerror="this.src='images/default.png'">
+            </div>
+            <div class="card-content">
+                <h3 class="card-title">${cat.nazwa}</h3>
+                <p class="card-subtitle">${cat.opis || ""}</p>
+                <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+            </div>
+        </div>`;
     });
 
-    // --- karta rozwijania ---
+    // ---- karta rozwijania ----
     grid.innerHTML += `
     <div class="collection-card" id="expandCard" style="cursor:pointer;">
         <div class="collection-thumbnail">
-              <img src="images/${cat.nazwa.replaceAll(' ', '_')}.png" onerror="this.src='images/default.png'">
+            <img src="images/default.png">
         </div>
         <div class="card-content">
             <h3 class="card-title" id="expandLabel">Rozwiń wszystkie kategorie ↓</h3>
@@ -223,37 +226,34 @@ async function loadCategories() {
         </div>
     </div>`;
 
-    // --- ukryte kategorie ---
-    extraGrid.classList.add("grid");
-    extraGrid.style.display = "none";
+    // ---- ukryte kategorie ----
+    rest.forEach(cat => {
+        const imgName = normalizeName(cat.nazwa);
 
-extraGrid.innerHTML = pozostale.map(cat => `
-    <div class="collection-card">
-        <div class="collection-thumbnail">
-             <img src="images/expand.png">
-        </div>
-        <div class="card-content">
-            <h3 class="card-title">${cat.nazwa}</h3>
-            <p class="card-subtitle">${cat.opis || ""}</p>
-            <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-        </div>
-    </div>
-`).join("");
+        extraGrid.innerHTML += `
+        <div class="collection-card">
+            <div class="collection-thumbnail">
+                <img src="images/${imgName}.png" onerror="this.src='images/default.png'">
+            </div>
+            <div class="card-content">
+                <h3 class="card-title">${cat.nazwa}</h3>
+                <p class="card-subtitle">${cat.opis || ""}</p>
+                <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+            </div>
+        </div>`;
+    });
 
-    // --- obsługa rozwijania ---
+    // ---- obsługa rozwijania ----
     let expanded = false;
-
     document.getElementById("expandCard").onclick = () => {
         expanded = !expanded;
-
         extraGrid.style.display = expanded ? "grid" : "none";
-
         document.getElementById("expandLabel").textContent =
             expanded ? "Zwiń kategorie ↑" : "Rozwiń wszystkie kategorie ↓";
     };
 }
 
-    // -------------------- START --------------------
+// -----------------------------------------
 async function initDashboard() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return logout();
@@ -268,6 +268,3 @@ initDashboard();
 
 </body>
 </html>
-
-
-
