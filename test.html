@@ -104,7 +104,15 @@ async function createTest() {
     const data = await res.json();
     id_testu_global = data.id_testu;
 }
-
+// -------------------------------------------------
+// MAPOWANIE ODPOWIEDZI Z BACKENDU → format ABCD
+// -------------------------------------------------
+function mapAnswers(answers) {
+    return answers.map(a => ({
+        tresc_odpowiedzi: a.tresc,        // nazwa z backendu
+        czy_poprawna: a.poprawna          // bool 0/1
+    }));
+}
 // -------------------------------------------------
 // TIMER
 // -------------------------------------------------
@@ -203,10 +211,10 @@ async function loadQuestions() {
     questions = shuffle(data).slice(0, questionCount);
 
     // Losowanie kolejności odpowiedzi
-    questions = questions.map(q => ({
-        ...q,
-        odpowiedzi: shuffle(q.odpowiedzi)
-    }));
+   questions = questions.map(q => ({
+    ...q,
+    odpowiedzi: shuffle(mapAnswers(q.odpowiedzi))
+}));
 
     showQuestion();
     startTimer();
@@ -223,4 +231,5 @@ async function loadQuestions() {
 
 </body>
 </html>
+
 
