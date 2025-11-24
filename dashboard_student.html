@@ -119,9 +119,14 @@
 
     // -------------------- ŁADOWANIE WYNIKÓW + SORTOWANIE WG KATEGORII --------------------
     async function loadResults(userId) {
-        const wyniki = await fetch(
-            `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
-        ).then(r => r.json());
+        const wyniki = await fetch(`https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`);
+        if (!res.ok) {
+    console.error("Błąd pobierania użytkownika:", res.status);
+    logout();
+    return;
+}
+
+const data = await res.json();
 
         const wynikiDiv = document.getElementById("wynikiContainer");
         wynikiDiv.innerHTML = "";
@@ -216,6 +221,7 @@
 
 </body>
 </html>
+
 
 
 
