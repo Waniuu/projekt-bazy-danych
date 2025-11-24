@@ -260,7 +260,7 @@ expandCard.onclick = () => {
 
     if (expanded) {
         extraBox.style.display = "grid";
-        extraBox.style.gridTemplateColumns = "repeat(4, minmax(0, 1fr))";
+       extraBox.style.gridTemplateColumns = "repeat(4, minmax(250px, 1fr))";
         extraBox.style.gap = "20px";
 
         expandLabel.textContent = "Zwiń kategorie ↑";
@@ -285,10 +285,36 @@ expandCard.onclick = () => {
 
     initDashboard();
 </script>
+<style>
+    #extraCategories {
+        display: none;
+        width: 100%;
+        margin-top: 20px;
+        grid-template-columns: repeat(4, minmax(250px, 1fr)) !important;
+        gap: 30px !important;
+    }
 
+    /* Zabezpieczenie na telefonach */
+    @media (max-width: 1200px) {
+        #extraCategories {
+            grid-template-columns: repeat(3, minmax(250px, 1fr)) !important;
+        }
+    }
+    @media (max-width: 900px) {
+        #extraCategories {
+            grid-template-columns: repeat(2, minmax(250px, 1fr)) !important;
+        }
+    }
+    @media (max-width: 600px) {
+        #extraCategories {
+            grid-template-columns: repeat(1, minmax(250px, 1fr)) !important;
+        }
+    }
+</style>
 
 </body>
 </html>
+
 
 
 
