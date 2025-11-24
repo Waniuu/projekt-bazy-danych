@@ -155,7 +155,7 @@
         const user = JSON.parse(localStorage.getItem("user"));
 
         // ZAPIS DO BAZY
-        await fetch("https://projekt-bazy-danych-backend.onrender.com/api/wyniki", {
+    await fetch("https://projekt-bazy-danych-backend.onrender.com/api/zapisz-wynik", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -202,3 +202,4 @@
 
 </body>
 </html>
+
