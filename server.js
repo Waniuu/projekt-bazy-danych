@@ -153,45 +153,49 @@ app.get("/api/wyniki/:id", (req, res) => {
 // ---------------------------------------------
 app.post("/api/testy/generuj", (req, res) => {
   try {
-    const { id_szablonu, liczba_pytan = 5 } = req.body;
-    if (!id_szablonu) return res.status(400).json({ error: "id_szablonu wymagane" });
+    const { id_kategorii, liczba_pytan = 5 } = req.body;
 
-    // pobierz kategorię
+    if (!id_kategorii) {
+      return res.status(400).json({ error: "id_kategorii wymagane" });
+    }
+
+    // Pobierz kategorię
     const kat = db.prepare(`
       SELECT nazwa 
       FROM Kategoria 
       WHERE id_kategorii = ?
-    `).get(id_szablonu);
+    `).get(id_kategorii);
 
     if (!kat) {
       return res.status(404).json({ error: "Kategoria nie istnieje" });
     }
 
     const tx = db.transaction(() => {
-      // utwórz test z nazwą kategorii
+
+      // Utwórz test z nazwą kategorii
       const info = db.prepare(`
         INSERT INTO Test (tytul, id_szablonu, data_utworzenia)
         VALUES (?, ?, DATE('now'))
-      `).run(kat.nazwa, id_szablonu);
+      `).run(kat.nazwa, id_kategorii);
 
       const newTestId = info.lastInsertRowid;
 
-      // pytania z kategorii
+      // Pobierz pytania z kategorii
       const questions = db.prepare(`
-        SELECT id_pytania 
-        FROM Pytanie 
+        SELECT id_pytania
+        FROM Pytanie
         WHERE id_kategorii = ?
         ORDER BY RANDOM()
         LIMIT ?
-      `).all(id_szablonu, liczba_pytan);
+      `).all(id_kategorii, liczba_pytan);
 
-      // powiązanie pytań z testem
-      const ins = db.prepare(`
+      // Połącz pytania z testem
+      const stmt = db.prepare(`
         INSERT INTO Test_Pytanie (id_testu, id_pytania)
         VALUES (?, ?)
       `);
 
-      questions.forEach(q => ins.run(newTestId, q.id_pytania));
+      questions.forEach(q => stmt.run(newTestId, q.id_pytania));
 
       return newTestId;
     });
@@ -200,10 +204,10 @@ app.post("/api/testy/generuj", (req, res) => {
     res.status(201).json({ id_testu });
 
   } catch (err) {
+    console.log("BŁĄD generowania testu:", err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // ---------------------------------------------
 // LOGIN
@@ -256,6 +260,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
