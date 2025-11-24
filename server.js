@@ -60,6 +60,37 @@ app.get("/api/uzytkownicy/:id", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.get("/api/pytania-z-odpowiedziami", (req, res) => {
+  try {
+    const { id_kategorii } = req.query;
+
+    if (!id_kategorii) {
+      return res.status(400).json({ error: "Brak id_kategorii" });
+    }
+
+    const pytania = db.prepare(`
+      SELECT * FROM Pytanie WHERE id_kategorii = ?
+    `).all(id_kategorii);
+
+    const odpowiedziStmt = db.prepare(`
+      SELECT * FROM Odpowiedz WHERE id_pytania = ?
+    `);
+
+    const wynik = pytania.map(p => {
+      const odp = odpowiedziStmt.all(p.id_pytania);
+      return {
+        ...p,
+        odpowiedzi: odp
+      };
+    });
+
+    res.json(wynik);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/wyniki", (req, res) => {
   try {
     const { id_studenta, id_kategorii, liczba_punktow, max_punktow, ocena } = req.body;
@@ -459,6 +490,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
