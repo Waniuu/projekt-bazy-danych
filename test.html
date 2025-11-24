@@ -200,7 +200,7 @@ async function finishTest() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            id_studenta: user.id,
+            id_studenta: user.id || user.id_uzytkownika, // poprawka!
             id_testu: id_testu_global,
             liczba_punktow: score
         })
@@ -247,5 +247,6 @@ async function loadQuestions() {
 
 </body>
 </html>
+
 
 
