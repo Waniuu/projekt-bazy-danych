@@ -200,7 +200,7 @@ async function loadCategories() {
   grid.innerHTML += `
 <div class="collection-card">
     <div class="collection-thumbnail">
-        <img src="images/${cat.nazwa.replaceAll(' ', '_')}.jpg" onerror="this.src='images/default.jpg'">
+        <img src="images/${cat.nazwa.replaceAll(' ', '_')}.png" onerror="this.src='images/default.png'">
     </div>
     <div class="card-content">
         <h3 class="card-title">${cat.nazwa}</h3>
@@ -215,7 +215,7 @@ async function loadCategories() {
     grid.innerHTML += `
     <div class="collection-card" id="expandCard" style="cursor:pointer;">
         <div class="collection-thumbnail">
-              <img src="images/${cat.nazwa.replaceAll(' ', '_')}.jpg" onerror="this.src='images/default.jpg'">
+              <img src="images/${cat.nazwa.replaceAll(' ', '_')}.png" onerror="this.src='images/default.png'">
         </div>
         <div class="card-content">
             <h3 class="card-title" id="expandLabel">Rozwiń wszystkie kategorie ↓</h3>
@@ -230,7 +230,7 @@ async function loadCategories() {
 extraGrid.innerHTML = pozostale.map(cat => `
     <div class="collection-card">
         <div class="collection-thumbnail">
-             <img src="images/expand.jpg">
+             <img src="images/expand.png">
         </div>
         <div class="card-content">
             <h3 class="card-title">${cat.nazwa}</h3>
@@ -268,5 +268,6 @@ initDashboard();
 
 </body>
 </html>
+
 
 
