@@ -131,7 +131,19 @@ function startTimer() {
         }
     }, 1000);
 }
+// -------------------------------------------------
+// MAPOWANIE — widoczne odpowiedzi (tylko tekst)
+// -------------------------------------------------
+function mapAnswersOnlyText(answers) {
+    return answers.map(a => a.tresc); 
+}
 
+// -------------------------------------------------
+// MAPOWANIE — logika poprawności (wewnętrznie)
+// -------------------------------------------------
+function mapAnswersLogic(answers) {
+    return answers.map(a => a.poprawna); 
+}
 // -------------------------------------------------
 // WYŚWIETLANIE PYTANIA
 // -------------------------------------------------
@@ -144,7 +156,7 @@ function showQuestion() {
         <p>${q.tresc}</p>
 
         ${q.odpowiedzi.map((o, idx) => `
-            <div class="answer-option" onclick="checkAnswer(${o.czy_poprawna})">
+            <div class="answer-option" onclick="checkAnswer(${idx})">
                 ${String.fromCharCode(65 + idx)}) ${o.tresc_odpowiedzi}
             </div>
         `).join("")}
@@ -154,10 +166,10 @@ function showQuestion() {
 // -------------------------------------------------
 // SPRAWDZANIE ODPOWIEDZI
 // -------------------------------------------------
-function checkAnswer(isCorrect) {
-    if (isCorrect === 1) points++;
-
-    currentIndex++;
+function checkAnswer(answerIndex) {
+    if (questions[currentIndex].poprawne[answerIndex] === 1) {
+        points++;
+    }
 
     if (currentIndex < questions.length) {
         showQuestion();
@@ -206,15 +218,19 @@ async function loadQuestions() {
             "<p>Brak pytań w tej kategorii!</p>";
         return;
     }
+    function shuffleOrder(length) {
+    const arr = [...Array(length).keys()];
+    return arr.sort(() => Math.random() - 0.5);
+}
+questions = questions.map(q => {
+    const order = shuffleOrder(q.odpowiedzi.length);
 
-    // Losowanie pytań
-    questions = shuffle(data).slice(0, questionCount);
-
-    // Losowanie kolejności odpowiedzi
-   questions = questions.map(q => ({
-    ...q,
-    odpowiedzi: shuffle(mapAnswers(q.odpowiedzi))
-}));
+    return {
+        ...q,
+        odpowiedzi: order.map(i => q.odpowiedzi[i].tresc),   // teksty do wyświetlania
+        poprawne:   order.map(i => q.odpowiedzi[i].poprawna) // logika poprawności
+    };
+});
 
     showQuestion();
     startTimer();
@@ -231,5 +247,6 @@ async function loadQuestions() {
 
 </body>
 </html>
+
 
 
