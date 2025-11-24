@@ -68,6 +68,8 @@
     </div>
 
     <div class="grid" id="collectionsGrid"></div>
+
+    <div class="grid" id="extraCategories" style="display:none; margin-top:20px;"></div>
 </section>
 
 <section class="featured" id="featured">
@@ -113,7 +115,6 @@ async function loadStudentInfo(userId) {
         return;
     }
 
-    // FILTRUJEMY poprawne wartości
     const oceny = wyniki
         .map(w => Number(w.ocena))
         .filter(n => !isNaN(n));
@@ -127,24 +128,16 @@ async function loadStudentInfo(userId) {
     document.getElementById("studentSrednia").textContent = avg.toFixed(2);
 }
 
-    // -------------------- ŁADOWANIE WYNIKÓW + SORTOWANIE WG KATEGORII --------------------
+    // -------------------- ŁADOWANIE WYNIKÓW --------------------
 async function loadResults(userId) {
     const wynikiDiv = document.getElementById("wynikiContainer");
 
-    let response;
-    try {
-        response = await fetch(
-            `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
-        );
-    } catch (err) {
-        wynikiDiv.innerHTML = "<p>Błąd połączenia z serwerem.</p>";
-        return;
-    }
+    let response = await fetch(
+        `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
+    );
 
-    // POPRAWKA: tu używamy response, a nie res
     if (!response.ok) {
         wynikiDiv.innerHTML = "<p>Nie udało się załadować wyników.</p>";
-        console.error("Błąd HTTP:", response.status);
         return;
     }
 
@@ -157,17 +150,14 @@ async function loadResults(userId) {
         return;
     }
 
-    // SORTOWANIE WG NAZWY KATEGORII
     wyniki.sort((a, b) => a.nazwa_testu.localeCompare(b.nazwa_testu));
 
-    // GRUPOWANIE WG KATEGORII
     const grupy = {};
     for (const w of wyniki) {
         if (!grupy[w.nazwa_testu]) grupy[w.nazwa_testu] = [];
         grupy[w.nazwa_testu].push(w);
     }
 
-    // GENEROWANIE HTML
     for (const [kategoria, lista] of Object.entries(grupy)) {
         wynikiDiv.innerHTML += `
             <h3 style="margin-top:20px;color:#ff3366;border-bottom:1px solid #ff336666;padding-bottom:5px;">
@@ -190,32 +180,38 @@ async function loadResults(userId) {
     }
 }
 
-    // -------------------- KATEGORIE (3 + ROZWIJANIE) --------------------
-    async function loadCategories() {
-        const categories = await fetch(
-            "https://projekt-bazy-danych-backend.onrender.com/api/kategorie"
-        ).then(r => r.json());
+    // -------------------- KATEGORIE --------------------
+async function loadCategories() {
+    const categories = await fetch(
+        "https://projekt-bazy-danych-backend.onrender.com/api/kategorie"
+    ).then(r => r.json());
 
-        const grid = document.getElementById("collectionsGrid");
-        grid.innerHTML = "";
+    const grid = document.getElementById("collectionsGrid");
+    const extraGrid = document.getElementById("extraCategories");
 
-        const trzy = categories.slice(0, 3);
-        trzy.forEach(cat => {
-            grid.innerHTML += `
-            <div class="collection-card">
-                <div class="collection-thumbnail">
-                    <img src="images/neo-classic.avif">
-                </div>
-                <div class="card-content">
-                    <h3 class="card-title">${cat.nazwa}</h3>
-                    <p class="card-subtitle">${cat.opis || ""}</p>
-                    <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-                </div>
+    grid.innerHTML = "";
+    extraGrid.innerHTML = "";
+
+    const pierwsze3 = categories.slice(0, 3);
+    const pozostale = categories.slice(3);
+
+    // --- 3 pierwsze kategorie ---
+    pierwsze3.forEach(cat => {
+        grid.innerHTML += `
+        <div class="collection-card">
+            <div class="collection-thumbnail">
+                <img src="images/neo-classic.avif">
             </div>
-            `;
-        });
+            <div class="card-content">
+                <h3 class="card-title">${cat.nazwa}</h3>
+                <p class="card-subtitle">${cat.opis || ""}</p>
+                <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+            </div>
+        </div>`;
+    });
 
-grid.innerHTML += `
+    // --- karta rozwijania ---
+    grid.innerHTML += `
     <div class="collection-card" id="expandCard" style="cursor:pointer;">
         <div class="collection-thumbnail">
             <img src="images/neo-classic.avif">
@@ -224,104 +220,50 @@ grid.innerHTML += `
             <h3 class="card-title" id="expandLabel">Rozwiń wszystkie kategorie ↓</h3>
             <p class="card-subtitle">Kliknij, aby zobaczyć więcej</p>
         </div>
-    </div>
+    </div>`;
 
-  <div id="extraCategories" class="grid" style="display:none; margin-top:20px;"></div>
-`;
+    // --- ukryte kategorie ---
+    extraGrid.classList.add("grid");
+    extraGrid.style.display = "none";
 
-        // --- LISTA POZOSTAŁYCH KATEGORII ---
-const extraBox = document.getElementById("extraCategories");
-const expandCard = document.getElementById("expandCard");
-const expandLabel = document.getElementById("expandLabel");
-
-const pozostale = categories.slice(3);
-
-// generujemy karty 1:1 jak pozostałe
-extraBox.innerHTML = pozostale.map(cat => `
-    <div class="collection-card">
-        <div class="collection-thumbnail">
-            <img src="images/neo-classic.avif">
+    extraGrid.innerHTML = pozostale.map(cat => `
+        <div class="collection-card">
+            <div class="collection-thumbnail">
+                <img src="images/neo-classic.avif">
+            </div>
+            <div class="card-content">
+                <h3 class="card-title">${cat.nazwa}</h3>
+                <p class="card-subtitle">${cat.opis || ""}</p>
+                <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+            </div>
         </div>
-        <div class="card-content">
-            <h3 class="card-title">${cat.nazwa}</h3>
-            <p class="card-subtitle">${cat.opis || ""}</p>
-            <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-        </div>
-    </div>
-`).join("");
-// --- ROZWIJANIE / ZWIJANIE ---
-let expanded = false;
+    `).join("");
 
-expandCard.onclick = () => {
-    expanded = !expanded;
+    // --- obsługa rozwijania ---
+    let expanded = false;
 
-    if (expanded) {
-        extraBox.style.display = "grid";
-       extraBox.style.gridTemplateColumns = "repeat(4, minmax(250px, 1fr))";
-        extraBox.style.gap = "20px";
+    document.getElementById("expandCard").onclick = () => {
+        expanded = !expanded;
 
-        expandLabel.textContent = "Zwiń kategorie ↑";
-    } else {
-        extraBox.style.display = "none";
-        expandLabel.textContent = "Rozwiń wszystkie kategorie ↓";
-    }
-};
-    }
+        extraGrid.style.display = expanded ? "grid" : "none";
 
-    // -------------------- START DASHBOARDU --------------------
-    async function initDashboard() {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) return logout();
+        document.getElementById("expandLabel").textContent =
+            expanded ? "Zwiń kategorie ↑" : "Rozwiń wszystkie kategorie ↓";
+    };
+}
 
-        const id = user.id;
+    // -------------------- START --------------------
+async function initDashboard() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) return logout();
 
-        loadStudentInfo(id);
-        loadResults(id);
-        loadCategories();
-    }
+    loadStudentInfo(user.id);
+    loadResults(user.id);
+    loadCategories();
+}
 
-    initDashboard();
+initDashboard();
 </script>
-<style>
-    #extraCategories {
-    position: relative;
-    background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.5s ease;
-    opacity: 0;
-    animation: fadeInUp 0.6s ease forwards;
-    border-radius: 8px;
-    }
-    /* Zabezpieczenie na telefonach */
-    @media (max-width: 1200px) {
-        #extraCategories {
-            grid-template-columns: repeat(3, minmax(250px, 1fr)) !important;
-        }
-    }
-    @media (max-width: 900px) {
-        #extraCategories {
-            grid-template-columns: repeat(2, minmax(250px, 1fr)) !important;
-        }
-    }
-    @media (max-width: 600px) {
-        #extraCategories {
-            grid-template-columns: repeat(1, minmax(250px, 1fr)) !important;
-        }
-    }
-</style>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
