@@ -215,28 +215,30 @@ async function loadResults(userId) {
             `;
         });
 
-       grid.innerHTML += `
-<div class="collection-card" id="expandCard" 
-     style="display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;">
-    <button id="expandButton"
-        style="
-            padding: 15px 25px;
-            font-size: 18px;
-            border-radius: 10px;
-            background:#ff3366;color:white;
-            cursor:pointer;">
-        Rozwiń wszystkie kategorie ↓
-    </button>
-</div>
+grid.innerHTML += `
+    <div class="collection-card" id="expandCard" style="cursor:pointer;">
+        <div class="collection-thumbnail">
+            <img src="images/neo-classic.avif">
+        </div>
+        <div class="card-content">
+            <h3 class="card-title" id="expandLabel">Rozwiń wszystkie kategorie ↓</h3>
+            <p class="card-subtitle">Kliknij, aby zobaczyć więcej</p>
+        </div>
+    </div>
 
-<div id="extraCategories" style="display:none;width:100%;margin-top:20px;"></div>
+    <div id="extraCategories" 
+         style="display:none; width:100%; margin-top:20px; grid-template-columns: repeat(4, 1fr); gap:20px;">
+    </div>
 `;
+
         // --- LISTA POZOSTAŁYCH KATEGORII ---
 const extraBox = document.getElementById("extraCategories");
-const expandBtn = document.getElementById("expandButton");
+const expandCard = document.getElementById("expandCard");
+const expandLabel = document.getElementById("expandLabel");
 
 const pozostale = categories.slice(3);
 
+// generujemy karty 1:1 jak pozostałe
 extraBox.innerHTML = pozostale.map(cat => `
     <div class="collection-card">
         <div class="collection-thumbnail">
@@ -250,24 +252,23 @@ extraBox.innerHTML = pozostale.map(cat => `
     </div>
 `).join("");
 
-// --- OBSŁUGA ROZWIJANIA ---
+// --- ROZWIJANIE / ZWIJANIE ---
 let expanded = false;
 
-expandBtn.onclick = () => {
+expandCard.onclick = () => {
     expanded = !expanded;
 
     if (expanded) {
         extraBox.style.display = "grid";
-        extraBox.style.gridTemplateColumns = "repeat(auto-fit, minmax(250px, 1fr))";
+        extraBox.style.gridTemplateColumns = "repeat(4, minmax(0, 1fr))";
         extraBox.style.gap = "20px";
-        expandBtn.textContent = "Zwiń kategorię ↑";
+
+        expandLabel.textContent = "Zwiń kategorie ↑";
     } else {
         extraBox.style.display = "none";
-        expandBtn.textContent = "Rozwiń wszystkie kategorie ↓";
+        expandLabel.textContent = "Rozwiń wszystkie kategorie ↓";
     }
 };
-
-    }
 
     // -------------------- START DASHBOARDU --------------------
     async function initDashboard() {
@@ -287,6 +288,7 @@ expandBtn.onclick = () => {
 
 </body>
 </html>
+
 
 
 
