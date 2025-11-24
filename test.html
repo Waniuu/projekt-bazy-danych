@@ -95,10 +95,10 @@ async function createTest() {
     const res = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/testy/generuj", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            id_szablonu: katId,
-            liczba_pytan: questionCount
-        })
+    body: JSON.stringify({
+    id_szablonu: 1, // stały szablon albo pobierz z URL
+    liczba_pytan: questionCount
+})
     });
 
     const data = await res.json();
@@ -223,3 +223,4 @@ async function loadQuestions() {
 
 </body>
 </html>
+
