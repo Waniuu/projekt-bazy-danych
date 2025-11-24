@@ -226,9 +226,7 @@ grid.innerHTML += `
         </div>
     </div>
 
-    <div id="extraCategories" 
-         style="display:none; width:100%; margin-top:20px; grid-template-columns: repeat(4, 1fr); gap:20px;">
-    </div>
+  <div id="extraCategories" class="grid" style="display:none; margin-top:20px;"></div>
 `;
 
         // --- LISTA POZOSTAŁYCH KATEGORII ---
@@ -251,7 +249,6 @@ extraBox.innerHTML = pozostale.map(cat => `
         </div>
     </div>
 `).join("");
-
 // --- ROZWIJANIE / ZWIJANIE ---
 let expanded = false;
 
@@ -316,6 +313,7 @@ expandCard.onclick = () => {
 
 </body>
 </html>
+
 
 
 
