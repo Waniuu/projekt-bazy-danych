@@ -44,19 +44,6 @@
             text-align: center;
             margin-bottom: 20px;
         }
-
-        .btn-next {
-            padding: 14px 30px;
-            background: #ff3366;
-            color: white;
-            border: none;
-            font-size: 18px;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        .btn-next:hover { background: #ff5580; }
     </style>
 </head>
 
@@ -75,8 +62,35 @@
 </div>
 
 <script>
-    let id_testu_global = null;
+// -------------------------------------------------
+// GLOBALNE
+// -------------------------------------------------
 
+let id_testu_global = null;
+
+function getParam(name) {
+    return new URLSearchParams(window.location.search).get(name);
+}
+
+function shuffle(arr) {
+    return arr.sort(() => Math.random() - 0.5);
+}
+
+// PARAMETRY TESTU
+const katId = getParam("id");
+const questionCount = Number(getParam("count"));
+const timeMinutes = Number(getParam("time"));
+
+let questions = [];
+let currentIndex = 0;
+let points = 0;
+
+let timerInterval;
+let timeLeft = timeMinutes * 60;
+
+// -------------------------------------------------
+// GENEROWANIE TESTU W BACKENDZIE (OTRZYMANIE id_testu)
+// -------------------------------------------------
 async function createTest() {
     const res = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/testy/generuj", {
         method: "POST",
@@ -91,83 +105,67 @@ async function createTest() {
     id_testu_global = data.id_testu;
 }
 
-    // ---------- FUNKCJE POMOCNICZE ----------
-    function getParam(name) {
-        return new URLSearchParams(window.location.search).get(name);
-    }
+// -------------------------------------------------
+// TIMER
+// -------------------------------------------------
+function startTimer() {
+    timerInterval = setInterval(() => {
+        timeLeft--;
 
-    function shuffle(array) {
-        return array.sort(() => Math.random() - 0.5);
-    }
+        const min = Math.floor(timeLeft / 60);
+        const sec = (timeLeft % 60).toString().padStart(2, "0");
 
-    // ---------- POBIERANIE PARAMETRÓW ----------
-    const katId = getParam("id");
-    const questionCount = Number(getParam("count"));
-    const timeMinutes = Number(getParam("time"));
+        document.getElementById("timer").textContent = `${min}:${sec}`;
 
-    let questions = [];
-    let currentIndex = 0;
-    let points = 0;
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            finishTest();
+        }
+    }, 1000);
+}
 
-    let timerInterval;
-    let timeLeft = timeMinutes * 60;
+// -------------------------------------------------
+// WYŚWIETLANIE PYTANIA
+// -------------------------------------------------
+function showQuestion() {
+    const q = questions[currentIndex];
+    const box = document.getElementById("questionBox");
 
-    // ---------- LICZNIK ----------
-    function startTimer() {
-        timerInterval = setInterval(() => {
-            timeLeft--;
-
-            const min = Math.floor(timeLeft / 60);
-            const sec = timeLeft % 60;
-
-            document.getElementById("timer").textContent =
-                `${min}:${sec.toString().padStart(2, "0")}`;
-
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                finishTest();
-            }
-        }, 1000);
-    }
-
-    // ---------- WYŚWIETLANIE PYTANIA ----------
-    function showQuestion() {
-        const q = questions[currentIndex];
-        const box = document.getElementById("questionBox");
-
-        box.innerHTML = `
+    box.innerHTML = `
         <div class="question-title">Pytanie ${currentIndex + 1}/${questions.length}</div>
         <p>${q.tresc}</p>
 
-        <div class="answer-option" onclick="checkAnswer(1)">A) ${q.odp_a}</div>
-        <div class="answer-option" onclick="checkAnswer(2)">B) ${q.odp_b}</div>
-        <div class="answer-option" onclick="checkAnswer(3)">C) ${q.odp_c}</div>
-        <div class="answer-option" onclick="checkAnswer(4)">D) ${q.odp_d}</div>
+        ${q.odpowiedzi.map((o, idx) => `
+            <div class="answer-option" onclick="checkAnswer(${o.czy_poprawna})">
+                ${String.fromCharCode(65 + idx)}) ${o.tresc_odpowiedzi}
+            </div>
+        `).join("")}
     `;
+}
+
+// -------------------------------------------------
+// SPRAWDZANIE ODPOWIEDZI
+// -------------------------------------------------
+function checkAnswer(isCorrect) {
+    if (isCorrect === 1) points++;
+
+    currentIndex++;
+
+    if (currentIndex < questions.length) {
+        showQuestion();
+    } else {
+        finishTest();
     }
+}
 
-    // ---------- SPRAWDZANIE ODPOWIEDZI ----------
-    function checkAnswer(selected) {
-        const correct = questions[currentIndex].poprawna;
-
-        if (selected === correct) points++;
-
-        currentIndex++;
-
-        if (currentIndex < questions.length) {
-            showQuestion();
-        } else {
-            finishTest();
-        }
-    }
-
-    // ---------- ZAKOŃCZENIE TESTU ----------
-   async function finishTest() {
+// -------------------------------------------------
+// ZAKOŃCZENIE TESTU – zapis wyniku
+// -------------------------------------------------
+async function finishTest() {
     clearInterval(timerInterval);
 
     const score = points;
     const total = questions.length;
-
     const user = JSON.parse(localStorage.getItem("user"));
 
     await fetch("https://projekt-bazy-danych-backend.onrender.com/api/zapisz-wynik", {
@@ -185,37 +183,43 @@ async function createTest() {
     window.location.href = "dashboard_student.html";
 }
 
+// -------------------------------------------------
+// ŁADOWANIE PYTAŃ + ODPOWIEDZI
+// -------------------------------------------------
+async function loadQuestions() {
+    const res = await fetch(
+        `https://projekt-bazy-danych-backend.onrender.com/api/pytania-z-odpowiedziami?id_kategorii=${katId}`
+    );
 
-    // ---------- ŁADOWANIE PYTAŃ ----------
-    async function loadQuestions() {
-        const res = await fetch(
-            `https://projekt-bazy-danych-backend.onrender.com/api/pytania?id_kategorii=${katId}`
-        );
-        let data = await res.json();
+    const data = await res.json();
 
-        // API zwraca NAPISY zamiast liczb -> poprawiamy:
-        data = data.map(q => ({
-            ...q,
-            poprawna: Number(q.poprawna)
-        }));
-
-        if (!data.length) {
-            document.getElementById("questionBox").innerHTML =
-                "<p>Brak pytań w tej kategorii!</p>";
-            return;
-        }
-
-        questions = shuffle(data).slice(0, questionCount);
-
-        showQuestion();
-        startTimer();
+    if (!data.length) {
+        document.getElementById("questionBox").innerHTML =
+            "<p>Brak pytań w tej kategorii!</p>";
+        return;
     }
 
-    loadQuestions();
+    // Losowanie pytań
+    questions = shuffle(data).slice(0, questionCount);
+
+    // Losowanie kolejności odpowiedzi
+    questions = questions.map(q => ({
+        ...q,
+        odpowiedzi: shuffle(q.odpowiedzi)
+    }));
+
+    showQuestion();
+    startTimer();
+}
+
+// -------------------------------------------------
+// START TESTU
+// -------------------------------------------------
+(async function init() {
+    await createTest();  // MUSI być jako pierwsze
+    await loadQuestions();
+})();
 </script>
 
 </body>
 </html>
-
-
-
