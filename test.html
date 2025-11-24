@@ -75,6 +75,22 @@
 </div>
 
 <script>
+    let id_testu_global = null;
+
+async function createTest() {
+    const res = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/testy/generuj", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            id_szablonu: katId,
+            liczba_pytan: questionCount
+        })
+    });
+
+    const data = await res.json();
+    id_testu_global = data.id_testu;
+}
+
     // ---------- FUNKCJE POMOCNICZE ----------
     function getParam(name) {
         return new URLSearchParams(window.location.search).get(name);
@@ -202,4 +218,5 @@
 
 </body>
 </html>
+
 
