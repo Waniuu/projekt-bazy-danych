@@ -118,44 +118,55 @@
     }
 
     // -------------------- ŁADOWANIE WYNIKÓW + SORTOWANIE WG KATEGORII --------------------
-    async function loadResults(userId) {
-        const wyniki = await fetch(`https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`);
-        if (!res.ok) {
-    console.error("Błąd pobierania użytkownika:", res.status);
-    logout();
-    return;
-}
+async function loadResults(userId) {
+    const wynikiDiv = document.getElementById("wynikiContainer");
 
-const data = await res.json();
+    let response;
+    try {
+        response = await fetch(
+            `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
+        );
+    } catch (err) {
+        wynikiDiv.innerHTML = "<p>Błąd połączenia z serwerem.</p>";
+        return;
+    }
 
-        const wynikiDiv = document.getElementById("wynikiContainer");
-        wynikiDiv.innerHTML = "";
+    // POPRAWKA: tu używamy response, a nie res
+    if (!response.ok) {
+        wynikiDiv.innerHTML = "<p>Nie udało się załadować wyników.</p>";
+        console.error("Błąd HTTP:", response.status);
+        return;
+    }
 
-        if (!wyniki.length) {
-            wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
-            return;
-        }
+    const wyniki = await response.json();
 
-        // SORTOWANIE WG NAZWY KATEGORII (nazwa_testu)
-        wyniki.sort((a, b) => a.nazwa_testu.localeCompare(b.nazwa_testu));
+    wynikiDiv.innerHTML = "";
 
-        // GRUPOWANIE WG KATEGORII
-        const grupy = {};
-        for (const w of wyniki) {
-            if (!grupy[w.nazwa_testu]) grupy[w.nazwa_testu] = [];
-            grupy[w.nazwa_testu].push(w);
-        }
+    if (!wyniki.length) {
+        wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
+        return;
+    }
 
-        // GENEROWANIE HTML
-        for (const [kategoria, lista] of Object.entries(grupy)) {
+    // SORTOWANIE WG NAZWY KATEGORII
+    wyniki.sort((a, b) => a.nazwa_testu.localeCompare(b.nazwa_testu));
+
+    // GRUPOWANIE WG KATEGORII
+    const grupy = {};
+    for (const w of wyniki) {
+        if (!grupy[w.nazwa_testu]) grupy[w.nazwa_testu] = [];
+        grupy[w.nazwa_testu].push(w);
+    }
+
+    // GENEROWANIE HTML
+    for (const [kategoria, lista] of Object.entries(grupy)) {
+        wynikiDiv.innerHTML += `
+            <h3 style="margin-top:20px;color:#ff3366;border-bottom:1px solid #ff336666;padding-bottom:5px;">
+                ${kategoria}
+            </h3>
+        `;
+
+        lista.forEach(w => {
             wynikiDiv.innerHTML += `
-                <h3 style="margin-top:20px;color:#ff3366;border-bottom:1px solid #ff336666;padding-bottom:5px;">
-                    ${kategoria}
-                </h3>
-            `;
-
-            lista.forEach(w => {
-                wynikiDiv.innerHTML += `
                 <div class="testimonial-card">
                     <div class="testimonial-rating">⭐ ${w.ocena}</div>
                     <div class="testimonial-quote">
@@ -164,10 +175,10 @@ const data = await res.json();
                         Data: ${w.data}
                     </div>
                 </div>
-                `;
-            });
-        }
+            `;
+        });
     }
+}
 
     // -------------------- KATEGORIE (3 + ROZWIJANIE) --------------------
     async function loadCategories() {
@@ -221,6 +232,7 @@ const data = await res.json();
 
 </body>
 </html>
+
 
 
 
