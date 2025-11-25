@@ -6,6 +6,78 @@
     <title>Panel Studenta</title>
     <link rel="stylesheet" href="templatemo-noir-fashion.css">
 </head>
+<style>
+/* KARTA DANYCH STUDENTA */
+.student-info-card {
+    background: rgba(255,255,255,0.08);
+    padding: 25px;
+    border-radius: 18px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.4);
+    transition: .3s;
+}
+.student-info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(0,0,0,0.45);
+}
+.student-info-card h3 {
+    margin-bottom: 15px;
+    color: #ff3366;
+    border-bottom: 1px solid #ff336655;
+    padding-bottom: 6px;
+    font-size: 22px;
+}
+
+/* OSTATNIE WYNIKI – GRID */
+#wynikiContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+/* KARTA WYNIKU */
+.result-card {
+    background: rgba(255,255,255,0.06);
+    padding: 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    transition: .3s;
+    backdrop-filter: blur(6px);
+}
+.result-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 25px rgba(0,0,0,0.45);
+}
+
+.result-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ff3366;
+    margin-bottom: 10px;
+}
+
+.result-line {
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+.result-points {
+    color: #ff3366;
+    font-weight: bold;
+}
+
+.kategoria-naglowek {
+    width: 100%;
+    grid-column: 1/-1;
+    margin-top: 25px;
+    color: #ff3366;
+    font-size: 22px;
+    font-weight: bold;
+    border-bottom: 1px solid #ff336666;
+    padding-bottom: 5px;
+}
+</style>
 
 <body>
 <nav id="navbar">
@@ -162,24 +234,26 @@ async function loadResults(userId) {
         grupy[w.nazwa_testu].push(w);
     });
 
-    for (const [kat, lista] of Object.entries(grupy)) {
-        wynikiDiv.innerHTML += `
-        <h3 style="color:#ff3366;margin-top:20px;border-bottom:1px solid #ff336666;padding-bottom:5px;">
-            ${kat}
-        </h3>`;
+for (const [kat, lista] of Object.entries(grupy)) {
 
-        lista.forEach(w => {
-            wynikiDiv.innerHTML += `
-                <div class="testimonial-card">
-                    <div class="testimonial-rating">⭐ ${w.ocena}</div>
-                    <div class="testimonial-quote">
-                        <b>${w.nazwa_testu}</b><br>
-                        Punkty: <span style="color:#ff3366;">${w.liczba_punktow}</span><br>
-                        Data: ${w.data}
-                    </div>
-                </div>`;
-        });
-    }
+    wynikiDiv.innerHTML += `
+        <div class="kategoria-naglowek">${kat}</div>
+    `;
+
+    lista.forEach(w => {
+        wynikiDiv.innerHTML += `
+            <div class="result-card">
+                <div class="result-title">${w.nazwa_testu}</div>
+                <div class="result-line">Ocena: ⭐ ${w.ocena}</div>
+                <div class="result-line">Punkty: 
+                    <span class="result-points">${w.liczba_punktow}</span>
+                </div>
+                <div class="result-line">Data: ${w.data}</div>
+            </div>
+        `;
+    });
+}
+
 }
 
 // -----------------------------------------
@@ -268,3 +342,4 @@ initDashboard();
 
 </body>
 </html>
+
