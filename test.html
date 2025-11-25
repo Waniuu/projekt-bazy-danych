@@ -96,8 +96,9 @@ async function createTest() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
    body: JSON.stringify({
-     id_szablonu: 1,
-    liczba_pytan: questionCount
+     id_szablonu: Number(katId),
+     liczba_pytan: questionCount
+})
 })
     });
 
@@ -239,3 +240,4 @@ async function loadQuestions() {
 
 </body>
 </html>
+
