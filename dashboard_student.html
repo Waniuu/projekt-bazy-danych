@@ -320,7 +320,7 @@ for (const [kat, lista] of Object.entries(grupy)) {
         `;
     });
 }
-
+updateStats(wyniki);
 }
 function updateStats(wyniki) {
     if (!wyniki.length) return;
@@ -467,7 +467,6 @@ async function initDashboard() {
     loadStudentInfo(user.id);
     loadResults(user.id);
     loadCategories();
-    updateStats(wyniki);
 
 }
 
@@ -476,5 +475,6 @@ initDashboard();
 
 </body>
 </html>
+
 
 
