@@ -1,134 +1,160 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Panel Studenta</title>
     <link rel="stylesheet" href="templatemo-noir-fashion.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <style>
+    /* --- Ogólne poprawki i layout podobny do index.html featured-hero --- */
+    .featured-hero {
+        display: grid;
+        grid-template-columns: 1fr 420px;
+        gap: 36px;
+        align-items: start;
+    }
+
+    @media (max-width: 980px) {
+        .featured-hero {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* KARTA DANYCH STUDENTA */
+    .student-info-card {
+        background: rgba(255,255,255,0.08);
+        padding: 25px;
+        border-radius: 18px;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.15);
+        box-shadow: 0 4px 18px rgba(0,0,0,0.4);
+        transition: .3s;
+        color: white;
+    }
+    .student-info-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.45);
+    }
+    .student-info-card h3 {
+        margin-bottom: 12px;
+        color: #ff3366;
+        border-bottom: 1px solid #ff336655;
+        padding-bottom: 6px;
+        font-size: 20px;
+    }
+
+    /* OSTATNIE WYNIKI – GRID (karty po lewej) */
+    #wynikiContainer {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 18px;
+    }
+
+    /* KARTA WYNIKU */
+    .result-card {
+        background: rgba(255,255,255,0.06);
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.08);
+        color: white;
+        transition: .22s;
+        backdrop-filter: blur(6px);
+    }
+    .result-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+    }
+
+    .result-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #ff3366;
+        margin-bottom: 8px;
+    }
+
+    .result-line {
+        margin-bottom: 6px;
+        font-size: 14px;
+        color: #e9e9e9;
+    }
+    .result-points { color: #ff3366; font-weight: 700; }
+
+    .kategoria-naglowek {
+        width: 100%;
+        grid-column: 1/-1;
+        margin-top: 10px;
+        color: #ff3366;
+        font-size: 18px;
+        font-weight: 700;
+        border-bottom: 1px solid #ff336666;
+        padding-bottom: 6px;
+    }
+
+    /* --- Panel statystyk (po prawej) --- */
+    .featured-image-section {
+        display: flex;
+        justify-content: center;
+    }
+
+    .featured-image-grid {
+        width: 100%;
+        max-width: 420px;
+    }
+
+    .stats-panel {
+        background: rgba(255,255,255,0.06);
+        border-radius: 16px;
+        padding: 18px;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 6px 22px rgba(0,0,0,0.35);
+        color: white;
+    }
+
+    .stats-title {
+        color: #ff3366;
+        font-size: 18px;
+        margin-bottom: 8px;
+        font-weight: 700;
+    }
+
+    .progress-bar-bg {
+        width: 100%;
+        height: 16px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.12);
+        overflow: hidden;
+        margin-top: 8px;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ff3366 0%, #ff6699 100%);
+        width: 0%;
+        border-radius: 10px;
+        transition: width .8s cubic-bezier(.2,.9,.3,1);
+    }
+
+    .rank-list { margin-top: 10px; }
+    .rank-item {
+        margin-bottom: 8px;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .rank-item .pos { width: 22px; display:inline-block; color:#ffd6e3; font-weight:700; }
+
+    .canvas-container { margin-top: 14px; width:100%; height:180px; }
+    canvas#resultsChart { width:100% !important; height:180px !important; }
+
+    /* drobne elementy */
+    .label { color:#ff9ab7; font-weight:700; font-size:13px; }
+    h2 { margin-top: 6px; color: #fff; }
+    p.section-subtitle { color: #dcdcdc; margin-bottom: 14px; }
+    </style>
 </head>
-<style>
-/* KARTA DANYCH STUDENTA */
-.student-info-card {
-    background: rgba(255,255,255,0.08);
-    padding: 25px;
-    border-radius: 18px;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.15);
-    box-shadow: 0 4px 18px rgba(0,0,0,0.4);
-    transition: .3s;
-}
-.student-info-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 25px rgba(0,0,0,0.45);
-}
-.student-info-card h3 {
-    margin-bottom: 15px;
-    color: #ff3366;
-    border-bottom: 1px solid #ff336655;
-    padding-bottom: 6px;
-    font-size: 22px;
-}
-
-/* OSTATNIE WYNIKI – GRID */
-#wynikiContainer {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 20px;
-}
-
-/* KARTA WYNIKU */
-.result-card {
-    background: rgba(255,255,255,0.06);
-    padding: 18px;
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.1);
-    color: white;
-    transition: .3s;
-    backdrop-filter: blur(6px);
-}
-.result-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 25px rgba(0,0,0,0.45);
-}
-
-.result-title {
-    font-size: 18px;
-    font-weight: bold;
-    color: #ff3366;
-    margin-bottom: 10px;
-}
-
-.result-line {
-    margin-bottom: 4px;
-    font-size: 14px;
-}
-.result-points {
-    color: #ff3366;
-    font-weight: bold;
-}
-
-.kategoria-naglowek {
-    width: 100%;
-    grid-column: 1/-1;
-    margin-top: 25px;
-    color: #ff3366;
-    font-size: 22px;
-    font-weight: bold;
-    border-bottom: 1px solid #ff336666;
-    padding-bottom: 5px;
-}<style>
-.stats-panel {
-    background: rgba(255,255,255,0.06);
-    padding: 20px;
-    border-radius: 18px;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.12);
-    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
-    color: white;
-}
-
-.stats-title {
-    color: #ff3366;
-    font-size: 22px;
-    margin-bottom: 10px;
-}
-
-.progress-bar-bg {
-    width: 100%;
-    height: 16px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.2);
-    overflow: hidden;
-    margin-top: 10px;
-}
-.progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(to right, #ff3366, #ff6699);
-    width: 0%;
-    border-radius: 10px;
-    transition: width .6s ease;
-}
-
-.rank-list {
-    margin-top: 10px;
-}
-.rank-item {
-    margin-bottom: 6px;
-    font-size: 15px;
-    display: flex;
-    justify-content: space-between;
-}
-
-.canvas-container {
-    margin-top: 18px;
-    width: 100%;
-}
-</style>
-
-</style>
-
 <body>
 <nav id="navbar">
     <div class="nav-container">
@@ -156,7 +182,6 @@
 <section class="hero">
     <div class="hero-bg"></div>
     <div class="hero-container">
-
         <div class="hero-left">
             <h1 class="hero-title">
                 <span class="line"><span><span class="accent">Twoje</span></span></span>
@@ -166,20 +191,15 @@
         </div>
 
         <div class="hero-right">
-            <div class="student-info-card"
-                 style="background:rgba(255,255,255,0.08);padding:20px;border-radius:15px;backdrop-filter:blur(5px);margin-bottom:20px;color:white;">
-
+            <div class="student-info-card">
                 <h3>Twoje dane</h3>
-
-                <p><b>Imię:</b> <span id="studentImie"></span></p>
-                <p><b>Nazwisko:</b> <span id="studentNazwisko"></span></p>
-                <p><b>Email:</b> <span id="studentEmail"></span></p>
-                <p><b>Numer indeksu:</b> <span id="studentIndeks"></span></p>
-                <p><b>Średnia ocen:</b> <span id="studentSrednia" style="color:#ff3366;font-weight:bold;"></span></p>
-
+                <p><b>Imię:</b> <span id="studentImie">—</span></p>
+                <p><b>Nazwisko:</b> <span id="studentNazwisko">—</span></p>
+                <p><b>Email:</b> <span id="studentEmail">—</span></p>
+                <p><b>Numer indeksu:</b> <span id="studentIndeks">—</span></p>
+                <p><b>Średnia ocen:</b> <span id="studentSrednia" style="color:#ff3366;font-weight:700;">—</span></p>
             </div>
         </div>
-
     </div>
 </section>
 
@@ -190,284 +210,364 @@
     </div>
 
     <div class="grid" id="collectionsGrid"></div>
-
     <div class="grid" id="extraCategories" style="display:none;margin-top:20px;"></div>
 </section>
 
 <section class="featured">
     <div class="featured-container">
+        <!-- Tutaj układ identyczny do index.html featured-hero -->
         <div class="featured-hero">
+
+            <!-- LEWA: wyniki -->
             <div class="featured-content">
                 <span class="label">Ucz się bez limitu</span>
                 <h2>Ostatnie wyniki</h2>
-                <p>Historia twoich testów</p>
+                <p class="section-subtitle">Historia twoich testów</p>
 
-                <div class="testimonials">
-                    <div class="testimonials-grid" id="wynikiContainer">Ładowanie wyników...</div>
-                    <div class="stats-panel" id="statsPanel">
-
-    <div class="stats-title">Progres nauki</div>
-    <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="progressFill"></div>
-    </div>
-
-    <div class="stats-title" style="margin-top:20px;">Ranking kategorii</div>
-    <div class="rank-list" id="rankList">Ładowanie...</div>
-
-    <div class="stats-title" style="margin-top:20px;">Wykres wyników</div>
-    <div class="canvas-container">
-        <canvas id="resultsChart"></canvas>
-    </div>
-
-</div>
-
+                <div id="wynikiWrapper">
+                    <div id="wynikiContainer">Ładowanie wyników...</div>
                 </div>
-
             </div>
-        </div>
+
+            <!-- PRAWA: panel (zamiast grafiki) -->
+            <div class="featured-image-section">
+                <div class="featured-image-grid">
+                    <div class="stats-panel" id="statsPanel">
+                        <div class="stats-title">Progres nauki</div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+                        </div>
+
+                        <div class="stats-title" style="margin-top:16px;">Ranking kategorii</div>
+                        <div class="rank-list" id="rankList">Brak danych</div>
+
+                        <div class="stats-title" style="margin-top:16px;">Wykres wyników</div>
+                        <div class="canvas-container">
+                            <canvas id="resultsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- /featured-hero -->
     </div>
 </section>
 
 <script>
-// -----------------------------------------
-// NORMALIZACJA NAZWY KATEGORII → PLIK PNG
-// -----------------------------------------
+/* -------------------------
+   Utility / helpers
+   ------------------------- */
 function normalizeName(name) {
     return name
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")  // usuwa ogonki
-        .replaceAll(" ", "_");           // spacje → _
+        .replace(/[\u0300-\u036f]/g, "")
+        .replaceAll(" ", "_");
 }
 
-// -----------------------------------------
 function logout() {
     localStorage.removeItem("user");
     window.location.href = "logowanie.html";
 }
 
-// -----------------------------------------
+/* -------------------------
+   Pobieranie i wypełnianie danych studenta
+   ------------------------- */
 async function loadStudentInfo(userId) {
-    const data = await fetch(
-        `https://projekt-bazy-danych-backend.onrender.com/api/uzytkownicy/${userId}`
-    ).then(r => r.json());
+    try {
+        const res = await fetch(`https://projekt-bazy-danych-backend.onrender.com/api/uzytkownicy/${userId}`);
+        if (!res.ok) throw new Error("Błąd pobierania danych studenta");
+        const data = await res.json();
 
-    document.getElementById("studentImie").textContent = data.imie;
-    document.getElementById("studentNazwisko").textContent = data.nazwisko;
-    document.getElementById("studentEmail").textContent = data.email;
-    document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
-
-    const wyniki = await fetch(
-        `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
-    ).then(r => r.json());
-
-    if (!wyniki.length) {
-        document.getElementById("studentSrednia").textContent = "Brak danych";
-        return;
+        document.getElementById("studentImie").textContent = data.imie || "—";
+        document.getElementById("studentNazwisko").textContent = data.nazwisko || "—";
+        document.getElementById("studentEmail").textContent = data.email || "—";
+        document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
+    } catch (e) {
+        console.warn(e);
     }
-
-    const oceny = wyniki.map(w => Number(w.ocena)).filter(n => !isNaN(n));
-    if (!oceny.length) return (document.getElementById("studentSrednia").textContent = "Brak danych");
-
-    const avg = oceny.reduce((a,b)=>a+b,0) / oceny.length;
-    document.getElementById("studentSrednia").textContent = avg.toFixed(2);
 }
 
-// -----------------------------------------
-async function loadResults(userId) {
-    let response = await fetch(
-        `https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`
-    );
+/* -------------------------
+   Wyniki, grupowanie, rendering kart i statystyk
+   ------------------------- */
 
-    const wynikiDiv = document.getElementById("wynikiContainer");
+let resultsChartInstance = null;
 
-    if (!response.ok) {
-        wynikiDiv.innerHTML = "<p>Błąd ładowania wyników.</p>";
-        return;
+function clearStats() {
+    document.getElementById("progressFill").style.width = "0%";
+    document.getElementById("rankList").innerHTML = "Brak danych";
+    if (resultsChartInstance) {
+        try { resultsChartInstance.destroy(); } catch(e) {}
+        resultsChartInstance = null;
     }
+}
 
-    const wyniki = await response.json();
+function renderResultsCards(wyniki) {
+    const wynikiDiv = document.getElementById("wynikiContainer");
     wynikiDiv.innerHTML = "";
 
-    if (!wyniki.length) {
+    if (!wyniki || !wyniki.length) {
         wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
         return;
     }
 
-    wyniki.sort((a,b)=>a.nazwa_testu.localeCompare(b.nazwa_testu));
-
+    // grupuj według nazwy testu (kategorii widocznej w twoich danych)
     const grupy = {};
     wyniki.forEach(w => {
-        if (!grupy[w.nazwa_testu]) grupy[w.nazwa_testu] = [];
-        grupy[w.nazwa_testu].push(w);
+        const key = w.nazwa_testu || "Inne";
+        if (!grupy[key]) grupy[key] = [];
+        grupy[key].push(w);
     });
 
-for (const [kat, lista] of Object.entries(grupy)) {
+    // sortuj kategorie alfabetycznie
+    const sortedKeys = Object.keys(grupy).sort((a,b)=> a.localeCompare(b,'pl'));
 
-    wynikiDiv.innerHTML += `
-        <div class="kategoria-naglowek">${kat}</div>
-    `;
+    sortedKeys.forEach(kat => {
+        wynikiDiv.insertAdjacentHTML('beforeend', `<div class="kategoria-naglowek">${kat}</div>`);
+        grupy[kat].forEach(w => {
+            const dataDisplay = w.data || "";
+            const ocena = (w.ocena !== undefined && w.ocena !== null) ? w.ocena : "—";
+            const pkt = (w.liczba_punktow !== undefined && w.liczba_punktow !== null) ? w.liczba_punktow : "—";
 
-    lista.forEach(w => {
-        wynikiDiv.innerHTML += `
-            <div class="result-card">
-                <div class="result-title">${w.nazwa_testu}</div>
-                <div class="result-line">Ocena: ⭐ ${w.ocena}</div>
-                <div class="result-line">Punkty: 
-                    <span class="result-points">${w.liczba_punktow}</span>
+            wynikiDiv.insertAdjacentHTML('beforeend', `
+                <div class="result-card">
+                    <div class="result-title">${w.nazwa_testu}</div>
+                    <div class="result-line">Ocena: ⭐ ${ocena}</div>
+                    <div class="result-line">Punkty: <span class="result-points">${pkt}</span></div>
+                    <div class="result-line">Data: ${dataDisplay}</div>
                 </div>
-                <div class="result-line">Data: ${w.data}</div>
-            </div>
-        `;
+            `);
+        });
     });
 }
-updateStats(wyniki);
-}
+
 function updateStats(wyniki) {
-    if (!wyniki.length) return;
+    // zabezpieczenia
+    if (!wyniki || !wyniki.length) {
+        clearStats();
+        return;
+    }
 
-    // =============================
-    // PROGRES – na podstawie średniej %
-    // =============================
-    const oceny = wyniki.map(w => Number(w.ocena));
-    let avg = oceny.reduce((a,b)=>a+b,0) / oceny.length;
-    document.getElementById("progressFill").style.width = (avg*10) + "%";
+    // OCENY jako liczby
+    const oceny = wyniki.map(w => Number(w.ocena)).filter(n => !isNaN(n));
+    if (!oceny.length) {
+        clearStats();
+        return;
+    }
 
-    // =============================
-    // RANKING KATEGORII
-    // =============================
-    let kategorie = {};
+    // średnia (0-100 zakładam że ocena jest w skali 0-10 lub 0-100; aby zrobić pasek jako procent,
+    // spróbujemy wykryć skalę: jeśli max oceny <= 10 użyjemy *10, jeśli max>10 przyjmujemy max jako 100)
+    const maxOcena = Math.max(...oceny);
+    const avgRaw = oceny.reduce((a,b)=>a+b,0) / oceny.length;
+    let avgPercent = 0;
+    if (maxOcena <= 10) {
+        avgPercent = (avgRaw / 10) * 100;
+    } else if (maxOcena <= 100) {
+        avgPercent = avgRaw;
+    } else {
+        // fallback
+        avgPercent = Math.min(100, avgRaw);
+    }
 
+    document.getElementById("progressFill").style.width = `${Math.round(avgPercent)}%`;
+
+    // RANKING KATEGORII (po nazwie_testu)
+    const kategorie = {};
     wyniki.forEach(w => {
-        if (!kategorie[w.nazwa_testu]) kategorie[w.nazwa_testu] = [];
-        kategorie[w.nazwa_testu].push(Number(w.ocena));
+        const key = w.nazwa_testu || "Inne";
+        if (!kategorie[key]) kategorie[key] = [];
+        const val = Number(w.ocena);
+        if (!isNaN(val)) kategorie[key].push(val);
     });
 
-    let ranking = Object.entries(kategorie)
-        .map(([kat, oceny]) => ({
-            kat,
-            avg: oceny.reduce((a,b)=>a+b,0) / oceny.length
-        }))
-        .sort((a,b)=>b.avg - a.avg);
+    const ranking = Object.entries(kategorie)
+        .map(([kat, arr]) => ({ kat, avg: arr.reduce((a,b)=>a+b,0)/arr.length }))
+        .sort((a,b)=> b.avg - a.avg);
 
-    let rankDiv = document.getElementById("rankList");
+    const rankDiv = document.getElementById("rankList");
     rankDiv.innerHTML = "";
-    ranking.forEach((r,i) => {
-        rankDiv.innerHTML += `
-            <div class="rank-item">
-                <span>${i+1}. ${r.kat}</span>
-                <span style="color:#ff3366">${r.avg.toFixed(2)}</span>
-            </div>
-        `;
-    });
+    if (!ranking.length) {
+        rankDiv.textContent = "Brak danych";
+    } else {
+        ranking.forEach((r,i) => {
+            rankDiv.insertAdjacentHTML('beforeend', `
+                <div class="rank-item">
+                    <div><span class="pos">${i+1}.</span> ${r.kat}</div>
+                    <div style="color:#ff3366;font-weight:700">${r.avg.toFixed(1)}</div>
+                </div>
+            `);
+        });
+    }
 
-    // =============================
-    // WYKRES WYNIKÓW
-    // =============================
+    // WYKRES - uporządkuj po dacie (jeśli data parsowalna), inaczej po kolejności
+    let sorted = [...wyniki];
+    if (wyniki.every(w => !isNaN(Date.parse(w.data)))) {
+        sorted.sort((a,b)=> new Date(a.data) - new Date(b.data));
+    }
+
+    const labels = sorted.map(w => w.data || "");
+    const dataPoints = sorted.map(w => Number(w.ocena) || 0);
+
+    // zniszcz poprzedni wykres
+    if (resultsChartInstance) {
+        try { resultsChartInstance.destroy(); } catch(e){ }
+        resultsChartInstance = null;
+    }
+
     const ctx = document.getElementById('resultsChart').getContext('2d');
-    const labels = wyniki.map(w => w.data);
-    const points = wyniki.map(w => Number(w.ocena));
-
-    new Chart(ctx, {
+    resultsChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels,
             datasets: [{
                 label: 'Oceny',
-                data: points,
+                data: dataPoints,
                 borderWidth: 3,
-                tension: 0.3
+                tension: 0.3,
+                fill: false,
+                pointRadius: 4,
+                pointBackgroundColor: '#ff3366',
+                borderColor: '#ff3366'
             }]
         },
         options: {
-            plugins: { legend: { labels: { color:"white" }}},
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: "white" } },
+                tooltip: { mode: 'index', intersect: false }
+            },
             scales: {
-                x: { ticks: { color:"white" }},
-                y: { ticks: { color:"white" }}
+                x: {
+                    ticks: { color: "white", maxRotation: 20, minRotation: 0 },
+                    grid: { color: 'rgba(255,255,255,0.04)' }
+                },
+                y: {
+                    ticks: { color: "white" },
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    beginAtZero: true
+                }
             }
         }
     });
 }
 
-// -----------------------------------------
-async function loadCategories() {
-    const categories = await fetch(
-        "https://projekt-bazy-danych-backend.onrender.com/api/kategorie"
-    ).then(r => r.json());
+/* -------------------------
+   Funkcja ładująca wyniki i wywołująca render + statystyki
+   ------------------------- */
+async function loadResults(userId) {
+    const wynikiDiv = document.getElementById("wynikiContainer");
+    wynikiDiv.innerHTML = "Ładowanie wyników...";
 
-    const grid = document.getElementById("collectionsGrid");
-    const extraGrid = document.getElementById("extraCategories");
+    try {
+        const res = await fetch(`https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`);
+        if (!res.ok) throw new Error("Błąd żądania wyników");
+        const wyniki = await res.json();
 
-    grid.innerHTML = "";
-    extraGrid.innerHTML = "";
+        if (!wyniki || !wyniki.length) {
+            wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
+            clearStats();
+            return;
+        }
 
-    const first3 = categories.slice(0,3);
-    const rest = categories.slice(3);
+        // render karty po lewej
+        renderResultsCards(wyniki);
 
-    // ---- pierwsze 3 kategorie ----
-    first3.forEach(cat => {
-        const imgName = normalizeName(cat.nazwa);
+        // update panelu po prawej
+        updateStats(wyniki);
 
-        grid.innerHTML += `
-        <div class="collection-card">
-            <div class="collection-thumbnail">
-                <img src="images/${imgName}.png" onerror="this.src='images/default.png'">
-            </div>
-            <div class="card-content">
-                <h3 class="card-title">${cat.nazwa}</h3>
-                <p class="card-subtitle">${cat.opis || ""}</p>
-                <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-            </div>
-        </div>`;
-    });
-
-    // ---- karta rozwijania ----
-    grid.innerHTML += `
-    <div class="collection-card" id="expandCard" style="cursor:pointer;">
-        <div class="collection-thumbnail">
-            <img src="images/default.png">
-        </div>
-        <div class="card-content">
-            <h3 class="card-title" id="expandLabel">Rozwiń wszystkie kategorie ↓</h3>
-            <p class="card-subtitle">Kliknij, aby zobaczyć więcej</p>
-        </div>
-    </div>`;
-
-    // ---- ukryte kategorie ----
-    rest.forEach(cat => {
-        const imgName = normalizeName(cat.nazwa);
-
-        extraGrid.innerHTML += `
-        <div class="collection-card">
-            <div class="collection-thumbnail">
-                <img src="images/${imgName}.png" onerror="this.src='images/default.png'">
-            </div>
-            <div class="card-content">
-                <h3 class="card-title">${cat.nazwa}</h3>
-                <p class="card-subtitle">${cat.opis || ""}</p>
-                <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-            </div>
-        </div>`;
-    });
-
-    // ---- obsługa rozwijania ----
-    let expanded = false;
-    document.getElementById("expandCard").onclick = () => {
-        expanded = !expanded;
-        extraGrid.style.display = expanded ? "grid" : "none";
-        document.getElementById("expandLabel").textContent =
-            expanded ? "Zwiń kategorie ↑" : "Rozwiń wszystkie kategorie ↓";
-    };
+    } catch (e) {
+        console.warn(e);
+        wynikiDiv.innerHTML = "<p>Błąd ładowania wyników.</p>";
+        clearStats();
+    }
 }
 
-// -----------------------------------------
+/* -------------------------
+   KATEGORIE (bez zmian, renderuje karty kategorii)
+   ------------------------- */
+async function loadCategories() {
+    try {
+        const categories = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/kategorie").then(r => r.json());
+
+        const grid = document.getElementById("collectionsGrid");
+        const extraGrid = document.getElementById("extraCategories");
+
+        grid.innerHTML = "";
+        extraGrid.innerHTML = "";
+
+        const first3 = categories.slice(0,3);
+        const rest = categories.slice(3);
+
+        first3.forEach(cat => {
+            const imgName = normalizeName(cat.nazwa);
+            grid.insertAdjacentHTML('beforeend', `
+                <div class="collection-card">
+                    <div class="collection-thumbnail">
+                        <img src="images/${imgName}.png" onerror="this.src='images/default.png'">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">${cat.nazwa}</h3>
+                        <p class="card-subtitle">${cat.opis || ""}</p>
+                        <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+                    </div>
+                </div>
+            `);
+        });
+
+        grid.insertAdjacentHTML('beforeend', `
+            <div class="collection-card" id="expandCard" style="cursor:pointer;">
+                <div class="collection-thumbnail"><img src="images/default.png"></div>
+                <div class="card-content">
+                    <h3 class="card-title" id="expandLabel">Rozwiń wszystkie kategorie ↓</h3>
+                    <p class="card-subtitle">Kliknij, aby zobaczyć więcej</p>
+                </div>
+            </div>
+        `);
+
+        rest.forEach(cat => {
+            const imgName = normalizeName(cat.nazwa);
+            extraGrid.insertAdjacentHTML('beforeend', `
+                <div class="collection-card">
+                    <div class="collection-thumbnail">
+                        <img src="images/${imgName}.png" onerror="this.src='images/default.png'">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">${cat.nazwa}</h3>
+                        <p class="card-subtitle">${cat.opis || ""}</p>
+                        <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+                    </div>
+                </div>
+            `);
+        });
+
+        let expanded = false;
+        const expandCard = document.getElementById("expandCard");
+        if (expandCard) {
+            expandCard.onclick = () => {
+                expanded = !expanded;
+                extraGrid.style.display = expanded ? "grid" : "none";
+                document.getElementById("expandLabel").textContent =
+                    expanded ? "Zwiń kategorie ↑" : "Rozwiń wszystkie kategorie ↓";
+            };
+        }
+
+    } catch (e) {
+        console.warn("Błąd ładowania kategorii", e);
+    }
+}
+
+/* -------------------------
+   Inicjalizacja dashboardu
+   ------------------------- */
 async function initDashboard() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return logout();
 
-    loadStudentInfo(user.id);
-    loadResults(user.id);
-    loadCategories();
-
+    const userId = user.id;
+    loadStudentInfo(userId);
+    await loadCategories();
+    await loadResults(userId);
 }
 
 initDashboard();
@@ -475,6 +575,3 @@ initDashboard();
 
 </body>
 </html>
-
-
-
