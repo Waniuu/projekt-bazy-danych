@@ -1,577 +1,378 @@
+
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Panel Studenta</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System generowania testów </title>
     <link rel="stylesheet" href="templatemo-noir-fashion.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <style>
-    /* --- Ogólne poprawki i layout podobny do index.html featured-hero --- */
-    .featured-hero {
-        display: grid;
-        grid-template-columns: 1fr 420px;
-        gap: 36px;
-        align-items: start;
-    }
-
-    @media (max-width: 980px) {
-        .featured-hero {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* KARTA DANYCH STUDENTA */
-    .student-info-card {
-        background: rgba(255,255,255,0.08);
-        padding: 25px;
-        border-radius: 18px;
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255,255,255,0.15);
-        box-shadow: 0 4px 18px rgba(0,0,0,0.4);
-        transition: .3s;
-        color: white;
-    }
-    .student-info-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 25px rgba(0,0,0,0.45);
-    }
-    .student-info-card h3 {
-        margin-bottom: 12px;
-        color: #ff3366;
-        border-bottom: 1px solid #ff336655;
-        padding-bottom: 6px;
-        font-size: 20px;
-    }
-
-    /* OSTATNIE WYNIKI – GRID (karty po lewej) */
-    #wynikiContainer {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 18px;
-    }
-
-    /* KARTA WYNIKU */
-    .result-card {
-        background: rgba(255,255,255,0.06);
-        padding: 14px;
-        border-radius: 14px;
-        border: 1px solid rgba(255,255,255,0.08);
-        color: white;
-        transition: .22s;
-        backdrop-filter: blur(6px);
-    }
-    .result-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.45);
-    }
-
-    .result-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #ff3366;
-        margin-bottom: 8px;
-    }
-
-    .result-line {
-        margin-bottom: 6px;
-        font-size: 14px;
-        color: #e9e9e9;
-    }
-    .result-points { color: #ff3366; font-weight: 700; }
-
-    .kategoria-naglowek {
-        width: 100%;
-        grid-column: 1/-1;
-        margin-top: 10px;
-        color: #ff3366;
-        font-size: 18px;
-        font-weight: 700;
-        border-bottom: 1px solid #ff336666;
-        padding-bottom: 6px;
-    }
-
-    /* --- Panel statystyk (po prawej) --- */
-    .featured-image-section {
-        display: flex;
-        justify-content: center;
-    }
-
-    .featured-image-grid {
-        width: 100%;
-        max-width: 420px;
-    }
-
-    .stats-panel {
-        background: rgba(255,255,255,0.06);
-        border-radius: 16px;
-        padding: 18px;
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255,255,255,0.12);
-        box-shadow: 0 6px 22px rgba(0,0,0,0.35);
-        color: white;
-    }
-
-    .stats-title {
-        color: #ff3366;
-        font-size: 18px;
-        margin-bottom: 8px;
-        font-weight: 700;
-    }
-
-    .progress-bar-bg {
-        width: 100%;
-        height: 16px;
-        border-radius: 10px;
-        background: rgba(255,255,255,0.12);
-        overflow: hidden;
-        margin-top: 8px;
-    }
-    .progress-bar-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #ff3366 0%, #ff6699 100%);
-        width: 0%;
-        border-radius: 10px;
-        transition: width .8s cubic-bezier(.2,.9,.3,1);
-    }
-
-    .rank-list { margin-top: 10px; }
-    .rank-item {
-        margin-bottom: 8px;
-        font-size: 14px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .rank-item .pos { width: 22px; display:inline-block; color:#ffd6e3; font-weight:700; }
-
-    .canvas-container { margin-top: 14px; width:100%; height:180px; }
-    canvas#resultsChart { width:100% !important; height:180px !important; }
-
-    /* drobne elementy */
-    .label { color:#ff9ab7; font-weight:700; font-size:13px; }
-    h2 { margin-top: 6px; color: #fff; }
-    p.section-subtitle { color: #dcdcdc; margin-bottom: 14px; }
-    </style>
 </head>
 <body>
 <nav id="navbar">
     <div class="nav-container">
-        <a href="index.html" class="logo-link">
-            <svg class="logo-svg" viewBox="0 0 100 100">
+        <a href="#home" class="logo-link">
+            <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#fff" />
-                        <stop offset="100%" style="stop-color:#ff3366" />
+                        <stop offset="0%" style="stop-color:#fff;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ff3366;stop-opacity:1" />
                     </linearGradient>
                 </defs>
                 <polygon points="50,10 20,50 50,90 80,50" fill="none" stroke="url(#logoGrad)" stroke-width="3"/>
                 <circle cx="50" cy="50" r="5" fill="url(#logoGrad)"/>
             </svg>
-            <span class="logo-text">Panel Studenta</span>
+            <span class="logo-text">System generowania testów</span>
         </a>
-
         <ul class="nav-links">
-            <li><a class="nav-link active">Dashboard</a></li>
-            <li><a class="nav-cta" onclick="logout()">Wyloguj</a></li>
+            <li><a href="#home" class="nav-link active">Home</a></li>
+            <li><a href="#collections" class="nav-link">Kategorie</a></li>
+            <li><a href="#featured" class="nav-link">Plan</a></li>
+            <li><a href="#contact" class="nav-link">Kontakt</a></li>
+            <li><a href="logowanie.html" class="nav-cta">Zaloguj się</a></li>
         </ul>
+        <div class="menu-toggle" id="menuToggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
     </div>
 </nav>
 
-<section class="hero">
+<div class="mobile-nav" id="mobileNav">
+    <ul class="mobile-nav-links">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#collections">Kategorie</a></li>
+        <li><a href="#featured">Featured</a></li>
+        <li><a href="#contact">Kontakt</a></li>
+    </ul>
+</div>
+
+<section class="hero" id="home">
     <div class="hero-bg"></div>
     <div class="hero-container">
         <div class="hero-left">
+            <div class="hero-badge">Promocja na 2025 do -50%</div>
             <h1 class="hero-title">
-                <span class="line"><span><span class="accent">Twoje</span></span></span>
-                <span class="line"><span>testy</span></span>
+                <span class="line"><span><span class="accent">Perfekcyjna</span></span></span>
+                <span class="line"><span>strona</span></span>
+                <span class="line"><span>do nauki</span></span>
             </h1>
-            <p class="hero-description">Masz wszystko pod ręką</p>
+            <p class="hero-description">
+                Naszym celem jest ułatwienie nauki poprzez interaktywne testy, natychmiastową informację zwrotną i dostępność materiałów w dowolnym miejscu i czasie.
+            </p>
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-number">500+</span>
+                    <span class="stat-label">Eklsuzywnych pytań</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">24h</span>
+                    <span class="stat-label">Dostęp do strony całą dobę</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">Wiarygodnosci</span>
+                </div>
+            </div>
+            <div class="cta-group">
+                <a href="#collections" class="cta-button primary">Przejżyj pytania </a>
+                <a href="#featured" class="cta-button outline">Zasubskrbuj</a>
+            </div>
         </div>
-
         <div class="hero-right">
-            <div class="student-info-card">
-                <h3>Twoje dane</h3>
-                <p><b>Imię:</b> <span id="studentImie">—</span></p>
-                <p><b>Nazwisko:</b> <span id="studentNazwisko">—</span></p>
-                <p><b>Email:</b> <span id="studentEmail">—</span></p>
-                <p><b>Numer indeksu:</b> <span id="studentIndeks">—</span></p>
-                <p><b>Średnia ocen:</b> <span id="studentSrednia" style="color:#ff3366;font-weight:700;">—</span></p>
+            <div class="hero-image-wrapper">
+                <div class="hero-carousel">
+                    <div class="carousel-slide active">
+                        <img src="images/noir-fashion-hero-01.avif" alt="Fashion Model 1">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="images/noir-fashion-hero-02.avif" alt="Fashion Model 2">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="images/noir-fashion-hero-03.avif" alt="Fashion Model 3">
+                    </div>
+                    <div class="carousel-overlay"></div>
+                    <div class="carousel-indicators">
+                        <span class="indicator active" data-slide="0"></span>
+                        <span class="indicator" data-slide="1"></span>
+                        <span class="indicator" data-slide="2"></span>
+                    </div>
+                </div>
+                <div class="floating-tags">
+                    <div class="tag">Nowe na rynku</div>
+                    <div class="tag">Handcrafted</div>
+                    <div class="tag">Premium Quality</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="scroll-indicator">
+        <span></span>
+    </div>
+</section>
+
+<section class="collections" id="collections">
+    <div class="section-header">
+        <h2 class="section-title">Kategorie Pytań</h2>
+        <p class="section-subtitle">Specjalnie przygoptoweane dla ciebie</p>
+    </div>
+
+    <div class="grid" id="collectionsGrid">
+        <div class="collection-card" data-category="women">
+            <div class="collection-thumbnail">
+                <img src="images/urban-edge.avif" alt="Urban Edge Women's Collection">
+            </div>
+            <div class="card-content">
+                <span class="card-badge">New Arrival</span>
+                <h3 class="card-title">Matematyka</h3>
+                <p class="card-subtitle">Statystyka</p>
+                <p class="card-price">From $299</p>
             </div>
         </div>
     </div>
 </section>
 
-<section class="collections">
-    <div class="section-header">
-        <h2 class="section-title">Kategorie testów</h2>
-        <p class="section-subtitle">Wybierz kategorię aby rozpocząć</p>
-    </div>
-
-    <div class="grid" id="collectionsGrid"></div>
-    <div class="grid" id="extraCategories" style="display:none;margin-top:20px;"></div>
-</section>
-
-<section class="featured">
+<section class="featured" id="featured">
     <div class="featured-container">
-        <!-- Tutaj układ identyczny do index.html featured-hero -->
         <div class="featured-hero">
-
-            <!-- LEWA: wyniki -->
             <div class="featured-content">
                 <span class="label">Ucz się bez limitu</span>
-                <h2>Ostatnie wyniki</h2>
-                <p class="section-subtitle">Historia twoich testów</p>
+                <h2>Plan subskrypcji</h2>
+                <p>Platforma powstała z pasji do edukacji i technologii – wierzymy, że nauka może być przyjemna, skuteczna i dopasowana do indywidualnych potrzeb użytkownika.</p>
 
-                <div id="wynikiWrapper">
-                    <div id="wynikiContainer">Ładowanie wyników...</div>
+                <div class="feature-highlights">
+                    <div class="highlight-item">
+                        <div class="highlight-icon">🌱</div>
+                        <div class="highlight-title">Plus</div>
+                        <div class="highlight-desc"><p class="card-price">Już od 9.99zł</p></div>
+                    </div>
+                    <div class="highlight-item">
+                        <div class="highlight-icon">✨</div>
+                        <div class="highlight-title">Pro</div>
+                        <div class="highlight-desc"><p class="card-price">Już od 29.99zł</p></div>
+                    </div>
+                    <div class="highlight-item">
+                        <div class="highlight-icon">👑</div>
+                        <div class="highlight-title">Pro plus</div>
+                        <div class="highlight-desc"><p class="card-price">Już od 49.99zł</p></div>
+                    </div>
                 </div>
+
+                <a href="#collections" class="feature-cta">SUBSKRYBUJ</a>
             </div>
 
-            <!-- PRAWA: panel (zamiast grafiki) -->
             <div class="featured-image-section">
                 <div class="featured-image-grid">
-                    <div class="stats-panel" id="statsPanel">
-                        <div class="stats-title">Progres nauki</div>
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+                    <div class="featured-img">
+                        <img src="images/art-of-fashion-01.avif" alt="Fashion Collection Showcase">
+                    </div>
+                    <div class="featured-img">
+                        <img src="images/art-of-fashion-02.avif" alt="Luxury Fashion Details">
+                    </div>
+                    <div class="featured-img">
+                        <img src="images/art-of-fashion-03.avif" alt="Artisan Craftsmanship">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="testimonials">
+            <div class="testimonials-header">
+                <h3>Opinie użytkowników</h3>
+                <p class="section-subtitle">Co mają do powiedzenia nasi klienci</p>
+            </div>
+
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-rating">★★★★★</div>
+                    <div class="testimonial-quote">
+                        "Tworzenie testów nigdy nie było tak proste."
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">S</div>
+                        <div class="author-info">
+                            <h4> Marcin</h4>
+                            <p>Kraków</p>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="stats-title" style="margin-top:16px;">Ranking kategorii</div>
-                        <div class="rank-list" id="rankList">Brak danych</div>
+                <div class="testimonial-card">
+                    <div class="testimonial-rating">★★★★★</div>
+                    <div class="testimonial-quote">
+                        "Świetna strona do nauki i sprawdzania wiedzy!"
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">M</div>
+                        <div class="author-info">
+                            <h4> Kasia</h4>
+                            <p>Warszawa</p>
+                        </div>
+                    </div>
+                </div>
 
-                        <div class="stats-title" style="margin-top:16px;">Wykres wyników</div>
-                        <div class="canvas-container">
-                            <canvas id="resultsChart"></canvas>
+                <div class="testimonial-card">
+                    <div class="testimonial-rating">★★★★★</div>
+                    <div class="testimonial-quote">
+                        "Uczę się codziennie i widzę realne postępy!"
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">A</div>
+                        <div class="author-info">
+                            <h4>Ola</h4>
+                            <p>Gdańsk</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-        </div> <!-- /featured-hero -->
+        </div>
     </div>
 </section>
 
-<script>
-/* -------------------------
-   Utility / helpers
-   ------------------------- */
-function normalizeName(name) {
-    return name
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replaceAll(" ", "_");
-}
+<section class="contact" id="contact">
+    <div class="contact-container">
+        <div class="contact-header">
+            <h2 class="section-title">Kontakt</h2>
+            <p class="section-subtitle">Masz pytanie? Skontaktuj się z nami a my odpowiemy w ciągu 24h</p>
+        </div>
 
-function logout() {
-    localStorage.removeItem("user");
-    window.location.href = "logowanie.html";
-}
-
-/* -------------------------
-   Pobieranie i wypełnianie danych studenta
-   ------------------------- */
-async function loadStudentInfo(userId) {
-    try {
-        const res = await fetch(`https://projekt-bazy-danych-backend.onrender.com/api/uzytkownicy/${userId}`);
-        if (!res.ok) throw new Error("Błąd pobierania danych studenta");
-        const data = await res.json();
-
-        document.getElementById("studentImie").textContent = data.imie || "—";
-        document.getElementById("studentNazwisko").textContent = data.nazwisko || "—";
-        document.getElementById("studentEmail").textContent = data.email || "—";
-        document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
-    } catch (e) {
-        console.warn(e);
-    }
-}
-
-/* -------------------------
-   Wyniki, grupowanie, rendering kart i statystyk
-   ------------------------- */
-
-let resultsChartInstance = null;
-
-function clearStats() {
-    document.getElementById("progressFill").style.width = "0%";
-    document.getElementById("rankList").innerHTML = "Brak danych";
-    if (resultsChartInstance) {
-        try { resultsChartInstance.destroy(); } catch(e) {}
-        resultsChartInstance = null;
-    }
-}
-
-function renderResultsCards(wyniki) {
-    const wynikiDiv = document.getElementById("wynikiContainer");
-    wynikiDiv.innerHTML = "";
-
-    if (!wyniki || !wyniki.length) {
-        wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
-        return;
-    }
-
-    // grupuj według nazwy testu (kategorii widocznej w twoich danych)
-    const grupy = {};
-    wyniki.forEach(w => {
-        const key = w.nazwa_testu || "Inne";
-        if (!grupy[key]) grupy[key] = [];
-        grupy[key].push(w);
-    });
-
-    // sortuj kategorie alfabetycznie
-    const sortedKeys = Object.keys(grupy).sort((a,b)=> a.localeCompare(b,'pl'));
-
-    sortedKeys.forEach(kat => {
-        wynikiDiv.insertAdjacentHTML('beforeend', `<div class="kategoria-naglowek">${kat}</div>`);
-        grupy[kat].forEach(w => {
-            const dataDisplay = w.data || "";
-            const ocena = (w.ocena !== undefined && w.ocena !== null) ? w.ocena : "—";
-            const pkt = (w.liczba_punktow !== undefined && w.liczba_punktow !== null) ? w.liczba_punktow : "—";
-
-            wynikiDiv.insertAdjacentHTML('beforeend', `
-                <div class="result-card">
-                    <div class="result-title">${w.nazwa_testu}</div>
-                    <div class="result-line">Ocena: ⭐ ${ocena}</div>
-                    <div class="result-line">Punkty: <span class="result-points">${pkt}</span></div>
-                    <div class="result-line">Data: ${dataDisplay}</div>
-                </div>
-            `);
-        });
-    });
-}
-
-function updateStats(wyniki) {
-    // zabezpieczenia
-    if (!wyniki || !wyniki.length) {
-        clearStats();
-        return;
-    }
-
-    // OCENY jako liczby
-    const oceny = wyniki.map(w => Number(w.ocena)).filter(n => !isNaN(n));
-    if (!oceny.length) {
-        clearStats();
-        return;
-    }
-
-    // średnia (0-100 zakładam że ocena jest w skali 0-10 lub 0-100; aby zrobić pasek jako procent,
-    // spróbujemy wykryć skalę: jeśli max oceny <= 10 użyjemy *10, jeśli max>10 przyjmujemy max jako 100)
-    const maxOcena = Math.max(...oceny);
-    const avgRaw = oceny.reduce((a,b)=>a+b,0) / oceny.length;
-    let avgPercent = 0;
-    if (maxOcena <= 10) {
-        avgPercent = (avgRaw / 10) * 100;
-    } else if (maxOcena <= 100) {
-        avgPercent = avgRaw;
-    } else {
-        // fallback
-        avgPercent = Math.min(100, avgRaw);
-    }
-
-    document.getElementById("progressFill").style.width = `${Math.round(avgPercent)}%`;
-
-    // RANKING KATEGORII (po nazwie_testu)
-    const kategorie = {};
-    wyniki.forEach(w => {
-        const key = w.nazwa_testu || "Inne";
-        if (!kategorie[key]) kategorie[key] = [];
-        const val = Number(w.ocena);
-        if (!isNaN(val)) kategorie[key].push(val);
-    });
-
-    const ranking = Object.entries(kategorie)
-        .map(([kat, arr]) => ({ kat, avg: arr.reduce((a,b)=>a+b,0)/arr.length }))
-        .sort((a,b)=> b.avg - a.avg);
-
-    const rankDiv = document.getElementById("rankList");
-    rankDiv.innerHTML = "";
-    if (!ranking.length) {
-        rankDiv.textContent = "Brak danych";
-    } else {
-        ranking.forEach((r,i) => {
-            rankDiv.insertAdjacentHTML('beforeend', `
-                <div class="rank-item">
-                    <div><span class="pos">${i+1}.</span> ${r.kat}</div>
-                    <div style="color:#ff3366;font-weight:700">${r.avg.toFixed(1)}</div>
-                </div>
-            `);
-        });
-    }
-
-    // WYKRES - uporządkuj po dacie (jeśli data parsowalna), inaczej po kolejności
-    let sorted = [...wyniki];
-    if (wyniki.every(w => !isNaN(Date.parse(w.data)))) {
-        sorted.sort((a,b)=> new Date(a.data) - new Date(b.data));
-    }
-
-    const labels = sorted.map(w => w.data || "");
-    const dataPoints = sorted.map(w => Number(w.ocena) || 0);
-
-    // zniszcz poprzedni wykres
-    if (resultsChartInstance) {
-        try { resultsChartInstance.destroy(); } catch(e){ }
-        resultsChartInstance = null;
-    }
-
-    const ctx = document.getElementById('resultsChart').getContext('2d');
-    resultsChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Oceny',
-                data: dataPoints,
-                borderWidth: 3,
-                tension: 0.3,
-                fill: false,
-                pointRadius: 4,
-                pointBackgroundColor: '#ff3366',
-                borderColor: '#ff3366'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { labels: { color: "white" } },
-                tooltip: { mode: 'index', intersect: false }
-            },
-            scales: {
-                x: {
-                    ticks: { color: "white", maxRotation: 20, minRotation: 0 },
-                    grid: { color: 'rgba(255,255,255,0.04)' }
-                },
-                y: {
-                    ticks: { color: "white" },
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-
-/* -------------------------
-   Funkcja ładująca wyniki i wywołująca render + statystyki
-   ------------------------- */
-async function loadResults(userId) {
-    const wynikiDiv = document.getElementById("wynikiContainer");
-    wynikiDiv.innerHTML = "Ładowanie wyników...";
-
-    try {
-        const res = await fetch(`https://projekt-bazy-danych-backend.onrender.com/api/wyniki/${userId}`);
-        if (!res.ok) throw new Error("Błąd żądania wyników");
-        const wyniki = await res.json();
-
-        if (!wyniki || !wyniki.length) {
-            wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
-            clearStats();
-            return;
-        }
-
-        // render karty po lewej
-        renderResultsCards(wyniki);
-
-        // update panelu po prawej
-        updateStats(wyniki);
-
-    } catch (e) {
-        console.warn(e);
-        wynikiDiv.innerHTML = "<p>Błąd ładowania wyników.</p>";
-        clearStats();
-    }
-}
-
-/* -------------------------
-   KATEGORIE (bez zmian, renderuje karty kategorii)
-   ------------------------- */
-async function loadCategories() {
-    try {
-        const categories = await fetch("https://projekt-bazy-danych-backend.onrender.com/api/kategorie").then(r => r.json());
-
-        const grid = document.getElementById("collectionsGrid");
-        const extraGrid = document.getElementById("extraCategories");
-
-        grid.innerHTML = "";
-        extraGrid.innerHTML = "";
-
-        const first3 = categories.slice(0,3);
-        const rest = categories.slice(3);
-
-        first3.forEach(cat => {
-            const imgName = normalizeName(cat.nazwa);
-            grid.insertAdjacentHTML('beforeend', `
-                <div class="collection-card">
-                    <div class="collection-thumbnail">
-                        <img src="images/${imgName}.png" onerror="this.src='images/default.png'">
+        <div class="contact-content">
+            <div class="contact-form-wrapper">
+                <form id="contactForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">Imię</label>
+                            <input type="text" id="firstName" name="firstName" placeholder="Jan" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Nazwisko</label>
+                            <input type="text" id="lastName" name="lastName" placeholder="Kowalski" required>
+                        </div>
                     </div>
-                    <div class="card-content">
-                        <h3 class="card-title">${cat.nazwa}</h3>
-                        <p class="card-subtitle">${cat.opis || ""}</p>
-                        <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="jankowalski@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="subject">Temat</label>
+                        <input type="text" id="subject" name="subject" placeholder="Jak mozemy ci pomóc?" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Wiadomość</label>
+                        <textarea id="message" name="message" placeholder="Opowiedz wiecej o swoim problemie..." required></textarea>
+                    </div>
+                    <button type="submit" class="form-submit">Wyślij</button>
+                </form>
+            </div>
+
+            <div class="contact-info">
+                <div class="info-item">
+                    <div class="info-icon">📍</div>
+                    <div class="info-content">
+                        <h3>Odwiedź nas osobiscie</h3>
+                        <p>Profesora Sylwestra Kaliskiego 7<br>
+                            Polska, 85-796 Bydgoszcz<br>
+                            Kujwasko-pomorskie</p>
                     </div>
                 </div>
-            `);
-        });
 
-        grid.insertAdjacentHTML('beforeend', `
-            <div class="collection-card" id="expandCard" style="cursor:pointer;">
-                <div class="collection-thumbnail"><img src="images/default.png"></div>
-                <div class="card-content">
-                    <h3 class="card-title" id="expandLabel">Rozwiń wszystkie kategorie ↓</h3>
-                    <p class="card-subtitle">Kliknij, aby zobaczyć więcej</p>
+                <div class="info-item">
+                    <div class="info-icon">📞</div>
+                    <div class="info-content">
+                        <h3>Zadzwoń do nas</h3>
+                        <p>Główny: <a href="tel:+48111222333">+48 111 222 333</a><br>
+                            Pomoc: <a href="tel:+48111222333">+48 111 222 333</a><br>
+                            Pon-Pt 8:00-16:00</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">✉️</div>
+                    <div class="info-content">
+                        <h3>Skontaktuj sie z nami mailowo</h3>
+                        <p>Ogólny: <a href="mailto:hello@noir.fashion">mateuszwiniecki25@gmail.com</a><br>
+                            Pomoc: <a href="mailto:support@noir.fashion">sgt_pomoc@gmail.com</a><br>
+                    </div>
                 </div>
             </div>
-        `);
+        </div>
 
-        rest.forEach(cat => {
-            const imgName = normalizeName(cat.nazwa);
-            extraGrid.insertAdjacentHTML('beforeend', `
-                <div class="collection-card">
-                    <div class="collection-thumbnail">
-                        <img src="images/${imgName}.png" onerror="this.src='images/default.png'">
-                    </div>
-                    <div class="card-content">
-                        <h3 class="card-title">${cat.nazwa}</h3>
-                        <p class="card-subtitle">${cat.opis || ""}</p>
-                        <a href="start.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
-                    </div>
-                </div>
-            `);
-        });
+        <div class="map-section">
+            <div class="map-container">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1491.8350819178445!2d18.129902297827655!3d53.14353971978291!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x470313b103a9ea1d%3A0x2a29c87a5d2749d5!2sPolitechnika%20Bydgoska%20im.%20Jana%20i%20J%C4%99drzeja%20%C5%9Aniadeckich!5e0!3m2!1spl!2spl!4v1763809171732!5m2!1spl!2spl" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+    </div>
+    </div>
+</section>
 
-        let expanded = false;
-        const expandCard = document.getElementById("expandCard");
-        if (expandCard) {
-            expandCard.onclick = () => {
-                expanded = !expanded;
-                extraGrid.style.display = expanded ? "grid" : "none";
-                document.getElementById("expandLabel").textContent =
-                    expanded ? "Zwiń kategorie ↑" : "Rozwiń wszystkie kategorie ↓";
-            };
-        }
+<footer>
+    <div class="footer-bottom">
+        <p>© 2025 System generowania testów. Wszelkie prawa zastrzeżone</p>
+        <div class="payment-methods">
+            <div class="payment-icon">VISA</div>
+            <div class="payment-icon">MC</div>
+            <div class="payment-icon">AMEX</div>
+            <div class="payment-icon">PAY</div>
+        </div>
+    </div>
+</footer>
 
-    } catch (e) {
-        console.warn("Błąd ładowania kategorii", e);
-    }
-}
-
-/* -------------------------
-   Inicjalizacja dashboardu
-   ------------------------- */
-async function initDashboard() {
+<script src="templatemo-noir-scripts.js"></script>
+<script>
+    async function loadStudentData() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return logout();
 
-    const userId = user.id;
-    loadStudentInfo(userId);
-    await loadCategories();
-    await loadResults(userId);
-}
+    const studentId = user.id;
 
-initDashboard();
+    // 🔹 ŁADOWANIE KATEGORII
+        const categories = await fetch(
+            "https://projekt-bazy-danych-backend.onrender.com/api/kategorie"
+        ).then(r => r.json());
+
+        const grid = document.getElementById("collectionsGrid");
+        grid.innerHTML = "";
+
+        // --- 1) Pokazujemy tylko 3 kategorie ---
+        const trzyKategorie = categories.slice(0, 3);
+
+        trzyKategorie.forEach(cat => {
+            grid.innerHTML += `
+            <div class="collection-card">
+                <div class="collection-thumbnail">
+                    <img src="images/neo-classic.avif">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">${cat.nazwa}</h3>
+                    <p class="card-subtitle">${cat.opis || ""}</p>
+                    <a href="logowanie.html?id=${cat.id_kategorii}" class="cta-button primary">Rozpocznij</a>
+                </div>
+            </div>
+        `;
+        });
+
+        // --- 2) Dodajemy przycisk "Zobacz więcej" jako 4 karta ---
+        grid.innerHTML += `
+        <div class="collection-card" style="display:flex;align-items:center;justify-content:center;text-align:center;">
+            <button onclick="location.href='logowanie.html'"
+                style="
+                    padding: 15px 25px;
+                    font-size: 18px;
+                    border-radius: 10px;
+                    border: none;
+                    background:#ff3366;
+                    color:white;
+                    cursor:pointer;
+                    transition:0.3s;
+                "
+            >
+                Zobacz więcej →
+            </button>
+        </div>
+    `;
+    }
+    loadStudentData();
 </script>
-
 </body>
 </html>
