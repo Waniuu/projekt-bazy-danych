@@ -18,7 +18,7 @@
         .table th, .table td { padding:8px 10px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.04); }
         .table th { font-weight:600; font-size:13px; color:var(--muted); }
         .btn { padding:8px 10px; border-radius:8px; cursor:pointer; border:0; font-weight:600; }
-        .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.06); }
+        .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--text-color); }
         .btn.primary { background:linear-gradient(90deg,#ff3366,#ff7a66); color:white; }
         .flex { display:flex; gap:8px; align-items:center; }
         .modal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:60; }
@@ -27,11 +27,14 @@
         .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
         .form-row { display:flex; gap:8px; }
         .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
-        input[type="text"], input[type="email"], select, textarea { background:transparent; border:1px solid rgba(255,255,255,0.06); padding:10px; border-radius:8px; color:var(--text-color); width:100%; }
+        input[type="text"], input[type="email"], input[type="number"], select, textarea { background:transparent; border:1px solid rgba(255,255,255,0.06); padding:10px; border-radius:8px; color:var(--text-color); width:100%; }
         .small-muted { font-size:12px; color:rgba(255,255,255,0.5); }
         .search-input { width:100%; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--text-color); }
         .right-col { display:flex; flex-direction:column; gap:16px; }
         .section-title-small { font-size:16px; margin-bottom:6px; }
+        /* Raports tweaks */
+        #pane-raporty .btn { min-width:120px; }
+        #pane-raporty select, #pane-raporty input { min-width:160px; }
         /* responsiveness */
         @media (max-width: 900px) {
             .admin-grid { grid-template-columns: 1fr; }
@@ -210,68 +213,69 @@
                         </table>
                     </div>
                 </div>
-<!-- RAPORTY -->
-<div id="pane-raporty" class="card" style="display:none;">
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <h2>Raporty</h2>
-    <div class="flex">
-      <button id="refreshReports" class="btn ghost">Odśwież</button>
-    </div>
-  </div>
 
-  <hr style="opacity:0.06" />
+                <!-- RAPORTY -->
+                <div id="pane-raporty" class="card" style="display:none;">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <h2>Raporty</h2>
+                    <div class="flex">
+                      <button id="refreshReports" class="btn ghost">Odśwież</button>
+                    </div>
+                  </div>
 
-  <!-- 1) Raport Użytkownicy -->
-  <div style="margin-top:8px;">
-    <h3>1. Lista użytkowników</h3>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <select id="r_users_role">
-        <option value="">Wszystkie role</option>
-        <option value="student">Student</option>
-        <option value="nauczyciel">Nauczyciel</option>
-        <option value="administrator">Administrator</option>
-      </select>
-      <input id="r_users_email" type="text" placeholder="Email zawiera..." />
-      <button id="r_users_btn" class="btn primary">Pobierz PDF</button>
-    </div>
-  </div>
+                  <hr style="opacity:0.06" />
 
-  <hr style="opacity:0.06" />
+                  <!-- 1) Raport Użytkownicy -->
+                  <div style="margin-top:8px;">
+                    <h3>1. Lista użytkowników</h3>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                      <select id="r_users_role">
+                        <option value="">Wszystkie role</option>
+                        <option value="student">Student</option>
+                        <option value="nauczyciel">Nauczyciel</option>
+                        <option value="administrator">Administrator</option>
+                      </select>
+                      <input id="r_users_email" type="text" placeholder="Email zawiera..." />
+                      <button id="r_users_btn" class="btn primary">Pobierz PDF</button>
+                    </div>
+                  </div>
 
-  <!-- 2) Raport Statystyki pytań -->
-  <div style="margin-top:8px;">
-    <h3>2. Statystyki pytań (wykres)</h3>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <select id="r_q_bank"></select>
-      <select id="r_q_cat"></select>
-      <button id="r_q_btn" class="btn primary">Pobierz PDF</button>
-    </div>
-  </div>
+                  <hr style="opacity:0.06" />
 
-  <hr style="opacity:0.06" />
+                  <!-- 2) Raport Statystyki pytań -->
+                  <div style="margin-top:8px;">
+                    <h3>2. Statystyki pytań (wykres)</h3>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                      <select id="r_q_bank"></select>
+                      <select id="r_q_cat"></select>
+                      <button id="r_q_btn" class="btn primary">Pobierz PDF</button>
+                    </div>
+                  </div>
 
-  <!-- 3) Raport Testy pogrupowane -->
-  <div style="margin-top:8px;">
-    <h3>3. Testy pogrupowane (wg kategorii)</h3>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <input id="r_t_start" type="date" />
-      <input id="r_t_end" type="date" />
-      <button id="r_t_btn" class="btn primary">Pobierz PDF</button>
-    </div>
-  </div>
+                  <hr style="opacity:0.06" />
 
-  <hr style="opacity:0.06" />
+                  <!-- 3) Raport Testy pogrupowane -->
+                  <div style="margin-top:8px;">
+                    <h3>3. Testy pogrupowane (wg kategorii)</h3>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                      <input id="r_t_start" type="date" />
+                      <input id="r_t_end" type="date" />
+                      <button id="r_t_btn" class="btn primary">Pobierz PDF</button>
+                    </div>
+                  </div>
 
-  <!-- 4) Formularz oceny testu -->
-  <div style="margin-top:8px;">
-    <h3>4. Formularz oceny (PDF)</h3>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <input id="r_f_test_id" type="number" placeholder="ID testu" />
-      <input id="r_f_user_id" type="number" placeholder="ID użytkownika (opcjonalnie)" />
-      <button id="r_f_btn" class="btn primary">Pobierz PDF</button>
-    </div>
-  </div>
-</div>
+                  <hr style="opacity:0.06" />
+
+                  <!-- 4) Formularz oceny testu -->
+                  <div style="margin-top:8px;">
+                    <h3>4. Formularz oceny (PDF)</h3>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                      <input id="r_f_test_id" type="number" placeholder="ID testu" />
+                      <input id="r_f_user_id" type="number" placeholder="ID użytkownika (opcjonalnie)" />
+                      <button id="r_f_btn" class="btn primary">Pobierz PDF</button>
+                    </div>
+                  </div>
+                </div>
 
                 <!-- PRZEDMIOTY -->
                 <div id="pane-przedmioty" class="card" style="display:none;">
@@ -337,9 +341,8 @@
         document.getElementById('tab-pytania').addEventListener('click', ()=>showTab('pytania'));
         document.getElementById('tab-przedmioty').addEventListener('click', ()=>showTab('przedmioty'));
         document.getElementById('tab-raporty').addEventListener('click', ()=>showTab('raporty'));
- 
+
         document.getElementById('refreshAll').addEventListener('click', initAll);
-        
 
         // modal
         const modal = document.getElementById('modal');
@@ -362,101 +365,107 @@
         // ---------- DASHBOARD STATYSTYKI ----------
         async function loadStats(){
             try{
-                const users = await (await fetch(API_BASE + '/uzytkownicy?limit=1')).json();
-                // stats: user count
-                const allUsers = await (await fetch(API_BASE + '/uzytkownicy?limit=10000')).json();
-                document.getElementById('stat-users').textContent = allUsers.length;
+                // fetch counts (endpoints may vary, using list fetches)
+                const allUsers = await (await fetch(API_BASE + '/uzytkownicy?limit=10000')).json().catch(()=>[]);
+                document.getElementById('stat-users').textContent = allUsers.length || '—';
             }catch(e){
                 document.getElementById('stat-users').textContent = '—';
             }
 
             try {
-                const qs = await (await fetch(API_BASE + '/pytania?per_page=1')).json();
-                const allQs = await (await fetch(API_BASE + '/pytania?per_page=10000')).json();
-                document.getElementById('stat-questions').textContent = allQs.length;
+                const allQs = await (await fetch(API_BASE + '/pytania?per_page=10000')).json().catch(()=>[]);
+                document.getElementById('stat-questions').textContent = allQs.length || '—';
             } catch(e) { document.getElementById('stat-questions').textContent = '—'; }
 
             try {
-                // Testy endpoint generuj istnieje; ale nie mamy listy testów w API, więc spróbujemy policzyć z tabeli Test (jeśli endpoint nie ma, ustawimy —)
                 const resp = await fetch(API_BASE + '/testy', { method: 'GET' });
                 if (resp.ok) {
                     const list = await resp.json();
-                    document.getElementById('stat-tests').textContent = list.length;
+                    document.getElementById('stat-tests').textContent = (list && list.length) || '—';
                 } else {
                     document.getElementById('stat-tests').textContent = '—';
                 }
             } catch(e){ document.getElementById('stat-tests').textContent = '—'; }
 
             try {
-                const cats = await (await fetch(API_BASE + '/kategorie')).json();
-                document.getElementById('stat-cats').textContent = cats.length;
+                const cats = await (await fetch(API_BASE + '/kategorie')).json().catch(()=>[]);
+                document.getElementById('stat-cats').textContent = cats.length || '—';
             } catch(e){ document.getElementById('stat-cats').textContent = '—'; }
         }
-        // --- inicjalizacja selectów banków i kategorii (użyj istniejącej funkcji loadAuxiliary)
-async function loadReportSelectors(){
-  // banki i kategorie już załadowane w window._banksOptions / window._catsOptions
-  const bankSel = document.getElementById('r_q_bank');
-  const catSel = document.getElementById('r_q_cat');
-  bankSel.innerHTML = (window._banksOptions ? '<option value="">Wszystkie banki</option>' + window._banksOptions : '<option value="">Brak</option>');
-  catSel.innerHTML = (window._catsOptions ? '<option value="">Wszystkie kategorie</option>' + window._catsOptions : '<option value="">Brak</option>');
-}
 
-// helper do pobrania PDF i wymuszenia pobrania w przeglądarce
-async function fetchPdfAndDownload(url){
-  const resp = await fetch(url, { method: 'GET' });
-  if(!resp.ok){ const err = await resp.json().catch(()=>({})); alert('Błąd: ' + (err.error || resp.status)); return; }
-  const blob = await resp.blob();
-  const blobUrl = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = blobUrl;
-  a.download = 'raport.pdf';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(blobUrl);
-}
+        // --- inicjalizacja selectów banków i kategorii (wywoływana z loadAuxiliary)
+        async function loadReportSelectors(){
+          const bankSel = document.getElementById('r_q_bank');
+          const catSel = document.getElementById('r_q_cat');
+          bankSel.innerHTML = (window._banksOptions ? '<option value="">Wszystkie banki</option>' + window._banksOptions : '<option value="">Brak</option>');
+          catSel.innerHTML = (window._catsOptions ? '<option value="">Wszystkie kategorie</option>' + window._catsOptions : '<option value="">Brak</option>');
+        }
 
-// podpięcie przycisków
-document.getElementById('r_users_btn').addEventListener('click', async ()=>{
-  const rola = document.getElementById('r_users_role').value;
-  const email = document.getElementById('r_users_email').value.trim();
-  const p = new URLSearchParams();
-  if(rola) p.set('rola', rola);
-  if(email) p.set('email', email);
-  await fetchPdfAndDownload(API_BASE + '/reports/users?' + p.toString());
-});
+        // helper do pobrania PDF i wymuszenia pobrania w przeglądarce
+        async function fetchPdfAndDownload(url){
+          try{
+            const resp = await fetch(url, { method: 'GET' });
+            if(!resp.ok){
+              // spróbuj odczytać json z błędem
+              let err = {};
+              try { err = await resp.json(); } catch(e){ /* ignore */ }
+              alert('Błąd: ' + (err.error || resp.status));
+              return;
+            }
+            const blob = await resp.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            // suggested file name from header if present
+            const cd = resp.headers.get('content-disposition') || '';
+            const match = /filename="(.+)"/.exec(cd);
+            a.download = match ? match[1] : 'raport.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(blobUrl);
+          }catch(err){
+            alert('Błąd pobierania raportu: ' + (err.message || err));
+          }
+        }
 
-document.getElementById('r_q_btn').addEventListener('click', async ()=>{
-  const id_banku = document.getElementById('r_q_bank').value;
-  const id_kategorii = document.getElementById('r_q_cat').value;
-  const p = new URLSearchParams();
-  if(id_kategorii) p.set('id_kategorii', id_kategorii);
-  if(id_banku) p.set('id_banku', id_banku);
-  await fetchPdfAndDownload(API_BASE + '/reports/questions-stats?' + p.toString());
-});
+        // podpięcie przycisków raportów
+        document.getElementById('r_users_btn').addEventListener('click', async ()=>{
+          const rola = document.getElementById('r_users_role').value;
+          const email = document.getElementById('r_users_email').value.trim();
+          const p = new URLSearchParams();
+          if(rola) p.set('rola', rola);
+          if(email) p.set('email', email);
+          await fetchPdfAndDownload(API_BASE + '/reports/users?' + p.toString());
+        });
 
-document.getElementById('r_t_btn').addEventListener('click', async ()=>{
-  const start = document.getElementById('r_t_start').value;
-  const end = document.getElementById('r_t_end').value;
-  const p = new URLSearchParams();
-  if(start) p.set('start', start);
-  if(end) p.set('end', end);
-  await fetchPdfAndDownload(API_BASE + '/reports/tests-grouped?' + p.toString());
-});
+        document.getElementById('r_q_btn').addEventListener('click', async ()=>{
+          const id_banku = document.getElementById('r_q_bank').value;
+          const id_kategorii = document.getElementById('r_q_cat').value;
+          const p = new URLSearchParams();
+          if(id_kategorii) p.set('id_kategorii', id_kategorii);
+          if(id_banku) p.set('id_banku', id_banku);
+          await fetchPdfAndDownload(API_BASE + '/reports/questions-stats?' + p.toString());
+        });
 
-document.getElementById('r_f_btn').addEventListener('click', async ()=>{
-  const id_testu = document.getElementById('r_f_test_id').value;
-  const id_uzytkownika = document.getElementById('r_f_user_id').value;
-  if(!id_testu){ alert('Podaj ID testu'); return; }
-  const p = new URLSearchParams();
-  p.set('id_testu', id_testu);
-  if(id_uzytkownika) p.set('id_uzytkownika', id_uzytkownika);
-  await fetchPdfAndDownload(API_BASE + '/reports/test-form?' + p.toString());
-});
+        document.getElementById('r_t_btn').addEventListener('click', async ()=>{
+          const start = document.getElementById('r_t_start').value;
+          const end = document.getElementById('r_t_end').value;
+          const p = new URLSearchParams();
+          if(start) p.set('start', start);
+          if(end) p.set('end', end);
+          await fetchPdfAndDownload(API_BASE + '/reports/tests-grouped?' + p.toString());
+        });
 
-// call on init
-loadReportSelectors();
-
+        document.getElementById('r_f_btn').addEventListener('click', async ()=>{
+          const id_testu = document.getElementById('r_f_test_id').value;
+          const id_uzytkownika = document.getElementById('r_f_user_id').value;
+          if(!id_testu){ alert('Podaj ID testu'); return; }
+          const p = new URLSearchParams();
+          p.set('id_testu', id_testu);
+          if(id_uzytkownika) p.set('id_uzytkownika', id_uzytkownika);
+          await fetchPdfAndDownload(API_BASE + '/reports/test-form?' + p.toString());
+        });
 
         // ---------- UŻYTKOWNICY CRUD ----------
         const usersTableBody = document.querySelector('#usersTable tbody');
@@ -468,39 +477,40 @@ loadReportSelectors();
         usersFilter.addEventListener('change', listUsers);
 
         async function listUsers(){
-            const q = usersSearch.value.trim();
-            const typ = usersFilter.value;
-            const params = new URLSearchParams();
-            if(q) params.set('q', q);
-            if(typ) params.set('typ', typ);
-            params.set('limit', 1000);
-            const res = await fetch(API_BASE + '/uzytkownicy?' + params.toString());
-            const data = await res.json();
-            usersTableBody.innerHTML = '';
-            data.forEach(u => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${escapeHtml(u.imie)}</td>
-                    <td>${escapeHtml(u.nazwisko)}</td>
-                    <td>${escapeHtml(u.email)}</td>
-                    <td>${escapeHtml(u.typ_konta)}</td>
-                    <td>
-                        <div style="display:flex;gap:6px;">
-                            <button class="btn ghost" data-id="${u.id}" onclick="__admin.editUser(${u.id})">Edytuj</button>
-                            <button class="btn ghost" data-id="${u.id}" onclick="__admin.deleteUser(${u.id})">Usuń</button>
-                        </div>
-                    </td>`;
-                usersTableBody.appendChild(tr);
-            });
+            try{
+                const q = usersSearch.value.trim();
+                const typ = usersFilter.value;
+                const params = new URLSearchParams();
+                if(q) params.set('q', q);
+                if(typ) params.set('typ', typ);
+                params.set('limit', 1000);
+                const res = await fetch(API_BASE + '/uzytkownicy?' + params.toString());
+                const data = await res.json();
+                usersTableBody.innerHTML = '';
+                data.forEach(u => {
+                    const id = u.id || u.id_uzytkownika || u.ID;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${escapeHtml(u.imie)}</td>
+                        <td>${escapeHtml(u.nazwisko)}</td>
+                        <td>${escapeHtml(u.email)}</td>
+                        <td>${escapeHtml(u.typ_konta)}</td>
+                        <td>
+                            <div style="display:flex;gap:6px;">
+                                <button class="btn ghost" data-id="${id}" onclick="__admin.editUser(${id})">Edytuj</button>
+                                <button class="btn ghost" data-id="${id}" onclick="__admin.deleteUser(${id})">Usuń</button>
+                            </div>
+                        </td>`;
+                    usersTableBody.appendChild(tr);
+                });
+            }catch(e){ console.error('listUsers error', e); }
         }
 
         window.__admin = window.__admin || {};
         window.__admin.editUser = async function(id){
-            // pobierz szczegóły
-            const row = await (await fetch(API_BASE + '/uzytkownicy?limit=1&offset=0')).json(); // fallback
-            // lepsze: GET /api/uzytkownicy/:id (nie było w serwerze — ale możemy użyć listy)
-            const all = await (await fetch(API_BASE + '/uzytkownicy?limit=1000')).json();
-            const user = all.find(x => Number(x.id) === Number(id) || Number(x.id_uzytkownika) === Number(id));
+            // pobierz listę użytkowników i znajdź ten z id
+            const all = await (await fetch(API_BASE + '/uzytkownicy?limit=1000')).json().catch(()=>[]);
+            const user = all.find(x => Number(x.id || x.id_uzytkownika) === Number(id));
             if(!user) { alert('Nie znaleziono użytkownika'); return; }
 
             const html = `
@@ -529,7 +539,6 @@ loadReportSelectors();
                 const nazwisko = document.getElementById('m_nazwisko').value.trim();
                 const email = document.getElementById('m_email').value.trim();
                 const typ = document.getElementById('m_typ').value;
-                // PUT /api/uzytkownicy/:id
                 const idToUse = user.id || user.id_uzytkownika || id;
                 const resp = await fetch(API_BASE + '/uzytkownicy/' + idToUse, {
                     method: 'PUT',
@@ -548,8 +557,7 @@ loadReportSelectors();
 
         window.__admin.deleteUser = async function(id){
             if(!confirm('Na pewno usunąć użytkownika?')) return;
-            const idToUse = id;
-            const resp = await fetch(API_BASE + '/uzytkownicy/' + idToUse, { method: 'DELETE' });
+            const resp = await fetch(API_BASE + '/uzytkownicy/' + id, { method: 'DELETE' });
             if(resp.ok){
                 listUsers();
                 initAll();
@@ -705,7 +713,7 @@ loadReportSelectors();
                     <div class="form-row">
                         <div class="form-group"><label>Bank</label><select id="q_bank">${banksOptions}</select></div>
                         <div class="form-group"><label>Kategoria</label><select id="q_kat">${catsOptions}</select></div>
-                        <div class="form-group"><label>Trudność</label><input id="q_trud" type="text" value="${existing ? existing.trudnosc : '1'}" /></div>
+                        <div class="form-group"><label>Trudność</label><input id="q_trud" type="text" value="${existing ? (existing.trudnosc || existing.poziom_trudnosci || '1') : '1'}" /></div>
                     </div>
                     <div style="display:flex; gap:8px; justify-content:flex-end;">
                         <button id="saveQBtn" class="btn primary">${existing ? 'Zapisz' : 'Dodaj'}</button>
@@ -722,17 +730,31 @@ loadReportSelectors();
                 const trudnosc = document.getElementById('q_trud').value || 1;
                 if(!tresc){ alert('Podaj treść pytania'); return; }
                 if(existing){
-                    // serwer nie ma PUT /pytania/:id w twoim server.js — ale ma DELETE i POST
-                    // Najprościej: usunąć i stworzyć nowe (jeśli chcesz dokładnego PUT, dodam to do serwera)
-                    if(confirm('Zastąpić pytanie nową treścią? (stworzy nowe i usunie stare)')){
-                        await fetch(API_BASE + '/pytania/' + existing.id_pytania, { method: 'DELETE' });
-                        await fetch(API_BASE + '/pytania', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tresc, id_banku, id_kategorii, trudnosc }) });
+                    // jeśli PUT dostępny możesz użyć; domyślnie używamy PUT jeśli endpoint jest
+                    const idToUse = existing.id_pytania || existing.id;
+                    const resp = await fetch(API_BASE + '/pytania/' + idToUse, {
+                      method: 'PUT',
+                      headers: {'Content-Type':'application/json'},
+                      body: JSON.stringify({ tresc, id_banku, id_kategorii, poziom_trudnosci: trudnosc })
+                    }).catch(()=>null);
+                    if(resp && resp.ok){
                         closeModal(); listQuestions(); initAll();
+                    } else {
+                        // fallback: create new
+                        const resp2 = await fetch(API_BASE + '/pytania', {
+                            method:'POST', headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({ tresc, id_banku, id_kategorii, poziom_trudnosci: trudnosc })
+                        });
+                        if(resp2.ok){
+                            // try remove old
+                            try{ await fetch(API_BASE + '/pytania/' + idToUse, { method: 'DELETE' }); }catch(e){}
+                            closeModal(); listQuestions(); initAll();
+                        } else alert('Błąd zapisu');
                     }
                 } else {
                     const resp = await fetch(API_BASE + '/pytania', {
                         method:'POST', headers:{'Content-Type':'application/json'},
-                        body: JSON.stringify({ tresc, id_banku, id_kategorii, trudnosc })
+                        body: JSON.stringify({ tresc, id_banku, id_kategorii, poziom_trudnosci: trudnosc })
                     });
                     if(resp.ok){ closeModal(); listQuestions(); initAll(); } else alert('Błąd zapisu');
                 }
@@ -753,15 +775,16 @@ loadReportSelectors();
                 const data = await res.json();
                 questionsTableBody.innerHTML = '';
                 data.forEach(p=>{
+                    const id = p.id_pytania || p.id;
                     const tr = document.createElement('tr');
                     tr.innerHTML = `<td>${escapeHtml(p.tresc)}</td>
                     <td>${escapeHtml(p.bank_nazwa || p.nazwa || '')}</td>
                     <td>${escapeHtml(p.kat_nazwa || '')}</td>
-                    <td>${escapeHtml(String(p.trudnosc || '1'))}</td>
+                    <td>${escapeHtml(String(p.trudnosc || p.poziom_trudnosci || '1'))}</td>
                     <td>
                         <div style="display:flex;gap:6px;">
-                            <button class="btn ghost" onclick="__admin.editQuestion(${p.id_pytania || p.id})">Edytuj</button>
-                            <button class="btn ghost" onclick="__admin.deleteQuestion(${p.id_pytania || p.id})">Usuń</button>
+                            <button class="btn ghost" onclick="__admin.editQuestion(${id})">Edytuj</button>
+                            <button class="btn ghost" onclick="__admin.deleteQuestion(${id})">Usuń</button>
                         </div>
                     </td>`;
                     questionsTableBody.appendChild(tr);
@@ -770,8 +793,7 @@ loadReportSelectors();
         }
 
         window.__admin.editQuestion = async function(id){
-            // pobierz pytania (brak GET /pytania/:id w serwerze) -> użyj listy
-            const all = await (await fetch(API_BASE + '/pytania?per_page=1000')).json();
+            const all = await (await fetch(API_BASE + '/pytania?per_page=1000')).json().catch(()=>[]);
             const p = all.find(x => Number(x.id_pytania || x.id) === Number(id));
             if(!p) return alert('Nie znaleziono pytania');
             openQuestionForm(p);
@@ -825,7 +847,7 @@ loadReportSelectors();
         async function loadAuxiliary(){
             // nauczyciele do selecta
             try {
-                const users = await (await fetch(API_BASE + '/uzytkownicy?limit=1000')).json();
+                const users = await (await fetch(API_BASE + '/uzytkownicy?limit=1000')).json().catch(()=>[]);
                 const teachers = users.filter(u => u.typ_konta === 'nauczyciel');
                 const sel = document.getElementById('przedmiotNauczyciel');
                 sel.innerHTML = '<option value="">Brak</option>' + teachers.map(t=>`<option value="${t.email}">${escapeHtml(t.imie + ' ' + t.nazwisko)}</option>`).join('');
@@ -833,11 +855,14 @@ loadReportSelectors();
 
             // banks & cats options
             try {
-                const banks = await (await fetch(API_BASE + '/banki')).json();
+                const banks = await (await fetch(API_BASE + '/banki')).json().catch(()=>[]);
                 window._banksOptions = banks.map(b=>`<option value="${b.id_banku || b.id}">${escapeHtml(b.nazwa)}</option>`).join('');
-                const cats = await (await fetch(API_BASE + '/kategorie')).json();
+                const cats = await (await fetch(API_BASE + '/kategorie')).json().catch(()=>[]);
                 window._catsOptions = cats.map(c=>`<option value="${c.id_kategorii || c.id}">${escapeHtml(c.nazwa)}</option>`).join('');
             } catch(e){ console.warn(e); }
+
+            // teraz zapełnij selekty raportów
+            loadReportSelectors();
         }
 
         // ---------- Helper: escapeHtml ----------
