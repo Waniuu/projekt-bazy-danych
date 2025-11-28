@@ -223,7 +223,110 @@ app.post("/api/testy/generuj", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.get("/api/pytania/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const row = db.prepare("SELECT * FROM Pytanie WHERE id_pytania = ?").get(id);
+    if (!row) return res.status(404).json({ error: "Nie znaleziono pytania" });
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// LISTA TESTÓW
+app.get("/api/testy", (req, res) => {
+  try {
+    const rows = db.prepare("SELECT * FROM Test ORDER BY id_testu DESC").all();
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+app.get("/api/przedmioty/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const row = db.prepare("SELECT * FROM Przedmiot WHERE id_przedmiotu = ?").get(id);
+    if (!row) return res.status(404).json({ error: "Nie znaleziono przedmiotu" });
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+app.put("/api/przedmioty/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { nazwa, opis, nauczyciel_email } = req.body;
 
+    let id_nauczyciela = null;
+    if (nauczyciel_email) {
+      const nau = db.prepare("SELECT id_uzytkownika FROM Uzytkownik WHERE email = ? AND typ_konta = 'nauczyciel'").get(nauczyciel_email);
+      if (nau) id_nauczyciela = nau.id_uzytkownika;
+    }
+
+    db.prepare(`
+      UPDATE Przedmiot
+      SET nazwa = COALESCE(?, nazwa),
+          opis = COALESCE(?, opis),
+          id_nauczyciela = COALESCE(?, id_nauczyciela)
+      WHERE id_przedmiotu = ?
+    `).run(nazwa, opis, id_nauczyciela, id);
+
+    const row = db.prepare("SELECT * FROM Przedmiot WHERE id_przedmiotu = ?").get(id);
+    res.json(row);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// UPDATE PYTANIE
+app.put("/api/pytania/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { tresc, id_banku, id_kategorii, trudnosc } = req.body;
+
+    db.prepare(`
+      UPDATE Pytanie
+      SET tresc = COALESCE(?, tresc),
+          id_banku = COALESCE(?, id_banku),
+          id_kategorii = COALESCE(?, id_kategorii),
+          trudnosc = COALESCE(?, trudnosc)
+      WHERE id_pytania = ?
+    `).run(tresc, id_banku, id_kategorii, trudnosc, id);
+
+    const row = db.prepare("SELECT * FROM Pytanie WHERE id_pytania = ?").get(id);
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// CREATE BANK
+app.post("/api/banki", (req, res) => {
+  try {
+    const { nazwa } = req.body;
+    if (!nazwa) return res.status(400).json({ error: "Brak nazwy banku" });
+
+    const stmt = db.prepare("INSERT INTO BankPytan (nazwa) VALUES (?)");
+    const info = stmt.run(nazwa);
+
+    const row = db.prepare("SELECT * FROM BankPytan WHERE id_banku = ?").get(info.lastInsertRowid);
+    res.status(201).json(row);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE BANK
+app.delete("/api/banki/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const info = db.prepare("DELETE FROM BankPytan WHERE id_banku = ?").run(id);
+    res.json({ ok: true, changes: info.changes });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ---------------------------------------------
 // LOGIN
@@ -268,6 +371,32 @@ app.get("/api/kategorie", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// CREATE KATEGORIA
+app.post("/api/kategorie", (req, res) => {
+  try {
+    const { nazwa } = req.body;
+    if (!nazwa) return res.status(400).json({ error: "Brak nazwy kategorii" });
+
+    const stmt = db.prepare("INSERT INTO Kategoria (nazwa) VALUES (?)");
+    const info = stmt.run(nazwa);
+
+    const row = db.prepare("SELECT * FROM Kategoria WHERE id_kategorii = ?").get(info.lastInsertRowid);
+    res.status(201).json(row);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE KATEGORIA
+app.delete("/api/kategorie/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const info = db.prepare("DELETE FROM Kategoria WHERE id_kategorii = ?").run(id);
+    res.json({ ok: true, changes: info.changes });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Root
 app.get("/", (req, res) => {
@@ -276,4 +405,5 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
