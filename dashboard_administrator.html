@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dashboard Administrator — System generowania testów</title>
+    <!-- zachowujemy oryginalny styl -->
+    <link rel="stylesheet" href="templatemo-noir-fashion.css">
+    <style>
+        /* Dodatkowe drobne style dla panelu admina (kompatybilne z motywem) */
+        .admin-container { max-width: 1200px; margin: 32px auto; padding: 24px; }
+        .admin-grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
+        .card { background: var(--card-bg, rgba(255,255,255,0.03)); border-radius: 14px; padding: 16px; box-shadow: var(--soft-shadow); }
+        .stats-grid { display:flex; gap:12px; margin-bottom:12px; }
+        .stat-small { flex:1; padding:12px; border-radius:10px; text-align:center; }
+        .list-actions { display:flex; gap:8px; justify-content:flex-end; margin-bottom:8px; }
+        .table { width:100%; border-collapse:collapse; font-size:14px; }
+        .table th, .table td { padding:8px 10px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.04); }
+        .table th { font-weight:600; font-size:13px; color:var(--muted); }
+        .btn { padding:8px 10px; border-radius:8px; cursor:pointer; border:0; font-weight:600; }
+        .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.06); }
+        .btn.primary { background:linear-gradient(90deg,#ff3366,#ff7a66); color:white; }
+        .flex { display:flex; gap:8px; align-items:center; }
+        .modal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:60; }
+        .modal.show { display:flex; }
+        .modal-inner { width:720px; max-width:95%; background:var(--card-bg); padding:20px; border-radius:12px; box-shadow:var(--soft-shadow); }
+        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+        .form-row { display:flex; gap:8px; }
+        .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+        input[type="text"], input[type="email"], select, textarea { background:transparent; border:1px solid rgba(255,255,255,0.06); padding:10px; border-radius:8px; color:var(--text-color); width:100%; }
+        .small-muted { font-size:12px; color:rgba(255,255,255,0.5); }
+        .search-input { width:100%; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--text-color); }
+        .right-col { display:flex; flex-direction:column; gap:16px; }
+        .section-title-small { font-size:16px; margin-bottom:6px; }
+        /* responsiveness */
+        @media (max-width: 900px) {
+            .admin-grid { grid-template-columns: 1fr; }
+            .stats-grid { flex-direction:column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header / Navbar z oryginalnego motywu -->
+    <nav id="navbar">
+        <div class="nav-container">
+            <a href="dashboard_administrator.html" class="logo-link">
+                <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logoGradAdmin" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#fff;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#ff3366;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,10 20,50 50,90 80,50" fill="none" stroke="url(#logoGradAdmin)" stroke-width="3"/>
+                    <circle cx="50" cy="50" r="5" fill="url(#logoGradAdmin)"/>
+                </svg>
+                <span class="logo-text">Panel Administratora</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="dashboard_administrator.html" class="nav-link active">Dashboard</a></li>
+                <li><a href="index.html" class="nav-link">Strona główna</a></li>
+                <li><a href="logowanie.html" class="nav-link">Wyloguj</a></li>
+            </ul>
+            <div class="menu-toggle" id="menuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Główny kontener panelu administratora -->
+    <main class="admin-container">
+        <div class="admin-grid">
+            <!-- lewa kolumna: menu admina -->
+            <aside class="card">
+                <h3>Menu Administratora</h3>
+                <p class="small-muted">Szybki dostęp do zarządzania</p>
+
+                <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+                    <button id="tab-dashboard" class="btn ghost" style="text-align:left;">Dashboard</button>
+                    <button id="tab-uzytkownicy" class="btn ghost" style="text-align:left;">Użytkownicy</button>
+                    <button id="tab-kategorie" class="btn ghost" style="text-align:left;">Kategorie</button>
+                    <button id="tab-banki" class="btn ghost" style="text-align:left;">Banki pytań</button>
+                    <button id="tab-pytania" class="btn ghost" style="text-align:left;">Pytania</button>
+                    <button id="tab-przedmioty" class="btn ghost" style="text-align:left;">Przedmioty</button>
+                </div>
+
+                <div style="margin-top:18px;">
+                    <h4>Ustawienia serwera</h4>
+                    <div class="small-muted">API base path:</div>
+                    <div class="small-muted" id="apiBase">/api</div>
+                </div>
+            </aside>
+
+            <!-- prawa kolumna: zawartość -->
+            <section class="right-col">
+                <!-- STATYSTYKI -->
+                <div id="pane-dashboard" class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <h2>Dashboard</h2>
+                        <div class="flex">
+                            <button id="refreshAll" class="btn ghost">Odśwież</button>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid" style="margin-top:12px;">
+                        <div class="stat-small card">
+                            <div class="small-muted">Użytkownicy</div>
+                            <div id="stat-users" style="font-size:20px;font-weight:700">--</div>
+                        </div>
+                        <div class="stat-small card">
+                            <div class="small-muted">Pytania</div>
+                            <div id="stat-questions" style="font-size:20px;font-weight:700">--</div>
+                        </div>
+                        <div class="stat-small card">
+                            <div class="small-muted">Testy</div>
+                            <div id="stat-tests" style="font-size:20px;font-weight:700">--</div>
+                        </div>
+                        <div class="stat-small card">
+                            <div class="small-muted">Kategorie</div>
+                            <div id="stat-cats" style="font-size:20px;font-weight:700">--</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:14px;">
+                        <h3 class="section-title-small">Ostatnie aktywności</h3>
+                        <div id="recent-activity" class="small-muted">Brak danych</div>
+                    </div>
+                </div>
+
+                <!-- UŻYTKOWNICY -->
+                <div id="pane-uzytkownicy" class="card" style="display:none;">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <h2>Użytkownicy</h2>
+                        <div class="flex">
+                            <input id="usersSearch" class="search-input" placeholder="Szukaj (imię, nazwisko, email)" />
+                            <select id="usersFilter" style="min-width:140px;">
+                                <option value="">Wszystkie role</option>
+                                <option value="student">Student</option>
+                                <option value="nauczyciel">Nauczyciel</option>
+                                <option value="administrator">Administrator</option>
+                            </select>
+                            <button id="addUserBtn" class="btn primary">Dodaj</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:12px;">
+                        <table class="table" id="usersTable">
+                            <thead>
+                                <tr><th>Imię</th><th>Nazwisko</th><th>Email</th><th>Rola</th><th style="width:140px">Akcje</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- KATEGORIE -->
+                <div id="pane-kategorie" class="card" style="display:none;">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <h2>Kategorie</h2>
+                        <div class="flex">
+                            <input id="catName" type="text" placeholder="Nazwa kategorii" />
+                            <button id="addCatBtn" class="btn primary">Dodaj</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:12px;">
+                        <table class="table" id="catsTable">
+                            <thead><tr><th>Nazwa</th><th>Akcje</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- BANKI PYTAŃ -->
+                <div id="pane-banki" class="card" style="display:none;">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <h2>Banki pytań</h2>
+                        <div class="flex">
+                            <input id="bankName" type="text" placeholder="Nazwa banku" />
+                            <button id="addBankBtn" class="btn primary">Dodaj</button>
+                        </div>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <table class="table" id="banksTable">
+                            <thead><tr><th>Nazwa</th><th>Akcje</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PYTANIA -->
+                <div id="pane-pytania" class="card" style="display:none;">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <h2>Pytania</h2>
+                        <div class="flex">
+                            <input id="qSearch" class="search-input" placeholder="Szukaj treści pytania" />
+                            <select id="qBankFilter"><option value="">Wszystkie banki</option></select>
+                            <select id="qCatFilter"><option value="">Wszystkie kategorie</option></select>
+                            <button id="addQBtn" class="btn primary">Dodaj</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:12px;">
+                        <table class="table" id="questionsTable">
+                            <thead><tr><th>Treść</th><th>Bank</th><th>Kategoria</th><th>Trudność</th><th>Akcje</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PRZEDMIOTY -->
+                <div id="pane-przedmioty" class="card" style="display:none;">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <h2>Przedmioty</h2>
+                        <div class="flex">
+                            <input id="przedmiotName" type="text" placeholder="Nazwa przedmiotu" />
+                            <input id="przedmiotOpis" type="text" placeholder="Opis (opcjonalnie)" />
+                            <select id="przedmiotNauczyciel"><option value="">Brak</option></select>
+                            <button id="addPrzedmiotBtn" class="btn primary">Dodaj</button>
+                        </div>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <table class="table" id="przedmiotyTable">
+                            <thead><tr><th>Nazwa</th><th>Nauczyciel</th><th>Akcje</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- MODALE -->
+    <div id="modal" class="modal" aria-hidden="true">
+        <div class="modal-inner" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <strong id="modalTitle">Form</strong>
+                <button id="closeModal" class="btn ghost">✕</button>
+            </div>
+            <div id="modalBody">
+                <!-- treść generowana dynamicznie -->
+            </div>
+        </div>
+    </div>
+
+    <footer style="margin-top:40px; text-align:center;">
+        <p class="small-muted">© 2025 System generowania testów — Panel Administratora</p>
+    </footer>
+
+    <!-- Skrypty: logika admina (fetch API używa endpointów z server.js) -->
+    <script>
+    (function(){
+        const API_BASE = '/api';
+        document.getElementById('apiBase').textContent = API_BASE;
+
+        // elementy
+        const tabs = {
+            dashboard: document.getElementById('pane-dashboard'),
+            uzytkownicy: document.getElementById('pane-uzytkownicy'),
+            kategorie: document.getElementById('pane-kategorie'),
+            banki: document.getElementById('pane-banki'),
+            pytania: document.getElementById('pane-pytania'),
+            przedmioty: document.getElementById('pane-przedmioty'),
+        };
+
+        // menu taby
+        document.getElementById('tab-dashboard').addEventListener('click', ()=>showTab('dashboard'));
+        document.getElementById('tab-uzytkownicy').addEventListener('click', ()=>showTab('uzytkownicy'));
+        document.getElementById('tab-kategorie').addEventListener('click', ()=>showTab('kategorie'));
+        document.getElementById('tab-banki').addEventListener('click', ()=>showTab('banki'));
+        document.getElementById('tab-pytania').addEventListener('click', ()=>showTab('pytania'));
+        document.getElementById('tab-przedmioty').addEventListener('click', ()=>showTab('przedmioty'));
+        document.getElementById('refreshAll').addEventListener('click', initAll);
+
+        // modal
+        const modal = document.getElementById('modal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        document.getElementById('closeModal').addEventListener('click', ()=>closeModal());
+
+        function showModal(title, innerHtml) {
+            modalTitle.textContent = title;
+            modalBody.innerHTML = innerHtml;
+            modal.classList.add('show');
+        }
+        function closeModal(){ modal.classList.remove('show'); modalBody.innerHTML=''; }
+
+        // show tab
+        function showTab(name){
+            Object.keys(tabs).forEach(k => tabs[k].style.display = (k===name ? '' : 'none'));
+        }
+
+        // ---------- DASHBOARD STATYSTYKI ----------
+        async function loadStats(){
+            try{
+                const users = await (await fetch(API_BASE + '/uzytkownicy?limit=1')).json();
+                // stats: user count
+                const allUsers = await (await fetch(API_BASE + '/uzytkownicy?limit=10000')).json();
+                document.getElementById('stat-users').textContent = allUsers.length;
+            }catch(e){
+                document.getElementById('stat-users').textContent = '—';
+            }
+
+            try {
+                const qs = await (await fetch(API_BASE + '/pytania?per_page=1')).json();
+                const allQs = await (await fetch(API_BASE + '/pytania?per_page=10000')).json();
+                document.getElementById('stat-questions').textContent = allQs.length;
+            } catch(e) { document.getElementById('stat-questions').textContent = '—'; }
+
+            try {
+                // Testy endpoint generuj istnieje; ale nie mamy listy testów w API, więc spróbujemy policzyć z tabeli Test (jeśli endpoint nie ma, ustawimy —)
+                const resp = await fetch(API_BASE + '/testy', { method: 'GET' });
+                if (resp.ok) {
+                    const list = await resp.json();
+                    document.getElementById('stat-tests').textContent = list.length;
+                } else {
+                    document.getElementById('stat-tests').textContent = '—';
+                }
+            } catch(e){ document.getElementById('stat-tests').textContent = '—'; }
+
+            try {
+                const cats = await (await fetch(API_BASE + '/kategorie')).json();
+                document.getElementById('stat-cats').textContent = cats.length;
+            } catch(e){ document.getElementById('stat-cats').textContent = '—'; }
+        }
+
+        // ---------- UŻYTKOWNICY CRUD ----------
+        const usersTableBody = document.querySelector('#usersTable tbody');
+        const usersSearch = document.getElementById('usersSearch');
+        const usersFilter = document.getElementById('usersFilter');
+        document.getElementById('addUserBtn').addEventListener('click', ()=>openUserForm());
+
+        usersSearch.addEventListener('input', listUsers);
+        usersFilter.addEventListener('change', listUsers);
+
+        async function listUsers(){
+            const q = usersSearch.value.trim();
+            const typ = usersFilter.value;
+            const params = new URLSearchParams();
+            if(q) params.set('q', q);
+            if(typ) params.set('typ', typ);
+            params.set('limit', 1000);
+            const res = await fetch(API_BASE + '/uzytkownicy?' + params.toString());
+            const data = await res.json();
+            usersTableBody.innerHTML = '';
+            data.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${escapeHtml(u.imie)}</td>
+                    <td>${escapeHtml(u.nazwisko)}</td>
+                    <td>${escapeHtml(u.email)}</td>
+                    <td>${escapeHtml(u.typ_konta)}</td>
+                    <td>
+                        <div style="display:flex;gap:6px;">
+                            <button class="btn ghost" data-id="${u.id}" onclick="__admin.editUser(${u.id})">Edytuj</button>
+                            <button class="btn ghost" data-id="${u.id}" onclick="__admin.deleteUser(${u.id})">Usuń</button>
+                        </div>
+                    </td>`;
+                usersTableBody.appendChild(tr);
+            });
+        }
+
+        window.__admin = window.__admin || {};
+        window.__admin.editUser = async function(id){
+            // pobierz szczegóły
+            const row = await (await fetch(API_BASE + '/uzytkownicy?limit=1&offset=0')).json(); // fallback
+            // lepsze: GET /api/uzytkownicy/:id (nie było w serwerze — ale możemy użyć listy)
+            const all = await (await fetch(API_BASE + '/uzytkownicy?limit=1000')).json();
+            const user = all.find(x => Number(x.id) === Number(id) || Number(x.id_uzytkownika) === Number(id));
+            if(!user) { alert('Nie znaleziono użytkownika'); return; }
+
+            const html = `
+                <div>
+                    <div class="form-group"><label>Imię</label><input id="m_imie" type="text" value="${escapeHtml(user.imie)}" /></div>
+                    <div class="form-group"><label>Nazwisko</label><input id="m_nazwisko" type="text" value="${escapeHtml(user.nazwisko)}" /></div>
+                    <div class="form-group"><label>Email</label><input id="m_email" type="email" value="${escapeHtml(user.email)}" /></div>
+                    <div class="form-group"><label>Rola</label>
+                        <select id="m_typ">
+                            <option value="student">Student</option>
+                            <option value="nauczyciel">Nauczyciel</option>
+                            <option value="administrator">Administrator</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+                        <button id="saveUserBtn" class="btn primary">Zapisz</button>
+                        <button id="cancelUserBtn" class="btn ghost">Anuluj</button>
+                    </div>
+                </div>
+            `;
+            showModal('Edytuj użytkownika', html);
+            document.getElementById('m_typ').value = user.typ_konta || '';
+            document.getElementById('cancelUserBtn').addEventListener('click', closeModal);
+            document.getElementById('saveUserBtn').addEventListener('click', async ()=>{
+                const imie = document.getElementById('m_imie').value.trim();
+                const nazwisko = document.getElementById('m_nazwisko').value.trim();
+                const email = document.getElementById('m_email').value.trim();
+                const typ = document.getElementById('m_typ').value;
+                // PUT /api/uzytkownicy/:id
+                const idToUse = user.id || user.id_uzytkownika || id;
+                const resp = await fetch(API_BASE + '/uzytkownicy/' + idToUse, {
+                    method: 'PUT',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ imie, nazwisko, email, typ_konta: typ })
+                });
+                if(resp.ok){
+                    closeModal();
+                    listUsers();
+                    initAll();
+                } else {
+                    alert('Błąd zapisu');
+                }
+            });
+        };
+
+        window.__admin.deleteUser = async function(id){
+            if(!confirm('Na pewno usunąć użytkownika?')) return;
+            const idToUse = id;
+            const resp = await fetch(API_BASE + '/uzytkownicy/' + idToUse, { method: 'DELETE' });
+            if(resp.ok){
+                listUsers();
+                initAll();
+            } else alert('Błąd usuwania');
+        };
+
+        function openUserForm(){
+            const html = `
+                <div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Imię</label><input id="n_imie" type="text" /></div>
+                        <div class="form-group"><label>Nazwisko</label><input id="n_nazwisko" type="text" /></div>
+                    </div>
+                    <div class="form-group"><label>Email</label><input id="n_email" type="email" /></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Hasło</label><input id="n_haslo" type="text" /></div>
+                        <div class="form-group"><label>Rola</label>
+                            <select id="n_typ">
+                                <option value="student">Student</option>
+                                <option value="nauczyciel">Nauczyciel</option>
+                                <option value="administrator">Administrator</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button id="createUserBtn" class="btn primary">Stwórz</button>
+                        <button id="cancelCreateUserBtn" class="btn ghost">Anuluj</button>
+                    </div>
+                </div>
+            `;
+            showModal('Dodaj użytkownika', html);
+            document.getElementById('cancelCreateUserBtn').addEventListener('click', closeModal);
+            document.getElementById('createUserBtn').addEventListener('click', async ()=>{
+                const imie = document.getElementById('n_imie').value.trim();
+                const nazwisko = document.getElementById('n_nazwisko').value.trim();
+                const email = document.getElementById('n_email').value.trim();
+                const haslo = document.getElementById('n_haslo').value.trim();
+                const typ = document.getElementById('n_typ').value;
+                if(!imie||!nazwisko||!email||!haslo){ alert('Wypełnij wymagane pola'); return; }
+                const resp = await fetch(API_BASE + '/uzytkownicy', {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ imie, nazwisko, email, haslo, typ_konta: typ })
+                });
+                if(resp.ok){
+                    closeModal();
+                    listUsers();
+                    initAll();
+                } else {
+                    const err = await resp.json().catch(()=>({}));
+                    alert('Błąd: ' + (err.error || 'nieznany'));
+                }
+            });
+        }
+
+        // ---------- KATEGORIE ----------
+        const catsTableBody = document.querySelector('#catsTable tbody');
+        document.getElementById('addCatBtn').addEventListener('click', async ()=>{
+            const name = document.getElementById('catName').value.trim();
+            if(!name) return alert('Podaj nazwę kategorii');
+            const resp = await fetch(API_BASE + '/kategorie', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ nazwa: name })
+            });
+            if(resp.ok){ document.getElementById('catName').value=''; listCats(); initAll(); }
+            else { alert('Błąd dodawania kategorii'); }
+        });
+
+        async function listCats(){
+            try {
+                const res = await fetch(API_BASE + '/kategorie');
+                const data = await res.json();
+                catsTableBody.innerHTML = '';
+                data.forEach(c=>{
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${escapeHtml(c.nazwa)}</td>
+                    <td><div style="display:flex;gap:6px;">
+                        <button class="btn ghost" onclick="__admin.deleteCat(${c.id_kategorii || c.id})">Usuń</button>
+                    </div></td>`;
+                    catsTableBody.appendChild(tr);
+                });
+                // zapełnij filtry pytań
+                const qCatFilter = document.getElementById('qCatFilter');
+                if(qCatFilter){
+                    qCatFilter.innerHTML = '<option value="">Wszystkie kategorie</option>' + data.map(c=>`<option value="${c.id_kategorii || c.id}">${escapeHtml(c.nazwa)}</option>`).join('');
+                }
+            } catch(e){ console.error(e); }
+        }
+
+        window.__admin.deleteCat = async function(id){
+            if(!confirm('Usuń kategorię?')) return;
+            try{
+                const resp = await fetch(API_BASE + '/kategorie/' + id, { method:'DELETE' });
+                if(resp.ok){ listCats(); initAll(); } else alert('Błąd usuwania');
+            }catch(e){ alert('Błąd'); }
+        };
+
+        // ---------- BANKI ----------
+        const banksTableBody = document.querySelector('#banksTable tbody');
+        document.getElementById('addBankBtn').addEventListener('click', async ()=>{
+            const name = document.getElementById('bankName').value.trim();
+            if(!name) return alert('Podaj nazwę banku');
+            const resp = await fetch(API_BASE + '/banki', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ nazwa: name })
+            });
+            if(resp.ok){ document.getElementById('bankName').value=''; listBanks(); initAll(); }
+            else { alert('Błąd dodawania banku'); }
+        });
+
+        async function listBanks(){
+            try {
+                const res = await fetch(API_BASE + '/banki');
+                const data = await res.json();
+                banksTableBody.innerHTML = '';
+                data.forEach(b=>{
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${escapeHtml(b.nazwa)}</td>
+                    <td><div style="display:flex;gap:6px;">
+                        <button class="btn ghost" onclick="__admin.deleteBank(${b.id_banku || b.id})">Usuń</button>
+                    </div></td>`;
+                    banksTableBody.appendChild(tr);
+                });
+                // zapełnij filtry pytań
+                const qBankFilter = document.getElementById('qBankFilter');
+                if(qBankFilter){
+                    qBankFilter.innerHTML = '<option value="">Wszystkie banki</option>' + data.map(b=>`<option value="${b.id_banku || b.id}">${escapeHtml(b.nazwa)}</option>`).join('');
+                }
+            } catch(e){ console.error(e); }
+        }
+
+        window.__admin.deleteBank = async function(id){
+            if(!confirm('Usuń bank pytań?')) return;
+            try{
+                const resp = await fetch(API_BASE + '/banki/' + id, { method:'DELETE' });
+                if(resp.ok){ listBanks(); initAll(); } else alert('Błąd usuwania');
+            }catch(e){ alert('Błąd'); }
+        };
+
+        // ---------- PYTANIA ----------
+        const questionsTableBody = document.querySelector('#questionsTable tbody');
+        document.getElementById('addQBtn').addEventListener('click', ()=>openQuestionForm());
+        document.getElementById('qSearch').addEventListener('input', listQuestions);
+        document.getElementById('qBankFilter').addEventListener('change', listQuestions);
+        document.getElementById('qCatFilter').addEventListener('change', listQuestions);
+
+        function openQuestionForm(existing){
+            const banksOptions = window._banksOptions || '';
+            const catsOptions = window._catsOptions || '';
+            const html = `
+                <div>
+                    <div class="form-group"><label>Treść pytania</label><textarea id="q_tresc" rows="4">${existing ? escapeHtml(existing.tresc) : ''}</textarea></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Bank</label><select id="q_bank">${banksOptions}</select></div>
+                        <div class="form-group"><label>Kategoria</label><select id="q_kat">${catsOptions}</select></div>
+                        <div class="form-group"><label>Trudność</label><input id="q_trud" type="text" value="${existing ? existing.trudnosc : '1'}" /></div>
+                    </div>
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button id="saveQBtn" class="btn primary">${existing ? 'Zapisz' : 'Dodaj'}</button>
+                        <button id="cancelQBtn" class="btn ghost">Anuluj</button>
+                    </div>
+                </div>
+            `;
+            showModal(existing ? 'Edytuj pytanie' : 'Dodaj pytanie', html);
+            document.getElementById('cancelQBtn').addEventListener('click', closeModal);
+            document.getElementById('saveQBtn').addEventListener('click', async ()=>{
+                const tresc = document.getElementById('q_tresc').value.trim();
+                const id_banku = document.getElementById('q_bank').value || null;
+                const id_kategorii = document.getElementById('q_kat').value || null;
+                const trudnosc = document.getElementById('q_trud').value || 1;
+                if(!tresc){ alert('Podaj treść pytania'); return; }
+                if(existing){
+                    // serwer nie ma PUT /pytania/:id w twoim server.js — ale ma DELETE i POST
+                    // Najprościej: usunąć i stworzyć nowe (jeśli chcesz dokładnego PUT, dodam to do serwera)
+                    if(confirm('Zastąpić pytanie nową treścią? (stworzy nowe i usunie stare)')){
+                        await fetch(API_BASE + '/pytania/' + existing.id_pytania, { method: 'DELETE' });
+                        await fetch(API_BASE + '/pytania', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tresc, id_banku, id_kategorii, trudnosc }) });
+                        closeModal(); listQuestions(); initAll();
+                    }
+                } else {
+                    const resp = await fetch(API_BASE + '/pytania', {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ tresc, id_banku, id_kategorii, trudnosc })
+                    });
+                    if(resp.ok){ closeModal(); listQuestions(); initAll(); } else alert('Błąd zapisu');
+                }
+            });
+        }
+
+        async function listQuestions(){
+            try {
+                const q = document.getElementById('qSearch').value.trim();
+                const id_banku = document.getElementById('qBankFilter').value;
+                const id_kategorii = document.getElementById('qCatFilter').value;
+                const params = new URLSearchParams();
+                params.set('per_page', 1000);
+                if(q) params.set('q', q);
+                if(id_banku) params.set('id_banku', id_banku);
+                if(id_kategorii) params.set('id_kategorii', id_kategorii);
+                const res = await fetch(API_BASE + '/pytania?' + params.toString());
+                const data = await res.json();
+                questionsTableBody.innerHTML = '';
+                data.forEach(p=>{
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${escapeHtml(p.tresc)}</td>
+                    <td>${escapeHtml(p.bank_nazwa || p.nazwa || '')}</td>
+                    <td>${escapeHtml(p.kat_nazwa || '')}</td>
+                    <td>${escapeHtml(String(p.trudnosc || '1'))}</td>
+                    <td>
+                        <div style="display:flex;gap:6px;">
+                            <button class="btn ghost" onclick="__admin.editQuestion(${p.id_pytania || p.id})">Edytuj</button>
+                            <button class="btn ghost" onclick="__admin.deleteQuestion(${p.id_pytania || p.id})">Usuń</button>
+                        </div>
+                    </td>`;
+                    questionsTableBody.appendChild(tr);
+                });
+            } catch(e){ console.error(e); }
+        }
+
+        window.__admin.editQuestion = async function(id){
+            // pobierz pytania (brak GET /pytania/:id w serwerze) -> użyj listy
+            const all = await (await fetch(API_BASE + '/pytania?per_page=1000')).json();
+            const p = all.find(x => Number(x.id_pytania || x.id) === Number(id));
+            if(!p) return alert('Nie znaleziono pytania');
+            openQuestionForm(p);
+        };
+
+        window.__admin.deleteQuestion = async function(id){
+            if(!confirm('Usuń pytanie?')) return;
+            const resp = await fetch(API_BASE + '/pytania/' + id, { method: 'DELETE' });
+            if(resp.ok){ listQuestions(); initAll(); } else alert('Błąd usuwania');
+        };
+
+        // ---------- PRZEDMIOTY ----------
+        const przedmiotyTableBody = document.querySelector('#przedmiotyTable tbody');
+        document.getElementById('addPrzedmiotBtn').addEventListener('click', async ()=>{
+            const nazwa = document.getElementById('przedmiotName').value.trim();
+            const opis = document.getElementById('przedmiotOpis').value.trim();
+            const naucEmail = document.getElementById('przedmiotNauczyciel').value || null;
+            if(!nazwa) return alert('Podaj nazwę przedmiotu');
+            const resp = await fetch(API_BASE + '/przedmioty', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ nazwa, opis, nauczyciel_email: naucEmail })
+            });
+            if(resp.ok){ document.getElementById('przedmiotName').value=''; document.getElementById('przedmiotOpis').value=''; listPrzedmioty(); initAll(); }
+            else { alert('Błąd dodawania przedmiotu'); }
+        });
+
+        async function listPrzedmioty(){
+            try {
+                const res = await fetch(API_BASE + '/przedmioty');
+                const data = await res.json();
+                przedmiotyTableBody.innerHTML = '';
+                data.forEach(p=>{
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${escapeHtml(p.nazwa)}</td>
+                        <td>${escapeHtml((p.nauczyciel_imie ? p.nauczyciel_imie + ' ' + (p.nauczyciel_nazwisko||'') : '—'))}</td>
+                        <td><div style="display:flex;gap:6px;">
+                            <button class="btn ghost" onclick="__admin.deletePrzedmiot(${p.id_przedmiotu || p.id})">Usuń</button>
+                        </div></td>`;
+                    przedmiotyTableBody.appendChild(tr);
+                });
+            } catch(e){ console.error(e); }
+        }
+
+        window.__admin.deletePrzedmiot = async function(id){
+            if(!confirm('Usuń przedmiot?')) return;
+            const resp = await fetch(API_BASE + '/przedmioty/' + id, { method:'DELETE' });
+            if(resp.ok){ listPrzedmioty(); initAll(); } else alert('Błąd usuwania');
+        };
+
+        // ---------- Inicjalizacja list pomocniczych ----------
+        async function loadAuxiliary(){
+            // nauczyciele do selecta
+            try {
+                const users = await (await fetch(API_BASE + '/uzytkownicy?limit=1000')).json();
+                const teachers = users.filter(u => u.typ_konta === 'nauczyciel');
+                const sel = document.getElementById('przedmiotNauczyciel');
+                sel.innerHTML = '<option value="">Brak</option>' + teachers.map(t=>`<option value="${t.email}">${escapeHtml(t.imie + ' ' + t.nazwisko)}</option>`).join('');
+            } catch(e){ console.warn(e); }
+
+            // banks & cats options
+            try {
+                const banks = await (await fetch(API_BASE + '/banki')).json();
+                window._banksOptions = banks.map(b=>`<option value="${b.id_banku || b.id}">${escapeHtml(b.nazwa)}</option>`).join('');
+                const cats = await (await fetch(API_BASE + '/kategorie')).json();
+                window._catsOptions = cats.map(c=>`<option value="${c.id_kategorii || c.id}">${escapeHtml(c.nazwa)}</option>`).join('');
+            } catch(e){ console.warn(e); }
+        }
+
+        // ---------- Helper: escapeHtml ----------
+        function escapeHtml(s){
+            if(s === null || s === undefined) return '';
+            return String(s)
+                .replaceAll('&','&amp;')
+                .replaceAll('<','&lt;')
+                .replaceAll('>','&gt;')
+                .replaceAll('"','&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        // ---------- GLOWNA INICJALIZACJA ----------
+        async function initAll(){
+            showTab('dashboard');
+            await loadStats();
+            await loadAuxiliary();
+            await listUsers();
+            await listCats();
+            await listBanks();
+            await listQuestions();
+            await listPrzedmioty();
+            // recent-activity: prosty agregat
+            document.getElementById('recent-activity').textContent = 'Zaktualizowano: ' + new Date().toLocaleString();
+        }
+
+        // start
+        initAll();
+
+        // close modal on backdrop click
+        modal.addEventListener('click', (ev)=>{
+            if(ev.target === modal) closeModal();
+        });
+
+    })();
+    </script>
+
+    <!-- zachowujemy oryginalne skrypty templatemo -->
+    <script src="templatemo-noir-scripts.js"></script>
+</body>
+</html>
