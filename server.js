@@ -27,31 +27,40 @@ app.use(cors({
 }));
 
 // Open DB (read-write)
-let db;
-try {
-  db = new Database(DB_FILE, { verbose: console.log });
-  console.log('Baza otwarta:', DB_FILE);
-} catch (err) {
-  console.error('Nie można otworzyć bazy:', err.message);
-  process.exit(1);
-}
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    return cb(new Error("Not allowed by CORS"));
+  }
+}));
+app.use(bodyParser.json());
+app.get("/api/uzytkownicy/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const row = db.prepare(`
+      SELECT U.*, S.numer_indeksu
+      FROM Uzytkownik U
+      LEFT JOIN Student S ON S.id_uzytkownika = U.id_uzytkownika
+      WHERE U.id_uzytkownika = ?
+    `).get(id);
 
-// Helper: normalize user record to fields expected by frontend
-function normalizeUserRow(row){
-  if(!row) return null;
-  // Common column names: id_uzytkownika or id
-  const id = row.id_uzytkownika || row.id || row.ID;
-  return {
-    id: id,
-    id_uzytkownika: id,
-    imie: row.imie || row.first_name || row.firstName || '',
-    nazwisko: row.nazwisko || row.last_name || row.lastName || '',
-    email: row.email || row.mail || '',
-    typ_konta: row.typ_konta || row.typ || row.role || 'student',
-    // include other fields as-is
-    ...row
-  };
-}
+    if (!row) {
+      return res.status(404).json({ error: "Użytkownik nie istnieje" });
+    }
+
+    res.json({
+      id: row.id_uzytkownika,
+      imie: row.imie,
+      nazwisko: row.nazwisko,
+      email: row.email,
+      typ_konta: row.typ_konta,
+      numer_indeksu: row.numer_indeksu || null
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // -------------------- UŻYTKOWNICY --------------------
 // GET /api/uzytkownicy  (supports ?q=... & ?typ=... & ?limit & ?offset)
@@ -533,4 +542,5 @@ app.use(function(err, req, res, next){
 app.listen(PORT, () => {
   console.log(`Server uruchomiony na porcie ${PORT}`);
 });
+
 
