@@ -1,31 +1,20 @@
-// server.js
-// Kompletny backend dla projektu "projekt-bazy-danych" (SQLite + Express)
-// Zgodny z export_final.sql / test3_baza.sqlite
-// --------------------------------------------------
-// Wymagania: npm i express better-sqlite3 cors body-parser
-// --------------------------------------------------
+// server.js (ESM) - poprawiona wersja
+import express from "express";
+import bodyParser from "body-parser";
+import cors from "cors";
+import Database from "better-sqlite3";
 
-const express = require('express');
-const Database = require('better-sqlite3');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const path = require('path');
-
-const PORT = process.env.PORT || 3000;
-const DB_FILE = process.env.DATABASE_FILE || path.join(__dirname, 'test3_baza.sqlite');
-
-const app = express();
-app.use(bodyParser.json({ limit: '5mb' }));
-
-// CORS - dopasuj originy do swojego hostingu (GitHub Pages / lokalnie)
+const DB_PATH = process.env.DB_PATH || "./test3_baza.sqlite";
 const ALLOWED_ORIGINS = [
-  "http://localhost:3000",
-  "http://localhost:5500",
   "https://waniuu.github.io",
-  "https://waniuu.github.io/projekt-bazy-danych",
-  process.env.CLIENT_ORIGIN || ""
+  "http://localhost:5500",
+  "http://localhost:3000",
+  process.env.CLIENT_ORIGIN || "https://waniuu.github.io/projekt-bazy-danych"
 ].filter(Boolean);
 
+const db = new Database(DB_PATH, { readonly: false });
+
+const app = express();
 app.use(cors({
   origin: function(origin, callback){
     // allow requests with no origin (e.g. curl or server-to-server)
@@ -544,3 +533,4 @@ app.use(function(err, req, res, next){
 app.listen(PORT, () => {
   console.log(`Server uruchomiony na porcie ${PORT}`);
 });
+
