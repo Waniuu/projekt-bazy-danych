@@ -84,6 +84,7 @@
                     <button id="tab-banki" class="btn ghost" style="text-align:left;">Banki pytań</button>
                     <button id="tab-pytania" class="btn ghost" style="text-align:left;">Pytania</button>
                     <button id="tab-przedmioty" class="btn ghost" style="text-align:left;">Przedmioty</button>
+                    <button id="tab-raporty" class="btn ghost" style="text-align:left;">Raporty</button>
                 </div>
 
                 <div style="margin-top:18px;">
@@ -209,6 +210,68 @@
                         </table>
                     </div>
                 </div>
+<!-- RAPORTY -->
+<div id="pane-raporty" class="card" style="display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h2>Raporty</h2>
+    <div class="flex">
+      <button id="refreshReports" class="btn ghost">Odśwież</button>
+    </div>
+  </div>
+
+  <hr style="opacity:0.06" />
+
+  <!-- 1) Raport Użytkownicy -->
+  <div style="margin-top:8px;">
+    <h3>1. Lista użytkowników</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <select id="r_users_role">
+        <option value="">Wszystkie role</option>
+        <option value="student">Student</option>
+        <option value="nauczyciel">Nauczyciel</option>
+        <option value="administrator">Administrator</option>
+      </select>
+      <input id="r_users_email" type="text" placeholder="Email zawiera..." />
+      <button id="r_users_btn" class="btn primary">Pobierz PDF</button>
+    </div>
+  </div>
+
+  <hr style="opacity:0.06" />
+
+  <!-- 2) Raport Statystyki pytań -->
+  <div style="margin-top:8px;">
+    <h3>2. Statystyki pytań (wykres)</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <select id="r_q_bank"></select>
+      <select id="r_q_cat"></select>
+      <button id="r_q_btn" class="btn primary">Pobierz PDF</button>
+    </div>
+  </div>
+
+  <hr style="opacity:0.06" />
+
+  <!-- 3) Raport Testy pogrupowane -->
+  <div style="margin-top:8px;">
+    <h3>3. Testy pogrupowane (wg kategorii)</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <input id="r_t_start" type="date" />
+      <input id="r_t_end" type="date" />
+      <button id="r_t_btn" class="btn primary">Pobierz PDF</button>
+    </div>
+  </div>
+
+  <hr style="opacity:0.06" />
+
+  <!-- 4) Formularz oceny testu -->
+  <div style="margin-top:8px;">
+    <h3>4. Formularz oceny (PDF)</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <input id="r_f_test_id" type="number" placeholder="ID testu" />
+      <input id="r_f_user_id" type="number" placeholder="ID użytkownika (opcjonalnie)" />
+      <button id="r_f_btn" class="btn primary">Pobierz PDF</button>
+    </div>
+  </div>
+</div>
 
                 <!-- PRZEDMIOTY -->
                 <div id="pane-przedmioty" class="card" style="display:none;">
@@ -263,6 +326,7 @@
             banki: document.getElementById('pane-banki'),
             pytania: document.getElementById('pane-pytania'),
             przedmioty: document.getElementById('pane-przedmioty'),
+            raporty = document.getElementById('pane-raporty')
         };
 
         // menu taby
@@ -272,7 +336,10 @@
         document.getElementById('tab-banki').addEventListener('click', ()=>showTab('banki'));
         document.getElementById('tab-pytania').addEventListener('click', ()=>showTab('pytania'));
         document.getElementById('tab-przedmioty').addEventListener('click', ()=>showTab('przedmioty'));
+        document.getElementById('tab-raporty').addEventListener('click', ()=>showTab('raporty'));
+ 
         document.getElementById('refreshAll').addEventListener('click', initAll);
+        
 
         // modal
         const modal = document.getElementById('modal');
@@ -325,6 +392,71 @@
                 document.getElementById('stat-cats').textContent = cats.length;
             } catch(e){ document.getElementById('stat-cats').textContent = '—'; }
         }
+        // --- inicjalizacja selectów banków i kategorii (użyj istniejącej funkcji loadAuxiliary)
+async function loadReportSelectors(){
+  // banki i kategorie już załadowane w window._banksOptions / window._catsOptions
+  const bankSel = document.getElementById('r_q_bank');
+  const catSel = document.getElementById('r_q_cat');
+  bankSel.innerHTML = (window._banksOptions ? '<option value="">Wszystkie banki</option>' + window._banksOptions : '<option value="">Brak</option>');
+  catSel.innerHTML = (window._catsOptions ? '<option value="">Wszystkie kategorie</option>' + window._catsOptions : '<option value="">Brak</option>');
+}
+
+// helper do pobrania PDF i wymuszenia pobrania w przeglądarce
+async function fetchPdfAndDownload(url){
+  const resp = await fetch(url, { method: 'GET' });
+  if(!resp.ok){ const err = await resp.json().catch(()=>({})); alert('Błąd: ' + (err.error || resp.status)); return; }
+  const blob = await resp.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = 'raport.pdf';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+
+// podpięcie przycisków
+document.getElementById('r_users_btn').addEventListener('click', async ()=>{
+  const rola = document.getElementById('r_users_role').value;
+  const email = document.getElementById('r_users_email').value.trim();
+  const p = new URLSearchParams();
+  if(rola) p.set('rola', rola);
+  if(email) p.set('email', email);
+  await fetchPdfAndDownload(API_BASE + '/reports/users?' + p.toString());
+});
+
+document.getElementById('r_q_btn').addEventListener('click', async ()=>{
+  const id_banku = document.getElementById('r_q_bank').value;
+  const id_kategorii = document.getElementById('r_q_cat').value;
+  const p = new URLSearchParams();
+  if(id_kategorii) p.set('id_kategorii', id_kategorii);
+  if(id_banku) p.set('id_banku', id_banku);
+  await fetchPdfAndDownload(API_BASE + '/reports/questions-stats?' + p.toString());
+});
+
+document.getElementById('r_t_btn').addEventListener('click', async ()=>{
+  const start = document.getElementById('r_t_start').value;
+  const end = document.getElementById('r_t_end').value;
+  const p = new URLSearchParams();
+  if(start) p.set('start', start);
+  if(end) p.set('end', end);
+  await fetchPdfAndDownload(API_BASE + '/reports/tests-grouped?' + p.toString());
+});
+
+document.getElementById('r_f_btn').addEventListener('click', async ()=>{
+  const id_testu = document.getElementById('r_f_test_id').value;
+  const id_uzytkownika = document.getElementById('r_f_user_id').value;
+  if(!id_testu){ alert('Podaj ID testu'); return; }
+  const p = new URLSearchParams();
+  p.set('id_testu', id_testu);
+  if(id_uzytkownika) p.set('id_uzytkownika', id_uzytkownika);
+  await fetchPdfAndDownload(API_BASE + '/reports/test-form?' + p.toString());
+});
+
+// call on init
+loadReportSelectors();
+
 
         // ---------- UŻYTKOWNICY CRUD ----------
         const usersTableBody = document.querySelector('#usersTable tbody');
