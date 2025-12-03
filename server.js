@@ -168,6 +168,26 @@ app.get("/api/reports/questions-stats", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.get("/api/wyniki/:id_uzytkownika", (req, res) => {
+  try {
+    const id = Number(req.params.id_uzytkownika);
+
+    const sql = `
+      SELECT W.*, T.tytul, K.nazwa AS kategoria
+      FROM Wynik W
+      LEFT JOIN Test T ON T.id_testu = W.id_testu
+      LEFT JOIN Kategoria K ON K.id_kategorii = T.id_szablonu
+      WHERE W.id_uzytkownika = ?
+      ORDER BY W.id_wyniku DESC
+    `;
+
+    const rows = db.prepare(sql).all(id);
+    res.json(rows);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 // -------------------- 3) Raport: Testy pogrupowane wg kategorii (kryteria: start, end daty) --------------------
@@ -628,4 +648,5 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
