@@ -33,8 +33,7 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json({ limit: "5mb" }));
-// ===================== RAPORTY — serwer =====================
-import fetch from "node-fetch";
+// ===================== RAPORTY — serwer ====================
 
 app.get("/api/raport/test", async (req, res) => {
     try {
@@ -680,6 +679,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
