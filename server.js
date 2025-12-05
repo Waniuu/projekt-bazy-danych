@@ -34,6 +34,29 @@ app.use(cors({
 
 app.use(bodyParser.json({ limit: "5mb" }));
 // ===================== RAPORTY — serwer =====================
+import fetch from "node-fetch";
+
+app.get("/api/raport/test", async (req, res) => {
+    try {
+        const response = await fetch("https://fastreport-service.onrender.com/reports/test");
+
+        if (!response.ok) {
+            throw new Error("FastReportService returned error " + response.status);
+        }
+
+        const pdf = await response.arrayBuffer();
+
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", "attachment; filename=raport.pdf");
+
+        res.send(Buffer.from(pdf));
+
+    } catch (err) {
+        console.error("PDF ERROR:", err);
+        res.status(500).json({ error: "Błąd generowania PDF: " + err.message });
+    }
+});
+
 // wymaga: pdfkit, chartjs-node-canvas, moment
 import PDFDocument from "pdfkit";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
@@ -657,6 +680,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
