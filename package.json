@@ -8,9 +8,9 @@
     "start": "node server.js",
     "dev": "node server.js"
   },
-  "engines": {
-    "node": ">=22.0.0"
-  },
+"engines": {
+  "node": "18.x"
+},
   "author": "",
   "license": "ISC",
   "dependencies": {
