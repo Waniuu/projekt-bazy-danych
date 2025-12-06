@@ -8,8 +8,8 @@
     "start": "node server.js",
     "dev": "node server.js"
   },
- "engines": {
-    "node": ">=24.0.0"
+  "engines": {
+    "node": ">=22.0.0"
   },
   "author": "",
   "license": "ISC",
@@ -22,21 +22,5 @@
     "pdfkit": "^0.14.0",
     "chartjs-node-canvas": "^4.1.6",
     "moment": "^2.29.4"
-  }
-  "apiResponses": {
-    "loginSuccess": [
-      {
-        "success": true,
-        "role": "student"
-      },
-      {
-        "success": true,
-        "role": "administrator"
-      }
-    ],
-    "loginError": {
-      "success": false,
-      "message": "Złe hasło"
-    }
   }
 }
