@@ -12,6 +12,16 @@ import Database from "better-sqlite3";
 // KONFIGURACJA
 // -----------------------------------
 const DB_PATH = process.env.DB_PATH || "./test3_baza.sqlite";
+const apiResponses = {
+  loginSuccess: [
+    { success: true, role: "student" },
+    { success: true, role: "administrator" }
+  ],
+  loginError: {
+    success: false,
+    message: "Złe hasło"
+  }
+};
 
 const ALLOWED_ORIGINS = [
   "https://waniuu.github.io",
@@ -679,6 +689,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
