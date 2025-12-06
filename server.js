@@ -56,7 +56,7 @@ app.get("/api/raport/test", async (req, res) => {
         const pdf = await response.arrayBuffer();
 
         res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", "attachment; filename=raport.pdf");
+        res.setHeader("Content-Disposition", "inline; filename=raport.pdf");
 
         res.send(Buffer.from(pdf));
 
@@ -461,6 +461,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
