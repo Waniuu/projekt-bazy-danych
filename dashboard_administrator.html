@@ -801,49 +801,13 @@
             document.getElementById('recent-activity').textContent = 'Zaktualizowano: ' + new Date().toLocaleString();
         }
 // Funkcja do pobierania PDF
-    async function downloadReport(url) {
-        try {
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "Generowanie...";
-            btn.disabled = true;
 
-            const res = await fetch(API_URL + url); // API_URL masz zdefiniowane w głównym skrypcie
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || res.statusText);
-            }
-            const blob = await res.blob();
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = "raport.pdf";
-            link.click();
-        } catch (e) {
-            alert("Błąd: " + e.message);
-        } finally {
-            const btn = event.target; // Musimy ponownie pobrać element, jeśli kontekst się zgubił, ale tutaj ok
-            // W prostym HTML event.target działa. Wewnątrz async lepiej zapisać btn wcześniej.
-            // Przywracamy przycisk (zróbmy reload strony dla uproszczenia lub odblokujmy)
-            location.reload(); 
-        }
-    }
 
     // Specjalna funkcja dla raportu z parametrem (Wyniki Egzaminu)
-    async function downloadReportExam() {
-        const idTestu = document.getElementById('report-test-select').value;
-        if(!idTestu) { alert("Wybierz test!"); return; }
-        await downloadReport(`/api/reports/exam-results?id_testu=${idTestu}`);
-    }
+
 
     // Ładowanie listy testów do selecta (dodaj to do initAll w głównym skrypcie)
-    async function loadTestsForReport() {
-        try {
-            const res = await fetch(API_URL + '/api/testy');
-            const tests = await res.json();
-            const select = document.getElementById('report-test-select');
-            select.innerHTML = tests.map(t => `<option value="${t.id_testu}">${t.tytul}</option>`).join('');
-        } catch(e) { console.error(e); }
-    }
+  
         // start
         initAll();
 
