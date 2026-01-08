@@ -14,7 +14,7 @@ const DB_PATH = process.env.DB_PATH || "./test3_baza.sqlite";
 
 // Adres serwisu raportowego (Wewnętrzny dla Rendera lub Publiczny jako fallback)
 // Jeśli wewnętrzny nie działa, spróbuj użyć publicznego adresu HTTPS swojej usługi C#
-const FASTREPORT_URL = process.env.FASTREPORT_INTERNAL_URL || "http://fastreport-service:8080";
+const FASTREPORT_URL = process.env.FASTREPORT_INTERNAL_URL || "https://fastreport-service.onrender.com";
 
 const ALLOWED_ORIGINS = [
   "https://waniuu.github.io",
@@ -562,6 +562,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
