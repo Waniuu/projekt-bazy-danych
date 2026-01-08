@@ -289,612 +289,599 @@
     </footer>
 
     <!-- Skrypty: logika admina (fetch API używa endpointów z server.js) -->
-    <script>
-    (function(){
-        const API_BASE = 'https://projekt-bazy-danych-backend.onrender.com/api';
-        document.getElementById('apiBase').textContent = API_BASE;
+  <script>
+(function(){
+    const API_BASE = 'https://projekt-bazy-danych-backend.onrender.com/api';
+    document.getElementById('apiBase').textContent = API_BASE;
 
-        // elementy
-        const tabs = {
-            dashboard: document.getElementById('pane-dashboard'),
-            uzytkownicy: document.getElementById('pane-uzytkownicy'),
-            kategorie: document.getElementById('pane-kategorie'),
-            banki: document.getElementById('pane-banki'),
-            pytania: document.getElementById('pane-pytania'),
-            przedmioty: document.getElementById('pane-przedmioty'), // DODANE
-            raporty: document.getElementById('pane-raporty')        // DODANE
-        };
+    // elementy
+    const tabs = {
+        dashboard: document.getElementById('pane-dashboard'),
+        uzytkownicy: document.getElementById('pane-uzytkownicy'),
+        kategorie: document.getElementById('pane-kategorie'),
+        banki: document.getElementById('pane-banki'),
+        pytania: document.getElementById('pane-pytania'),
+        przedmioty: document.getElementById('pane-przedmioty'),
+        raporty: document.getElementById('pane-raporty')
+    };
 
-        // menu taby
-        document.getElementById('tab-dashboard').addEventListener('click', ()=>showTab('dashboard'));
-        document.getElementById('tab-uzytkownicy').addEventListener('click', ()=>showTab('uzytkownicy'));
-        document.getElementById('tab-kategorie').addEventListener('click', ()=>showTab('kategorie'));
-        document.getElementById('tab-banki').addEventListener('click', ()=>showTab('banki'));
-        document.getElementById('tab-pytania').addEventListener('click', ()=>showTab('pytania'));
-        document.getElementById('tab-przedmioty').addEventListener('click', ()=>showTab('przedmioty'));
-        document.getElementById('tab-raporty').addEventListener('click', ()=>showTab('raporty'));
+    // menu taby
+    document.getElementById('tab-dashboard').addEventListener('click', ()=>showTab('dashboard'));
+    document.getElementById('tab-uzytkownicy').addEventListener('click', ()=>showTab('uzytkownicy'));
+    document.getElementById('tab-kategorie').addEventListener('click', ()=>showTab('kategorie'));
+    document.getElementById('tab-banki').addEventListener('click', ()=>showTab('banki'));
+    document.getElementById('tab-pytania').addEventListener('click', ()=>showTab('pytania'));
+    document.getElementById('tab-przedmioty').addEventListener('click', ()=>showTab('przedmioty'));
+    document.getElementById('tab-raporty').addEventListener('click', ()=>showTab('raporty'));
 
-        document.getElementById('refreshAll').addEventListener('click', initAll);
+    document.getElementById('refreshAll').addEventListener('click', initAll);
 
-        // modal
-        const modal = document.getElementById('modal');
-        const modalBody = document.getElementById('modalBody');
-        const modalTitle = document.getElementById('modalTitle');
-        document.getElementById('closeModal').addEventListener('click', ()=>closeModal());
+    // modal
+    const modal = document.getElementById('modal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    document.getElementById('closeModal').addEventListener('click', ()=>closeModal());
 
-        function showModal(title, innerHtml) {
-            modalTitle.textContent = title;
-            modalBody.innerHTML = innerHtml;
-            modal.classList.add('show');
-        }
-        function closeModal(){ modal.classList.remove('show'); modalBody.innerHTML=''; }
+    function showModal(title, innerHtml) {
+        modalTitle.textContent = title;
+        modalBody.innerHTML = innerHtml;
+        modal.classList.add('show');
+    }
+    function closeModal(){ modal.classList.remove('show'); modalBody.innerHTML=''; }
 
-        // show tab
-        function showTab(name){
-            Object.keys(tabs).forEach(k => tabs[k].style.display = (k===name ? '' : 'none'));
-        }
-
-// ---------- DASHBOARD STATYSTYKI ----------
-async function loadStats(){
-    try{
-        // fetch counts
-        const allUsers = await (await fetch(API_BASE + '/uzytkownicy')).json().catch(()=>[]);
-        document.getElementById('stat-users').textContent = allUsers.length || '—';
-    }catch(e){
-        document.getElementById('stat-users').textContent = '—';
+    // show tab
+    function showTab(name){
+        Object.keys(tabs).forEach(k => tabs[k].style.display = (k===name ? '' : 'none'));
     }
 
-    try {
-        const allQs = await (await fetch(API_BASE + '/pytania')).json().catch(()=>[]);
-        document.getElementById('stat-questions').textContent = allQs.length || '—';
-    } catch(e) { document.getElementById('stat-questions').textContent = '—'; }
-
-    try {
-        const resp = await fetch(API_BASE + '/testy');
-        if (resp.ok) {
-            const list = await resp.json();
-            document.getElementById('stat-tests').textContent = (list && list.length) || '—';
-        } else {
-            document.getElementById('stat-tests').textContent = '—';
+    // ---------- DASHBOARD STATYSTYKI ----------
+    async function loadStats(){
+        try{
+            const allUsers = await (await fetch(API_BASE + '/uzytkownicy')).json().catch(()=>[]);
+            document.getElementById('stat-users').textContent = allUsers.length || '—';
+        }catch(e){
+            document.getElementById('stat-users').textContent = '—';
         }
-    } catch(e){ document.getElementById('stat-tests').textContent = '—'; }
 
-    try {
-        const cats = await (await fetch(API_BASE + '/kategorie')).json().catch(()=>[]);
-        document.getElementById('stat-cats').textContent = cats.length || '—';
-    } catch(e){ document.getElementById('stat-cats').textContent = '—'; }
-}
+        try {
+            const allQs = await (await fetch(API_BASE + '/pytania')).json().catch(()=>[]);
+            document.getElementById('stat-questions').textContent = allQs.length || '—';
+        } catch(e) { document.getElementById('stat-questions').textContent = '—'; }
 
-// ---------- UŻYTKOWNICY CRUD ----------
-const usersTableBody = document.querySelector('#usersTable tbody');
-const usersSearch = document.getElementById('usersSearch');
-const usersFilter = document.getElementById('usersFilter');
-document.getElementById('addUserBtn').addEventListener('click', ()=>openUserForm());
+        try {
+            const resp = await fetch(API_BASE + '/testy');
+            if (resp.ok) {
+                const list = await resp.json();
+                document.getElementById('stat-tests').textContent = (list && list.length) || '—';
+            } else {
+                document.getElementById('stat-tests').textContent = '—';
+            }
+        } catch(e){ document.getElementById('stat-tests').textContent = '—'; }
 
-usersSearch.addEventListener('input', listUsers);
-usersFilter.addEventListener('change', listUsers);
+        try {
+            const cats = await (await fetch(API_BASE + '/kategorie')).json().catch(()=>[]);
+            document.getElementById('stat-cats').textContent = cats.length || '—';
+        } catch(e){ document.getElementById('stat-cats').textContent = '—'; }
+    }
 
-async function listUsers(){
-    try{
-        const q = usersSearch.value.trim();
-        const typ = usersFilter.value;
-        const res = await fetch(API_BASE + '/uzytkownicy');
-        const data = await res.json();
-        
-        // Filtrowanie po stronie klienta
-        let filteredData = data;
-        if(q) {
-            filteredData = filteredData.filter(u => 
-                (u.imie && u.imie.toLowerCase().includes(q.toLowerCase())) ||
-                (u.nazwisko && u.nazwisko.toLowerCase().includes(q.toLowerCase())) ||
-                (u.email && u.email.toLowerCase().includes(q.toLowerCase()))
-            );
-        }
-        if(typ) {
-            filteredData = filteredData.filter(u => u.typ_konta === typ);
-        }
-        
-        usersTableBody.innerHTML = '';
-        filteredData.forEach(u => {
-            const id = u.id_uzytkownika || u.id;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${escapeHtml(u.imie)}</td>
-                <td>${escapeHtml(u.nazwisko)}</td>
-                <td>${escapeHtml(u.email)}</td>
-                <td>${escapeHtml(u.typ_konta)}</td>
-                <td>
-                    <div style="display:flex;gap:6px;">
-                        <button class="btn ghost" onclick="adminEditUser(${id})">Edytuj</button>
-                        <button class="btn ghost" onclick="adminDeleteUser(${id})">Usuń</button>
-                    </div>
-                </td>`;
-            usersTableBody.appendChild(tr);
-        });
-    }catch(e){ console.error('listUsers error', e); }
-}
+    // ---------- UŻYTKOWNICY CRUD ----------
+    const usersTableBody = document.querySelector('#usersTable tbody');
+    const usersSearch = document.getElementById('usersSearch');
+    const usersFilter = document.getElementById('usersFilter');
+    document.getElementById('addUserBtn').addEventListener('click', ()=>openUserForm());
 
-// Funkcje admina jako globalne (naprawa błędu linii 780)
-async function adminEditUser(id){
-    const all = await (await fetch(API_BASE + '/uzytkownicy')).json().catch(()=>[]);
-    const user = all.find(x => Number(x.id_uzytkownika || x.id) === Number(id));
-    if(!user) { alert('Nie znaleziono użytkownika'); return; }
+    usersSearch.addEventListener('input', listUsers);
+    usersFilter.addEventListener('change', listUsers);
 
-    const html = `
-        <div>
-            <div class="form-group"><label>Imię</label><input id="m_imie" type="text" value="${escapeHtml(user.imie)}" /></div>
-            <div class="form-group"><label>Nazwisko</label><input id="m_nazwisko" type="text" value="${escapeHtml(user.nazwisko)}" /></div>
-            <div class="form-group"><label>Email</label><input id="m_email" type="email" value="${escapeHtml(user.email)}" /></div>
-            <div class="form-group"><label>Rola</label>
-                <select id="m_typ">
-                    <option value="student" ${user.typ_konta === 'student' ? 'selected' : ''}>Student</option>
-                    <option value="nauczyciel" ${user.typ_konta === 'nauczyciel' ? 'selected' : ''}>Nauczyciel</option>
-                    <option value="administrator" ${user.typ_konta === 'administrator' ? 'selected' : ''}>Administrator</option>
-                </select>
+    async function listUsers(){
+        try{
+            const q = usersSearch.value.trim();
+            const typ = usersFilter.value;
+            const res = await fetch(API_BASE + '/uzytkownicy');
+            const data = await res.json();
+            
+            let filteredData = data;
+            if(q) {
+                filteredData = filteredData.filter(u => 
+                    (u.imie && u.imie.toLowerCase().includes(q.toLowerCase())) ||
+                    (u.nazwisko && u.nazwisko.toLowerCase().includes(q.toLowerCase())) ||
+                    (u.email && u.email.toLowerCase().includes(q.toLowerCase()))
+                );
+            }
+            if(typ) {
+                filteredData = filteredData.filter(u => u.typ_konta === typ);
+            }
+            
+            usersTableBody.innerHTML = '';
+            filteredData.forEach(u => {
+                const id = u.id_uzytkownika || u.id;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${escapeHtml(u.imie)}</td>
+                    <td>${escapeHtml(u.nazwisko)}</td>
+                    <td>${escapeHtml(u.email)}</td>
+                    <td>${escapeHtml(u.typ_konta)}</td>
+                    <td>
+                        <div style="display:flex;gap:6px;">
+                            <button class="btn ghost" onclick="adminEditUser(${id})">Edytuj</button>
+                            <button class="btn ghost" onclick="adminDeleteUser(${id})">Usuń</button>
+                        </div>
+                    </td>`;
+                usersTableBody.appendChild(tr);
+            });
+        }catch(e){ console.error('listUsers error', e); }
+    }
+
+    // Globalne funkcje admina
+    async function adminEditUser(id){
+        const all = await (await fetch(API_BASE + '/uzytkownicy')).json().catch(()=>[]);
+        const user = all.find(x => Number(x.id_uzytkownika || x.id) === Number(id));
+        if(!user) { alert('Nie znaleziono użytkownika'); return; }
+
+        const html = `
+            <div>
+                <div class="form-group"><label>Imię</label><input id="m_imie" type="text" value="${escapeHtml(user.imie)}" /></div>
+                <div class="form-group"><label>Nazwisko</label><input id="m_nazwisko" type="text" value="${escapeHtml(user.nazwisko)}" /></div>
+                <div class="form-group"><label>Email</label><input id="m_email" type="email" value="${escapeHtml(user.email)}" /></div>
+                <div class="form-group"><label>Rola</label>
+                    <select id="m_typ">
+                        <option value="student" ${user.typ_konta === 'student' ? 'selected' : ''}>Student</option>
+                        <option value="nauczyciel" ${user.typ_konta === 'nauczyciel' ? 'selected' : ''}>Nauczyciel</option>
+                        <option value="administrator" ${user.typ_konta === 'administrator' ? 'selected' : ''}>Administrator</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+                    <button id="saveUserBtn" class="btn primary">Zapisz</button>
+                    <button id="cancelUserBtn" class="btn ghost">Anuluj</button>
+                </div>
             </div>
-            <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
-                <button id="saveUserBtn" class="btn primary">Zapisz</button>
-                <button id="cancelUserBtn" class="btn ghost">Anuluj</button>
-            </div>
-        </div>
-    `;
-    showModal('Edytuj użytkownika', html);
-    document.getElementById('cancelUserBtn').addEventListener('click', closeModal);
-    document.getElementById('saveUserBtn').addEventListener('click', async ()=>{
-        const imie = document.getElementById('m_imie').value.trim();
-        const nazwisko = document.getElementById('m_nazwisko').value.trim();
-        const email = document.getElementById('m_email').value.trim();
-        const typ = document.getElementById('m_typ').value;
-        const idToUse = user.id_uzytkownika || user.id || id;
-        const resp = await fetch(API_BASE + '/uzytkownicy/' + idToUse, {
-            method: 'PUT',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ imie, nazwisko, email, typ_konta: typ })
+        `;
+        showModal('Edytuj użytkownika', html);
+        document.getElementById('cancelUserBtn').addEventListener('click', closeModal);
+        document.getElementById('saveUserBtn').addEventListener('click', async ()=>{
+            const imie = document.getElementById('m_imie').value.trim();
+            const nazwisko = document.getElementById('m_nazwisko').value.trim();
+            const email = document.getElementById('m_email').value.trim();
+            const typ = document.getElementById('m_typ').value;
+            const idToUse = user.id_uzytkownika || user.id || id;
+            const resp = await fetch(API_BASE + '/uzytkownicy/' + idToUse, {
+                method: 'PUT',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ imie, nazwisko, email, typ_konta: typ })
+            });
+            if(resp.ok){
+                closeModal();
+                listUsers();
+                initAll();
+            } else {
+                alert('Błąd zapisu');
+            }
         });
+    }
+
+    async function adminDeleteUser(id){
+        if(!confirm('Na pewno usunąć użytkownika?')) return;
+        const resp = await fetch(API_BASE + '/uzytkownicy/' + id, { method: 'DELETE' });
         if(resp.ok){
-            closeModal();
             listUsers();
             initAll();
-        } else {
-            alert('Błąd zapisu');
-        }
-    });
-}
+        } else alert('Błąd usuwania');
+    }
 
-async function adminDeleteUser(id){
-    if(!confirm('Na pewno usunąć użytkownika?')) return;
-    const resp = await fetch(API_BASE + '/uzytkownicy/' + id, { method: 'DELETE' });
-    if(resp.ok){
-        listUsers();
-        initAll();
-    } else alert('Błąd usuwania');
-}
-        function openUserForm(){
-            const html = `
-                <div>
-                    <div class="form-row">
-                        <div class="form-group"><label>Imię</label><input id="n_imie" type="text" /></div>
-                        <div class="form-group"><label>Nazwisko</label><input id="n_nazwisko" type="text" /></div>
-                    </div>
-                    <div class="form-group"><label>Email</label><input id="n_email" type="email" /></div>
-                    <div class="form-row">
-                        <div class="form-group"><label>Hasło</label><input id="n_haslo" type="text" /></div>
-                        <div class="form-group"><label>Rola</label>
-                            <select id="n_typ">
-                                <option value="student">Student</option>
-                                <option value="nauczyciel">Nauczyciel</option>
-                                <option value="administrator">Administrator</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="display:flex; gap:8px; justify-content:flex-end;">
-                        <button id="createUserBtn" class="btn primary">Stwórz</button>
-                        <button id="cancelCreateUserBtn" class="btn ghost">Anuluj</button>
+    function openUserForm(){
+        const html = `
+            <div>
+                <div class="form-row">
+                    <div class="form-group"><label>Imię</label><input id="n_imie" type="text" /></div>
+                    <div class="form-group"><label>Nazwisko</label><input id="n_nazwisko" type="text" /></div>
+                </div>
+                <div class="form-group"><label>Email</label><input id="n_email" type="email" /></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Hasło</label><input id="n_haslo" type="text" /></div>
+                    <div class="form-group"><label>Rola</label>
+                        <select id="n_typ">
+                            <option value="student">Student</option>
+                            <option value="nauczyciel">Nauczyciel</option>
+                            <option value="administrator">Administrator</option>
+                        </select>
                     </div>
                 </div>
-            `;
-            showModal('Dodaj użytkownika', html);
-            document.getElementById('cancelCreateUserBtn').addEventListener('click', closeModal);
-            document.getElementById('createUserBtn').addEventListener('click', async ()=>{
-                const imie = document.getElementById('n_imie').value.trim();
-                const nazwisko = document.getElementById('n_nazwisko').value.trim();
-                const email = document.getElementById('n_email').value.trim();
-                const haslo = document.getElementById('n_haslo').value.trim();
-                const typ = document.getElementById('n_typ').value;
-                if(!imie||!nazwisko||!email||!haslo){ alert('Wypełnij wymagane pola'); return; }
-                const resp = await fetch(API_BASE + '/uzytkownicy', {
-                    method:'POST', headers:{'Content-Type':'application/json'},
-                    body: JSON.stringify({ imie, nazwisko, email, haslo, typ_konta: typ })
-                });
-                if(resp.ok){
-                    closeModal();
-                    listUsers();
-                    initAll();
-                } else {
-                    const err = await resp.json().catch(()=>({}));
-                    alert('Błąd: ' + (err.error || 'nieznany'));
-                }
-            });
-        }
 
-        // ---------- KATEGORIE ----------
-        const catsTableBody = document.querySelector('#catsTable tbody');
-        document.getElementById('addCatBtn').addEventListener('click', async ()=>{
-            const name = document.getElementById('catName').value.trim();
-            if(!name) return alert('Podaj nazwę kategorii');
-            const resp = await fetch(API_BASE + '/kategorie', {
-                method: 'POST', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ nazwa: name })
-            });
-            if(resp.ok){ document.getElementById('catName').value=''; listCats(); initAll(); }
-            else { alert('Błąd dodawania kategorii'); }
-        });
-
-        async function listCats(){
-            try {
-                const res = await fetch(API_BASE + '/kategorie');
-                const data = await res.json();
-                catsTableBody.innerHTML = '';
-                data.forEach(c=>{
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${escapeHtml(c.nazwa)}</td>
-                    <td><div style="display:flex;gap:6px;">
-                        <button class="btn ghost" onclick="__admin.deleteCat(${c.id_kategorii || c.id})">Usuń</button>
-                    </div></td>`;
-                    catsTableBody.appendChild(tr);
-                });
-                // zapełnij filtry pytań
-                const qCatFilter = document.getElementById('qCatFilter');
-                if(qCatFilter){
-                    qCatFilter.innerHTML = '<option value="">Wszystkie kategorie</option>' + data.map(c=>`<option value="${c.id_kategorii || c.id}">${escapeHtml(c.nazwa)}</option>`).join('');
-                }
-            } catch(e){ console.error(e); }
-        }
-
-  async function deleteCategory(id){
-    if(!confirm('Usuń kategorię?')) return;
-    try{
-        const resp = await fetch(API_BASE + '/kategorie/' + id, { method:'DELETE' });
-        if(resp.ok){ listCats(); initAll(); } else alert('Błąd usuwania');
-    }catch(e){ alert('Błąd'); }
-}
-        // ---------- BANKI ----------
-        const banksTableBody = document.querySelector('#banksTable tbody');
-        document.getElementById('addBankBtn').addEventListener('click', async ()=>{
-            const name = document.getElementById('bankName').value.trim();
-            if(!name) return alert('Podaj nazwę banku');
-            const resp = await fetch(API_BASE + '/banki', {
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button id="createUserBtn" class="btn primary">Stwórz</button>
+                    <button id="cancelCreateUserBtn" class="btn ghost">Anuluj</button>
+                </div>
+            </div>
+        `;
+        showModal('Dodaj użytkownika', html);
+        document.getElementById('cancelCreateUserBtn').addEventListener('click', closeModal);
+        document.getElementById('createUserBtn').addEventListener('click', async ()=>{
+            const imie = document.getElementById('n_imie').value.trim();
+            const nazwisko = document.getElementById('n_nazwisko').value.trim();
+            const email = document.getElementById('n_email').value.trim();
+            const haslo = document.getElementById('n_haslo').value.trim();
+            const typ = document.getElementById('n_typ').value;
+            if(!imie||!nazwisko||!email||!haslo){ alert('Wypełnij wymagane pola'); return; }
+            const resp = await fetch(API_BASE + '/uzytkownicy', {
                 method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ nazwa: name })
+                body: JSON.stringify({ imie, nazwisko, email, haslo, typ_konta: typ })
             });
-            if(resp.ok){ document.getElementById('bankName').value=''; listBanks(); initAll(); }
-            else { alert('Błąd dodawania banku'); }
+            if(resp.ok){
+                closeModal();
+                listUsers();
+                initAll();
+            } else {
+                const err = await resp.json().catch(()=>({}));
+                alert('Błąd: ' + (err.error || 'nieznany'));
+            }
         });
+    }
 
-        async function listBanks(){
-            try {
-                const res = await fetch(API_BASE + '/banki');
-                const data = await res.json();
-                banksTableBody.innerHTML = '';
-                data.forEach(b=>{
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${escapeHtml(b.nazwa)}</td>
-                    <td><div style="display:flex;gap:6px;">
-                        <button class="btn ghost" onclick="__admin.deleteBank(${b.id_banku || b.id})">Usuń</button>
-                    </div></td>`;
-                    banksTableBody.appendChild(tr);
-                });
-                // zapełnij filtry pytań
-                const qBankFilter = document.getElementById('qBankFilter');
-                if(qBankFilter){
-                    qBankFilter.innerHTML = '<option value="">Wszystkie banki</option>' + data.map(b=>`<option value="${b.id_banku || b.id}">${escapeHtml(b.nazwa)}</option>`).join('');
-                }
-            } catch(e){ console.error(e); }
-        }
+    // ---------- KATEGORIE ----------
+    const catsTableBody = document.querySelector('#catsTable tbody');
+    document.getElementById('addCatBtn').addEventListener('click', async ()=>{
+        const name = document.getElementById('catName').value.trim();
+        if(!name) return alert('Podaj nazwę kategorii');
+        const resp = await fetch(API_BASE + '/kategorie', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ nazwa: name })
+        });
+        if(resp.ok){ document.getElementById('catName').value=''; listCats(); initAll(); }
+        else { alert('Błąd dodawania kategorii'); }
+    });
 
-        window.__admin.deleteBank = async function(id){
-            if(!confirm('Usuń bank pytań?')) return;
-            try{
-                const resp = await fetch(API_BASE + '/banki/' + id, { method:'DELETE' });
-                if(resp.ok){ listBanks(); initAll(); } else alert('Błąd usuwania');
-            }catch(e){ alert('Błąd'); }
-        };
+    async function listCats(){
+        try {
+            const res = await fetch(API_BASE + '/kategorie');
+            const data = await res.json();
+            catsTableBody.innerHTML = '';
+            data.forEach(c=>{
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${escapeHtml(c.nazwa)}</td>
+                <td><div style="display:flex;gap:6px;">
+                    <button class="btn ghost" onclick="deleteCategory(${c.id_kategorii || c.id})">Usuń</button>
+                </div></td>`;
+                catsTableBody.appendChild(tr);
+            });
+            // zapełnij filtry pytań
+            const qCatFilter = document.getElementById('qCatFilter');
+            if(qCatFilter){
+                qCatFilter.innerHTML = '<option value="">Wszystkie kategorie</option>' + data.map(c=>`<option value="${c.id_kategorii || c.id}">${escapeHtml(c.nazwa)}</option>`).join('');
+            }
+        } catch(e){ console.error(e); }
+    }
 
-        // ---------- PYTANIA ----------
-        const questionsTableBody = document.querySelector('#questionsTable tbody');
-        document.getElementById('addQBtn').addEventListener('click', ()=>openQuestionForm());
-        document.getElementById('qSearch').addEventListener('input', listQuestions);
-        document.getElementById('qBankFilter').addEventListener('change', listQuestions);
-        document.getElementById('qCatFilter').addEventListener('change', listQuestions);
+    async function deleteCategory(id){
+        if(!confirm('Usuń kategorię?')) return;
+        try{
+            const resp = await fetch(API_BASE + '/kategorie/' + id, { method:'DELETE' });
+            if(resp.ok){ listCats(); initAll(); } else alert('Błąd usuwania');
+        }catch(e){ alert('Błąd'); }
+    }
 
-        function openQuestionForm(existing){
-            const banksOptions = window._banksOptions || '';
-            const catsOptions = window._catsOptions || '';
-            const html = `
-                <div>
-                    <div class="form-group"><label>Treść pytania</label><textarea id="q_tresc" rows="4">${existing ? escapeHtml(existing.tresc) : ''}</textarea></div>
-                    <div class="form-row">
-                        <div class="form-group"><label>Bank</label><select id="q_bank">${banksOptions}</select></div>
-                        <div class="form-group"><label>Kategoria</label><select id="q_kat">${catsOptions}</select></div>
-                        <div class="form-group"><label>Trudność</label><input id="q_trud" type="text" value="${existing ? (existing.trudnosc || existing.poziom_trudnosci || '1') : '1'}" /></div>
-                    </div>
-                    <div style="display:flex; gap:8px; justify-content:flex-end;">
-                        <button id="saveQBtn" class="btn primary">${existing ? 'Zapisz' : 'Dodaj'}</button>
-                        <button id="cancelQBtn" class="btn ghost">Anuluj</button>
-                    </div>
+    // ---------- BANKI ----------
+    const banksTableBody = document.querySelector('#banksTable tbody');
+    document.getElementById('addBankBtn').addEventListener('click', async ()=>{
+        const name = document.getElementById('bankName').value.trim();
+        if(!name) return alert('Podaj nazwę banku');
+        const resp = await fetch(API_BASE + '/banki', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ nazwa: name })
+        });
+        if(resp.ok){ document.getElementById('bankName').value=''; listBanks(); initAll(); }
+        else { alert('Błąd dodawania banku'); }
+    });
+
+    async function listBanks(){
+        try {
+            const res = await fetch(API_BASE + '/banki');
+            const data = await res.json();
+            banksTableBody.innerHTML = '';
+            data.forEach(b=>{
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${escapeHtml(b.nazwa)}</td>
+                <td><div style="display:flex;gap:6px;">
+                    <button class="btn ghost" onclick="deleteBank(${b.id_banku || b.id})">Usuń</button>
+                </div></td>`;
+                banksTableBody.appendChild(tr);
+            });
+            // zapełnij filtry pytań
+            const qBankFilter = document.getElementById('qBankFilter');
+            if(qBankFilter){
+                qBankFilter.innerHTML = '<option value="">Wszystkie banki</option>' + data.map(b=>`<option value="${b.id_banku || b.id}">${escapeHtml(b.nazwa)}</option>`).join('');
+            }
+        } catch(e){ console.error(e); }
+    }
+
+    async function deleteBank(id){
+        if(!confirm('Usuń bank pytań?')) return;
+        try{
+            const resp = await fetch(API_BASE + '/banki/' + id, { method:'DELETE' });
+            if(resp.ok){ listBanks(); initAll(); } else alert('Błąd usuwania');
+        }catch(e){ alert('Błąd'); }
+    }
+
+    // ---------- PYTANIA ----------
+    const questionsTableBody = document.querySelector('#questionsTable tbody');
+    document.getElementById('addQBtn').addEventListener('click', ()=>openQuestionForm());
+    document.getElementById('qSearch').addEventListener('input', listQuestions);
+    document.getElementById('qBankFilter').addEventListener('change', listQuestions);
+    document.getElementById('qCatFilter').addEventListener('change', listQuestions);
+
+    function openQuestionForm(existing){
+        const banksOptions = window._banksOptions || '';
+        const catsOptions = window._catsOptions || '';
+        const html = `
+            <div>
+                <div class="form-group"><label>Treść pytania</label><textarea id="q_tresc" rows="4">${existing ? escapeHtml(existing.tresc) : ''}</textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Bank</label><select id="q_bank">${banksOptions}</select></div>
+                    <div class="form-group"><label>Kategoria</label><select id="q_kat">${catsOptions}</select></div>
+                    <div class="form-group"><label>Trudność</label><input id="q_trud" type="text" value="${existing ? (existing.trudnosc || existing.poziom_trudnosci || '1') : '1'}" /></div>
                 </div>
-            `;
-            showModal(existing ? 'Edytuj pytanie' : 'Dodaj pytanie', html);
-            document.getElementById('cancelQBtn').addEventListener('click', closeModal);
-            document.getElementById('saveQBtn').addEventListener('click', async ()=>{
-                const tresc = document.getElementById('q_tresc').value.trim();
-                const id_banku = document.getElementById('q_bank').value || null;
-                const id_kategorii = document.getElementById('q_kat').value || null;
-                const trudnosc = document.getElementById('q_trud').value || 1;
-                if(!tresc){ alert('Podaj treść pytania'); return; }
-                if(existing){
-                    // jeśli PUT dostępny możesz użyć; domyślnie używamy PUT jeśli endpoint jest
-                    const idToUse = existing.id_pytania || existing.id;
-                    const resp = await fetch(API_BASE + '/pytania/' + idToUse, {
-                      method: 'PUT',
-                      headers: {'Content-Type':'application/json'},
-                      body: JSON.stringify({ tresc, id_banku, id_kategorii, poziom_trudnosci: trudnosc })
-                    }).catch(()=>null);
-                    if(resp && resp.ok){
-                        closeModal(); listQuestions(); initAll();
-                    } else {
-                        // fallback: create new
-                        const resp2 = await fetch(API_BASE + '/pytania', {
-                            method:'POST', headers:{'Content-Type':'application/json'},
-                            body: JSON.stringify({ tresc, id_banku, id_kategorii, poziom_trudnosci: trudnosc })
-                        });
-                        if(resp2.ok){
-                            // try remove old
-                            try{ await fetch(API_BASE + '/pytania/' + idToUse, { method: 'DELETE' }); }catch(e){}
-                            closeModal(); listQuestions(); initAll();
-                        } else alert('Błąd zapisu');
-                    }
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button id="saveQBtn" class="btn primary">${existing ? 'Zapisz' : 'Dodaj'}</button>
+                    <button id="cancelQBtn" class="btn ghost">Anuluj</button>
+                </div>
+            </div>
+        `;
+        showModal(existing ? 'Edytuj pytanie' : 'Dodaj pytanie', html);
+        document.getElementById('cancelQBtn').addEventListener('click', closeModal);
+        document.getElementById('saveQBtn').addEventListener('click', async ()=>{
+            const tresc = document.getElementById('q_tresc').value.trim();
+            const id_banku = document.getElementById('q_bank').value || null;
+            const id_kategorii = document.getElementById('q_kat').value || null;
+            const trudnosc = document.getElementById('q_trud').value || 1;
+            if(!tresc){ alert('Podaj treść pytania'); return; }
+            if(existing){
+                const idToUse = existing.id_pytania || existing.id;
+                const resp = await fetch(API_BASE + '/pytania/' + idToUse, {
+                  method: 'PUT',
+                  headers: {'Content-Type':'application/json'},
+                  body: JSON.stringify({ tresc, id_banku, id_kategorii, poziom_trudnosci: trudnosc })
+                }).catch(()=>null);
+                if(resp && resp.ok){
+                    closeModal(); listQuestions(); initAll();
                 } else {
-                    const resp = await fetch(API_BASE + '/pytania', {
+                    const resp2 = await fetch(API_BASE + '/pytania', {
                         method:'POST', headers:{'Content-Type':'application/json'},
                         body: JSON.stringify({ tresc, id_banku, id_kategorii, poziom_trudnosci: trudnosc })
                     });
-                    if(resp.ok){ closeModal(); listQuestions(); initAll(); } else alert('Błąd zapisu');
+                    if(resp2.ok){
+                        try{ await fetch(API_BASE + '/pytania/' + idToUse, { method: 'DELETE' }); }catch(e){}
+                        closeModal(); listQuestions(); initAll();
+                    } else alert('Błąd zapisu');
                 }
-            });
-        }
-
-        async function listQuestions(){
-            try {
-                const q = document.getElementById('qSearch').value.trim();
-                const id_banku = document.getElementById('qBankFilter').value;
-                const id_kategorii = document.getElementById('qCatFilter').value;
-                const params = new URLSearchParams();
-                params.set('per_page', 1000);
-                if(q) params.set('q', q);
-                if(id_banku) params.set('id_banku', id_banku);
-                if(id_kategorii) params.set('id_kategorii', id_kategorii);
-                const res = await fetch(API_BASE + '/pytania?' + params.toString());
-                const data = await res.json();
-                questionsTableBody.innerHTML = '';
-                data.forEach(p=>{
-                    const id = p.id_pytania || p.id;
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${escapeHtml(p.tresc)}</td>
-                    <td>${escapeHtml(p.bank_nazwa || p.nazwa || '')}</td>
-                    <td>${escapeHtml(p.kat_nazwa || '')}</td>
-                    <td>${escapeHtml(String(p.trudnosc || p.poziom_trudnosci || '1'))}</td>
-                    <td>
-                        <div style="display:flex;gap:6px;">
-                            <button class="btn ghost" onclick="__admin.editQuestion(${id})">Edytuj</button>
-                            <button class="btn ghost" onclick="__admin.deleteQuestion(${id})">Usuń</button>
-                        </div>
-                    </td>`;
-                    questionsTableBody.appendChild(tr);
+            } else {
+                const resp = await fetch(API_BASE + '/pytania', {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ tresc, id_banku, id_kategorii, poziom_trudnosci: trudnosc })
                 });
-            } catch(e){ console.error(e); }
-        }
-
-        window.__admin.editQuestion = async function(id){
-            const all = await (await fetch(API_BASE + '/pytania?per_page=1000')).json().catch(()=>[]);
-            const p = all.find(x => Number(x.id_pytania || x.id) === Number(id));
-            if(!p) return alert('Nie znaleziono pytania');
-            openQuestionForm(p);
-        };
-
-        window.__admin.deleteQuestion = async function(id){
-            if(!confirm('Usuń pytanie?')) return;
-            const resp = await fetch(API_BASE + '/pytania/' + id, { method: 'DELETE' });
-            if(resp.ok){ listQuestions(); initAll(); } else alert('Błąd usuwania');
-        };
-
-        // ---------- PRZEDMIOTY ----------
-        const przedmiotyTableBody = document.querySelector('#przedmiotyTable tbody');
-        document.getElementById('addPrzedmiotBtn').addEventListener('click', async ()=>{
-            const nazwa = document.getElementById('przedmiotName').value.trim();
-            const opis = document.getElementById('przedmiotOpis').value.trim();
-            const naucEmail = document.getElementById('przedmiotNauczyciel').value || null;
-            if(!nazwa) return alert('Podaj nazwę przedmiotu');
-            const resp = await fetch(API_BASE + '/przedmioty', {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ nazwa, opis, nauczyciel_email: naucEmail })
-            });
-            if(resp.ok){ document.getElementById('przedmiotName').value=''; document.getElementById('przedmiotOpis').value=''; listPrzedmioty(); initAll(); }
-            else { alert('Błąd dodawania przedmiotu'); }
+                if(resp.ok){ closeModal(); listQuestions(); initAll(); } else alert('Błąd zapisu');
+            }
         });
+    }
 
-        async function listPrzedmioty(){
-            try {
-                const res = await fetch(API_BASE + '/przedmioty');
-                const data = await res.json();
-                przedmiotyTableBody.innerHTML = '';
-                data.forEach(p=>{
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${escapeHtml(p.nazwa)}</td>
-                        <td>${escapeHtml((p.nauczyciel_imie ? p.nauczyciel_imie + ' ' + (p.nauczyciel_nazwisko||'') : '—'))}</td>
-                        <td><div style="display:flex;gap:6px;">
-                            <button class="btn ghost" onclick="__admin.deletePrzedmiot(${p.id_przedmiotu || p.id})">Usuń</button>
-                        </div></td>`;
-                    przedmiotyTableBody.appendChild(tr);
-                });
-            } catch(e){ console.error(e); }
+    async function listQuestions(){
+        try {
+            const q = document.getElementById('qSearch').value.trim();
+            const id_banku = document.getElementById('qBankFilter').value;
+            const id_kategorii = document.getElementById('qCatFilter').value;
+            const params = new URLSearchParams();
+            params.set('per_page', 1000);
+            if(q) params.set('q', q);
+            if(id_banku) params.set('id_banku', id_banku);
+            if(id_kategorii) params.set('id_kategorii', id_kategorii);
+            const res = await fetch(API_BASE + '/pytania?' + params.toString());
+            const data = await res.json();
+            questionsTableBody.innerHTML = '';
+            data.forEach(p=>{
+                const id = p.id_pytania || p.id;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${escapeHtml(p.tresc)}</td>
+                <td>${escapeHtml(p.bank_nazwa || p.nazwa || '')}</td>
+                <td>${escapeHtml(p.kat_nazwa || '')}</td>
+                <td>${escapeHtml(String(p.trudnosc || p.poziom_trudnosci || '1'))}</td>
+                <td>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn ghost" onclick="editQuestion(${id})">Edytuj</button>
+                        <button class="btn ghost" onclick="deleteQuestion(${id})">Usuń</button>
+                    </div>
+                </td>`;
+                questionsTableBody.appendChild(tr);
+            });
+        } catch(e){ console.error(e); }
+    }
+
+    async function editQuestion(id){
+        const all = await (await fetch(API_BASE + '/pytania?per_page=1000')).json().catch(()=>[]);
+        const p = all.find(x => Number(x.id_pytania || x.id) === Number(id));
+        if(!p) return alert('Nie znaleziono pytania');
+        openQuestionForm(p);
+    }
+
+    async function deleteQuestion(id){
+        if(!confirm('Usuń pytanie?')) return;
+        const resp = await fetch(API_BASE + '/pytania/' + id, { method: 'DELETE' });
+        if(resp.ok){ listQuestions(); initAll(); } else alert('Błąd usuwania');
+    }
+
+    // ---------- PRZEDMIOTY ----------
+    const przedmiotyTableBody = document.querySelector('#przedmiotyTable tbody');
+    document.getElementById('addPrzedmiotBtn').addEventListener('click', async ()=>{
+        const nazwa = document.getElementById('przedmiotName').value.trim();
+        const opis = document.getElementById('przedmiotOpis').value.trim();
+        const naucEmail = document.getElementById('przedmiotNauczyciel').value || null;
+        if(!nazwa) return alert('Podaj nazwę przedmiotu');
+        const resp = await fetch(API_BASE + '/przedmioty', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ nazwa, opis, nauczyciel_email: naucEmail })
+        });
+        if(resp.ok){ document.getElementById('przedmiotName').value=''; document.getElementById('przedmiotOpis').value=''; listPrzedmioty(); initAll(); }
+        else { alert('Błąd dodawania przedmiotu'); }
+    });
+
+    async function listPrzedmioty(){
+        try {
+            const res = await fetch(API_BASE + '/przedmioty');
+            const data = await res.json();
+            przedmiotyTableBody.innerHTML = '';
+            data.forEach(p=>{
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${escapeHtml(p.nazwa)}</td>
+                    <td>${escapeHtml((p.nauczyciel_imie ? p.nauczyciel_imie + ' ' + (p.nauczyciel_nazwisko||'') : '—'))}</td>
+                    <td><div style="display:flex;gap:6px;">
+                        <button class="btn ghost" onclick="deletePrzedmiot(${p.id_przedmiotu || p.id})">Usuń</button>
+                    </div></td>`;
+                przedmiotyTableBody.appendChild(tr);
+            });
+        } catch(e){ console.error(e); }
+    }
+
+    async function deletePrzedmiot(id){
+        if(!confirm('Usuń przedmiot?')) return;
+        const resp = await fetch(API_BASE + '/przedmioty/' + id, { method:'DELETE' });
+        if(resp.ok){ listPrzedmioty(); initAll(); } else alert('Błąd usuwania');
+    }
+
+    // ---------- Inicjalizacja list pomocniczych ----------
+    async function loadAuxiliary(){
+        // nauczyciele do selecta
+        try {
+            const users = await (await fetch(API_BASE + '/uzytkownicy')).json().catch(()=>[]);
+            const teachers = users.filter(u => u.typ_konta === 'nauczyciel');
+            const sel = document.getElementById('przedmiotNauczyciel');
+            sel.innerHTML = '<option value="">Brak</option>' + teachers.map(t=>`<option value="${t.email}">${escapeHtml(t.imie + ' ' + t.nazwisko)}</option>`).join('');
+        } catch(e){ console.warn(e); }
+
+        // banks & cats options
+        try {
+            const banks = await (await fetch(API_BASE + '/banki')).json().catch(()=>[]);
+            window._banksOptions = banks.map(b=>`<option value="${b.id_banku || b.id}">${escapeHtml(b.nazwa)}</option>`).join('');
+            const cats = await (await fetch(API_BASE + '/kategorie')).json().catch(()=>[]);
+            window._catsOptions = cats.map(c=>`<option value="${c.id_kategorii || c.id}">${escapeHtml(c.nazwa)}</option>`).join('');
+        } catch(e){ console.warn(e); }
+    }
+
+    // ================== RAPORTY ==================
+    async function downloadPdf(url, filename = "raport.pdf") {
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error("Błąd generowania raportu");
+            const blob = await res.blob();
+
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (e) {
+            alert(e.message);
         }
+    }
 
-        window.__admin.deletePrzedmiot = async function(id){
-            if(!confirm('Usuń przedmiot?')) return;
-            const resp = await fetch(API_BASE + '/przedmioty/' + id, { method:'DELETE' });
-            if(resp.ok){ listPrzedmioty(); initAll(); } else alert('Błąd usuwania');
-        };
+    async function loadReportTests() {
+        try {
+            const res = await fetch(API_BASE + '/testy');
+            if (!res.ok) return;
+            const tests = await res.json();
+            const sel = document.getElementById('report-test-select');
+            if (!sel) return;
 
-        // ---------- Inicjalizacja list pomocniczych ----------
-        async function loadAuxiliary(){
-            // nauczyciele do selecta
-            try {
-                const users = await (await fetch(API_BASE + '/uzytkownicy?limit=1000')).json().catch(()=>[]);
-                const teachers = users.filter(u => u.typ_konta === 'nauczyciel');
-                const sel = document.getElementById('przedmiotNauczyciel');
-                sel.innerHTML = '<option value="">Brak</option>' + teachers.map(t=>`<option value="${t.email}">${escapeHtml(t.imie + ' ' + t.nazwisko)}</option>`).join('');
-            } catch(e){ console.warn(e); }
-
-            // banks & cats options
-            try {
-                const banks = await (await fetch(API_BASE + '/banki')).json().catch(()=>[]);
-                window._banksOptions = banks.map(b=>`<option value="${b.id_banku || b.id}">${escapeHtml(b.nazwa)}</option>`).join('');
-                const cats = await (await fetch(API_BASE + '/kategorie')).json().catch(()=>[]);
-                window._catsOptions = cats.map(c=>`<option value="${c.id_kategorii || c.id}">${escapeHtml(c.nazwa)}</option>`).join('');
-            } catch(e){ console.warn(e); }
+            sel.innerHTML =
+                '<option value="">— wybierz test —</option>' +
+                tests.map(t =>
+                    `<option value="${t.id_testu || t.id}">${escapeHtml(t.tytul || 'Test')}</option>`
+                ).join('');
+        } catch (e) {
+            console.warn('Raporty: nie udało się załadować testów', e);
         }
-// ================== RAPORTY (SCALONE) ==================
-
-// helper PDF
-async function downloadPdf(url, filename = "raport.pdf") {
-    try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Błąd generowania raportu");
-        const blob = await res.blob();
-
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(a.href);
-    } catch (e) {
-        alert(e.message);
-    }
-}
-
-// wypełnienie selecta testów
-async function loadReportTests() {
-    try {
-        const res = await fetch(API_BASE + '/testy');
-        if (!res.ok) return;
-        const tests = await res.json();
-        const sel = document.getElementById('report-test-select');
-        if (!sel) return;
-
-        sel.innerHTML =
-            '<option value="">— wybierz test —</option>' +
-            tests.map(t =>
-                `<option value="${t.id_testu || t.id}">${escapeHtml(t.tytul || 'Test')}</option>`
-            ).join('');
-    } catch (e) {
-        console.warn('Raporty: nie udało się załadować testów', e);
-    }
-}
-
-// podpinanie przycisków raportów
-function initReports() {
-    const btnStudents = document.getElementById("reportStudentsBtn");
-    const btnQuestions = document.getElementById("reportQuestionsBtn");
-    const btnStats = document.getElementById("reportStatsBtn");
-    const btnExam = document.getElementById("reportExamBtn");
-
-    if (btnStudents && !btnStudents.dataset.bound) {
-        btnStudents.addEventListener("click", () =>
-            downloadPdf(API_BASE + "/reports/users", "lista_studentow.pdf")
-        );
-        btnStudents.dataset.bound = "1";
     }
 
-    if (btnQuestions && !btnQuestions.dataset.bound) {
-        btnQuestions.addEventListener("click", () =>
-            downloadPdf(API_BASE + "/reports/questions-bank", "bank_pytan.pdf")
-        );
-        btnQuestions.dataset.bound = "1";
-    }
+    function initReports() {
+        const btnStudents = document.getElementById("reportStudentsBtn");
+        const btnQuestions = document.getElementById("reportQuestionsBtn");
+        const btnStats = document.getElementById("reportStatsBtn");
+        const btnExam = document.getElementById("reportExamBtn");
 
-    if (btnStats && !btnStats.dataset.bound) {
-        btnStats.addEventListener("click", () =>
-            downloadPdf(API_BASE + "/reports/tests-stats", "statystyka_zdawalnosci.pdf")
-        );
-        btnStats.dataset.bound = "1";
-    }
-
-    if (btnExam && !btnExam.dataset.bound) {
-        btnExam.addEventListener("click", () => {
-            const id = document.getElementById("report-test-select").value;
-            if (!id) return alert("Wybierz test");
-            downloadPdf(
-                API_BASE + `/reports/exam-results?id_testu=${id}`,
-                "wyniki_egzaminu.pdf"
+        if (btnStudents && !btnStudents.dataset.bound) {
+            btnStudents.addEventListener("click", () =>
+                downloadPdf(API_BASE + "/reports/users", "lista_studentow.pdf")
             );
-        });
-        btnExam.dataset.bound = "1";
-    }
-}
-
-        // ---------- Helper: escapeHtml ----------
-        function escapeHtml(s){
-            if(s === null || s === undefined) return '';
-            return String(s)
-                .replaceAll('&','&amp;')
-                .replaceAll('<','&lt;')
-                .replaceAll('>','&gt;')
-                .replaceAll('"','&quot;')
-                .replaceAll("'", '&#39;');
+            btnStudents.dataset.bound = "1";
         }
 
-        // ---------- GLOWNA INICJALIZACJA ----------
- let firstLoad = true;
+        if (btnQuestions && !btnQuestions.dataset.bound) {
+            btnQuestions.addEventListener("click", () =>
+                downloadPdf(API_BASE + "/reports/questions-bank", "bank_pytan.pdf")
+            );
+            btnQuestions.dataset.bound = "1";
+        }
 
-async function initAll(){
-    await loadStats();
-    await loadAuxiliary();
-    await listUsers();
-    await listCats();
-    await listBanks();
-    await listQuestions();
-    await listPrzedmioty();
-    await loadReportTests();
-    initReports();
+        if (btnStats && !btnStats.dataset.bound) {
+            btnStats.addEventListener("click", () =>
+                downloadPdf(API_BASE + "/reports/tests-stats", "statystyka_zdawalnosci.pdf")
+            );
+            btnStats.dataset.bound = "1";
+        }
 
-    document.getElementById('recent-activity').textContent =
-        'Zaktualizowano: ' + new Date().toLocaleString();
-
-    if (firstLoad) {
-        showTab('dashboard');
-        firstLoad = false;
+        if (btnExam && !btnExam.dataset.bound) {
+            btnExam.addEventListener("click", () => {
+                const id = document.getElementById("report-test-select").value;
+                if (!id) return alert("Wybierz test");
+                downloadPdf(
+                    API_BASE + `/reports/exam-results?id_testu=${id}`,
+                    "wyniki_egzaminu.pdf"
+                );
+            });
+            btnExam.dataset.bound = "1";
+        }
     }
-}
-// Funkcja do pobierania PDF
 
+    // ---------- Helper: escapeHtml ----------
+    function escapeHtml(s){
+        if(s === null || s === undefined) return '';
+        return String(s)
+            .replaceAll('&','&amp;')
+            .replaceAll('<','&lt;')
+            .replaceAll('>','&gt;')
+            .replaceAll('"','&quot;')
+            .replaceAll("'", '&#39;');
+    }
 
-    // Specjalna funkcja dla raportu z parametrem (Wyniki Egzaminu)
+    // ---------- GŁÓWNA INICJALIZACJA ----------
+    let firstLoad = true;
 
+    async function initAll(){
+        await loadStats();
+        await loadAuxiliary();
+        await listUsers();
+        await listCats();
+        await listBanks();
+        await listQuestions();
+        await listPrzedmioty();
+        await loadReportTests();
+        initReports();
 
-    // Ładowanie listy testów do selecta (dodaj to do initAll w głównym skrypcie)
-  
-        // start
-        initAll();
+        document.getElementById('recent-activity').textContent =
+            'Zaktualizowano: ' + new Date().toLocaleString();
 
-        // close modal on backdrop click
-        modal.addEventListener('click', (ev)=>{
-            if(ev.target === modal) closeModal();
-        });
+        if (firstLoad) {
+            showTab('dashboard');
+            firstLoad = false;
+        }
+    }
 
-    })();
-    </script>
+    // start
+    initAll();
+
+    // close modal on backdrop click
+    modal.addEventListener('click', (ev)=>{
+        if(ev.target === modal) closeModal();
+    });
+
+})();
+</script>
 
 
     <!-- zachowujemy oryginalne skrypty templatemo -->
