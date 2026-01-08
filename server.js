@@ -43,19 +43,20 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json({ limit: "5mb" }));
+// ===================== RAPORTY — REALNE DANE Z BAZY ====================
+
 const FASTREPORT_URL = "https://fastreport-service.onrender.com"; 
 
-// Funkcja pomocnicza: Wysyła DANE (JSON) do C# i pobiera PDF
+// Funkcja pomocnicza do wysyłania danych do C#
 async function generateReportWithData(endpoint, data, res) {
     try {
-        console.log(`[Report] Generowanie: ${endpoint}, Ilość wierszy: ${data.length}`);
+        console.log(`[Report] Generowanie: ${endpoint}, Wierszy: ${data.length}`);
         
-        // Wysyłamy dane metodą POST
         const response = await fetch(`${FASTREPORT_URL}${endpoint}`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                "User-Agent": "NodeBackend"
+                "User-Agent": "NodeBackend" // Ważne dla Rendera
             },
             body: JSON.stringify(data)
         });
@@ -77,124 +78,91 @@ async function generateReportWithData(endpoint, data, res) {
 }
 
 // ---------------------------------------------------------
-// 1. RAPORT: Statystyki Pytań (Dane z bazy)
+// 1. RAPORT: Lista Studentów (Prosty)
 // ---------------------------------------------------------
-app.get("/api/reports/questions-stats", (req, res) => {
+app.get("/api/reports/students-list", (req, res) => {
     try {
-        const { id_banku, id_kategorii } = req.query;
-        
-        // Budujemy zapytanie SQL dynamicznie
-        let sql = `
-            SELECT 
-                k.nazwa AS "Kategoria", 
-                b.nazwa AS "Bank", 
-                COUNT(p.id_pytania) AS "Liczba Pytan",
-                p.poziom_trudnosci AS "Poziom"
-            FROM Pytanie p
-            JOIN Kategoria k ON p.id_kategorii = k.id_kategorii
-            JOIN BankPytan b ON p.id_banku = b.id_banku
-            WHERE 1=1
-        `;
-        
-        const params = [];
-        if (id_banku) { sql += " AND p.id_banku = ?"; params.push(id_banku); }
-        if (id_kategorii) { sql += " AND p.id_kategorii = ?"; params.push(id_kategorii); }
-        
-        sql += " GROUP BY k.nazwa, b.nazwa, p.poziom_trudnosci";
-
-        const rows = db.prepare(sql).all(...params);
-        
-        // Przekazujemy dodatkowe info o tytule w pierwszym obiekcie lub jako osobne pole
-        // Tutaj upraszczamy: wysyłamy czystą listę
-        generateReportWithData("/reports/questions-stats", rows, res);
-    } catch (e) {
-        res.status(500).json({error: e.message});
-    }
-});
-
-// ---------------------------------------------------------
-// 2. RAPORT: Lista Użytkowników (Dane z bazy)
-// ---------------------------------------------------------
-app.get("/api/reports/users", (req, res) => {
-    try {
-        const { rola, email } = req.query;
-        let sql = `SELECT id_uzytkownika AS ID, email, rola, imie, nazwisko FROM Uzytkownik WHERE 1=1`;
-        const params = [];
-
-        if (rola) { sql += " AND rola = ?"; params.push(rola); }
-        // Szukanie po fragmencie emaila
-        if (email) { sql += " AND email LIKE ?"; params.push(`%${email}%`); }
-
-        const rows = db.prepare(sql).all(...params);
-        
-        // Formatowanie danych dla raportu (łączenie imienia i nazwiska)
-        const formattedRows = rows.map(r => ({
-            ID: r.ID,
-            "Imie i Nazwisko": `${r.imie || ''} ${r.nazwisko || ''}`.trim(),
-            Rola: r.rola,
-            Email: r.email,
-            Status: "Aktywny"
-        }));
-
-        generateReportWithData("/reports/users", formattedRows, res);
-    } catch (e) {
-        res.status(500).json({error: e.message});
-    }
-});
-
-// ---------------------------------------------------------
-// 3. RAPORT: Harmonogram/Testy (Dane z bazy)
-// ---------------------------------------------------------
-app.get("/api/reports/tests-grouped", (req, res) => {
-    try {
-        // Pobieramy prawdziwe testy z bazy
+        // Pobieramy tylko studentów
         const sql = `
             SELECT 
-                t.data_utworzenia AS "Data",
-                p.nazwa AS "Przedmiot",
-                t.tytul AS "Nazwa Testu",
-                t.czas_trwania || ' min' AS "Czas"
-            FROM Test t
-            LEFT JOIN Przedmiot p ON t.id_przedmiotu = p.id_przedmiotu
-            ORDER BY t.data_utworzenia DESC
+                id_uzytkownika AS "ID",
+                imie AS "Imie",
+                nazwisko AS "Nazwisko",
+                email AS "Email",
+                'Aktywny' AS "Status"
+            FROM Uzytkownik 
+            WHERE rola = 'student'
+            ORDER BY nazwisko ASC
         `;
         const rows = db.prepare(sql).all();
-        generateReportWithData("/reports/tests-grouped", rows, res);
-    } catch (e) {
-        res.status(500).json({error: e.message});
-    }
+        generateReportWithData("/reports/students-list", rows, res);
+    } catch (e) { res.status(500).json({error: e.message}); }
 });
 
 // ---------------------------------------------------------
-// 4. RAPORT: Karta Egzaminacyjna (Wyniki studenta)
+// 2. RAPORT: Wyniki Egzaminu (Wybór konkretnego testu)
 // ---------------------------------------------------------
-app.get("/api/reports/test-form", (req, res) => {
+app.get("/api/reports/exam-results", (req, res) => {
     try {
-        const { id_testu, id_uzytkownika } = req.query;
-        
-        // UWAGA: To wymaga, żebyś miał tabelę np. OdpowiedziStudenta. 
-        // Jeśli jej nie masz, pobierzemy ogólne wyniki z WynikTestu.
-        
+        const { id_testu } = req.query;
+        if (!id_testu) return res.status(400).json({error: "Wybierz test!"});
+
         const sql = `
             SELECT 
-                w.data AS "Data",
-                t.tytul AS "Test",
+                u.imie || ' ' || u.nazwisko AS "Student",
+                w.data AS "Data Podejscia",
                 w.liczba_punktow AS "Punkty",
                 w.ocena AS "Ocena"
             FROM WynikTestu w
-            JOIN Test t ON w.id_testu = t.id_testu
-            WHERE w.id_studenta = ?
+            JOIN Uzytkownik u ON w.id_studenta = u.id_uzytkownika
+            WHERE w.id_testu = ?
+            ORDER BY w.liczba_punktow DESC
         `;
-        
-        // Jeśli nie podano studenta, bierzemy wszystkich (dla testu)
-        const params = id_uzytkownika ? [id_uzytkownika] : [1]; 
-        
-        const rows = db.prepare(sql).all(...params);
-        
-        generateReportWithData("/reports/test-form", rows, res);
-    } catch (e) {
-        res.status(500).json({error: e.message});
-    }
+        const rows = db.prepare(sql).all(id_testu);
+        generateReportWithData("/reports/exam-results", rows, res);
+    } catch (e) { res.status(500).json({error: e.message}); }
+});
+
+// ---------------------------------------------------------
+// 3. RAPORT: Bank Pytań (Grupowany kategoriami)
+// ---------------------------------------------------------
+app.get("/api/reports/questions-bank", (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                k.nazwa AS "Kategoria",
+                p.poziom_trudnosci AS "Poziom",
+                p.tresc AS "Tresc Pytania"
+            FROM Pytanie p
+            JOIN Kategoria k ON p.id_kategorii = k.id_kategorii
+            ORDER BY k.nazwa, p.poziom_trudnosci
+        `;
+        const rows = db.prepare(sql).all();
+        generateReportWithData("/reports/questions-bank", rows, res);
+    } catch (e) { res.status(500).json({error: e.message}); }
+});
+
+// ---------------------------------------------------------
+// 4. RAPORT: Statystyka Testów (Podsumowanie)
+// ---------------------------------------------------------
+app.get("/api/reports/tests-stats", (req, res) => {
+    try {
+        // Agregacja danych: ile osób zdawało i średnia ocena
+        const sql = `
+            SELECT 
+                t.tytul AS "Nazwa Testu",
+                p.nazwa AS "Przedmiot",
+                COUNT(w.id_wyniku) AS "Liczba Podejsc",
+                ROUND(AVG(w.ocena), 2) AS "Srednia Ocena"
+            FROM Test t
+            JOIN Przedmiot p ON t.id_przedmiotu = p.id_przedmiotu
+            LEFT JOIN WynikTestu w ON t.id_testu = w.id_testu
+            GROUP BY t.id_testu
+            ORDER BY t.data_utworzenia DESC
+        `;
+        const rows = db.prepare(sql).all();
+        generateReportWithData("/reports/tests-stats", rows, res);
+    } catch (e) { res.status(500).json({error: e.message}); }
 });
 
 // -----------------------------------
@@ -583,6 +551,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
