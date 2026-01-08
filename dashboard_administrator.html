@@ -212,43 +212,40 @@
                             <tbody></tbody>
                         </table>
                     </div>
-              
+              </div> 
 
-                <!-- RAPORTY -->
-               <!-- RAPORTY -->
+<!-- RAPORTY -->
 <div id="pane-raporty" class="card" style="display:none;">
-  <h2>Raporty</h2>
+    <h2>Raporty</h2>
 
-  <div class="report-block">
-    <h3>1. Lista studentów</h3>
-    <p>Wykaz wszystkich aktywnych studentów.</p>
-    <button id="reportStudentsBtn" class="btn primary">Pobierz PDF</button>
-  </div>
+    <div class="report-block">
+        <h3>1. Lista studentów</h3>
+        <p>Wykaz wszystkich aktywnych studentów.</p>
+        <button id="reportStudentsBtn" class="btn primary">Pobierz PDF</button>
+    </div>
 
-  <hr />
+    <hr />
 
-  <div class="report-block">
-    <h3>2. Wyniki egzaminu</h3>
-    <select id="report-test-select"></select>
-    <button id="reportExamBtn" class="btn primary">Pobierz PDF</button>
-  </div>
+    <div class="report-block">
+        <h3>2. Wyniki egzaminu</h3>
+        <select id="report-test-select"></select>
+        <button id="reportExamBtn" class="btn primary">Pobierz PDF</button>
+    </div>
 
-  <hr />
+    <hr />
 
-  <div class="report-block">
-    <h3>3. Bank pytań</h3>
-    <button id="reportQuestionsBtn" class="btn primary">Pobierz PDF</button>
-  </div>
+    <div class="report-block">
+        <h3>3. Bank pytań</h3>
+        <button id="reportQuestionsBtn" class="btn primary">Pobierz PDF</button>
+    </div>
 
-  <hr />
+    <hr />
 
-  <div class="report-block">
-    <h3>4. Statystyka zdawalności</h3>
-    <button id="reportStatsBtn" class="btn primary">Pobierz PDF</button>
-  </div>
+    <div class="report-block">
+        <h3>4. Statystyka zdawalności</h3>
+        <button id="reportStatsBtn" class="btn primary">Pobierz PDF</button>
+    </div>
 </div>
-
-
  
 
 
@@ -304,8 +301,8 @@
             kategorie: document.getElementById('pane-kategorie'),
             banki: document.getElementById('pane-banki'),
             pytania: document.getElementById('pane-pytania'),
-            przedmioty: document.getElementById('pane-przedmioty'),
-            raporty: document.getElementById('pane-raporty')
+            przedmioty: document.getElementById('pane-przedmioty'), // DODANE
+            raporty: document.getElementById('pane-raporty')        // DODANE
         };
 
         // menu taby
