@@ -78,15 +78,16 @@ async function generateReportWithData(endpoint, data, res) {
 // 1. LISTA STUDENTÓW (Fix SQL)
 app.get("/api/reports/students-list", (req, res) => {
     try {
-        // Zmiana: Filtrujemy po emailu, wykluczając adminów
+        // UŻYWAMY KOLUMNY 'typ_konta', KTÓRA ISTNIEJE W BAZIE
         const sql = `
             SELECT 
                 id_uzytkownika AS "ID", 
                 imie AS "Imie", 
                 nazwisko AS "Nazwisko", 
-                email AS "Email" 
+                email AS "Email",
+                'Aktywny' AS "Status"
             FROM Uzytkownik 
-            WHERE email NOT LIKE '%admin%' 
+            WHERE typ_konta = 'student' 
             ORDER BY nazwisko ASC
         `;
         const rows = db.prepare(sql).all();
@@ -510,6 +511,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
