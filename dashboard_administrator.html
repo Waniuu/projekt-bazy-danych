@@ -775,6 +775,84 @@
                 window._catsOptions = cats.map(c=>`<option value="${c.id_kategorii || c.id}">${escapeHtml(c.nazwa)}</option>`).join('');
             } catch(e){ console.warn(e); }
         }
+// ================== RAPORTY (SCALONE) ==================
+
+// helper PDF
+async function downloadPdf(url, filename = "raport.pdf") {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Błąd generowania raportu");
+        const blob = await res.blob();
+
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    } catch (e) {
+        alert(e.message);
+    }
+}
+
+// wypełnienie selecta testów
+async function loadReportTests() {
+    try {
+        const res = await fetch(API_BASE + '/testy');
+        if (!res.ok) return;
+        const tests = await res.json();
+        const sel = document.getElementById('report-test-select');
+        if (!sel) return;
+
+        sel.innerHTML =
+            '<option value="">— wybierz test —</option>' +
+            tests.map(t =>
+                `<option value="${t.id_testu || t.id}">${escapeHtml(t.tytul || 'Test')}</option>`
+            ).join('');
+    } catch (e) {
+        console.warn('Raporty: nie udało się załadować testów', e);
+    }
+}
+
+// podpinanie przycisków raportów
+function initReports() {
+    const btnStudents = document.getElementById("reportStudentsBtn");
+    const btnQuestions = document.getElementById("reportQuestionsBtn");
+    const btnStats = document.getElementById("reportStatsBtn");
+    const btnExam = document.getElementById("reportExamBtn");
+
+    if (btnStudents && !btnStudents.dataset.bound) {
+        btnStudents.addEventListener("click", () =>
+            downloadPdf(API_BASE + "/reports/users", "lista_studentow.pdf")
+        );
+        btnStudents.dataset.bound = "1";
+    }
+
+    if (btnQuestions && !btnQuestions.dataset.bound) {
+        btnQuestions.addEventListener("click", () =>
+            downloadPdf(API_BASE + "/reports/questions-bank", "bank_pytan.pdf")
+        );
+        btnQuestions.dataset.bound = "1";
+    }
+
+    if (btnStats && !btnStats.dataset.bound) {
+        btnStats.addEventListener("click", () =>
+            downloadPdf(API_BASE + "/reports/tests-stats", "statystyka_zdawalnosci.pdf")
+        );
+        btnStats.dataset.bound = "1";
+    }
+
+    if (btnExam && !btnExam.dataset.bound) {
+        btnExam.addEventListener("click", () => {
+            const id = document.getElementById("report-test-select").value;
+            if (!id) return alert("Wybierz test");
+            downloadPdf(
+                API_BASE + `/reports/exam-results?id_testu=${id}`,
+                "wyniki_egzaminu.pdf"
+            );
+        });
+        btnExam.dataset.bound = "1";
+    }
+}
 
         // ---------- Helper: escapeHtml ----------
         function escapeHtml(s){
@@ -788,18 +866,27 @@
         }
 
         // ---------- GLOWNA INICJALIZACJA ----------
-        async function initAll(){
-            showTab('dashboard');
-            await loadStats();
-            await loadAuxiliary();
-            await listUsers();
-            await listCats();
-            await listBanks();
-            await listQuestions();
-            await listPrzedmioty();
-            // recent-activity: prosty agregat
-            document.getElementById('recent-activity').textContent = 'Zaktualizowano: ' + new Date().toLocaleString();
-        }
+ let firstLoad = true;
+
+async function initAll(){
+    await loadStats();
+    await loadAuxiliary();
+    await listUsers();
+    await listCats();
+    await listBanks();
+    await listQuestions();
+    await listPrzedmioty();
+    await loadReportTests();
+    initReports();
+
+    document.getElementById('recent-activity').textContent =
+        'Zaktualizowano: ' + new Date().toLocaleString();
+
+    if (firstLoad) {
+        showTab('dashboard');
+        firstLoad = false;
+    }
+}
 // Funkcja do pobierania PDF
 
 
@@ -818,49 +905,8 @@
 
     })();
     </script>
-<script>
-/* === RAPORTY PDF – GLOBALNE FUNKCJE === */
 
-const API_BASE = "https://projekt-bazy-danych-backend.onrender.com/api";
 
-async function downloadPdf(url, filename = "raport.pdf") {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Błąd generowania raportu");
-
-    const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  } catch (e) {
-    alert(e.message);
-  }
-}
-
-document.getElementById("reportStudentsBtn")
-  .addEventListener("click", () =>
-    downloadPdf(`${API_BASE}/reports/users`, "lista_studentow.pdf")
-  );
-
-document.getElementById("reportQuestionsBtn")
-  .addEventListener("click", () =>
-    downloadPdf(`${API_BASE}/reports/questions-bank`, "bank_pytan.pdf")
-  );
-
-document.getElementById("reportStatsBtn")
-  .addEventListener("click", () =>
-    downloadPdf(`${API_BASE}/reports/tests-stats`, "statystyka_zdawalnosci.pdf")
-  );
-
-document.getElementById("reportExamBtn")
-  .addEventListener("click", () => {
-    const id = document.getElementById("report-test-select").value;
-    if (!id) return alert("Wybierz test");
-    downloadPdf(`${API_BASE}/reports/exam-results?id_testu=${id}`, "wyniki_egzaminu.pdf");
-  });
-</script>
     <!-- zachowujemy oryginalne skrypty templatemo -->
     <script src="templatemo-noir-scripts.js"></script>
 </body>
