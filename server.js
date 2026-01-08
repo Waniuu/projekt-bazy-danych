@@ -50,37 +50,46 @@ app.use(bodyParser.json({ limit: "5mb" }));
 const FASTREPORT_URL = "https://fastreport-service.onrender.com"; // Adres Twojego mikroserwisu
 
 // Ulepszona funkcja z mechanizmem ponawiania (Retry)
+// ===================== PANCERNA FUNKCJA PROXY ====================
+
+// Ulepszona funkcja pobierania raportu z Retry Policy i nagłówkami
 async function fetchReport(endpoint, params, res, retryCount = 0) {
     try {
         const url = new URL(`${FASTREPORT_URL}${endpoint}`);
+        
+        // Dodawanie parametrów
         Object.keys(params).forEach(key => {
             if (params[key] !== undefined && params[key] !== null) {
                 url.searchParams.append(key, params[key]);
             }
         });
 
-        // Logujemy próbę (przydatne do debugowania)
-        console.log(`[Proxy] Próba ${retryCount + 1}: ${url.toString()}`);
+        console.log(`[Proxy] Próba ${retryCount + 1}/4: ${url.toString()}`);
 
         const response = await fetch(url.toString(), {
             headers: {
-                // Udajemy przeglądarkę, aby Render nie traktował nas jak bota
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AdminDashboard/1.0"
+                // Udajemy prawdziwą przeglądarkę, aby ominąć filtry Rendera
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
+                "Cache-Control": "no-cache"
             }
         });
 
-        // --- KLUCZOWA ZMIANA: OBSŁUGA BŁĘDU 429 ---
+        // --- OBSŁUGA BLOKADY 429 (Too Many Requests) ---
         if (response.status === 429 && retryCount < 3) {
-            console.warn(`[Proxy] Wykryto limit zapytań (429). Czekam 2 sekundy...`);
-            // Czekamy 2000 ms (2 sekundy)
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            // Rekurencyjnie próbujemy ponownie
+            // Wydłużamy czas oczekiwania przy każdej próbie (2s, 4s, 6s)
+            const waitTime = 2000 * (retryCount + 1); 
+            console.warn(`[Proxy] Blokada 429. Czekam ${waitTime/1000}s i ponawiam...`);
+            
+            await new Promise(resolve => setTimeout(resolve, waitTime));
             return fetchReport(endpoint, params, res, retryCount + 1);
         }
-        // -------------------------------------------
+        // -----------------------------------------------
 
         if (!response.ok) {
             const errText = await response.text();
+            // Jeśli to 404 lub 500 z C#, rzucamy błąd
             throw new Error(`FastReport Service Error ${response.status}: ${errText}`);
         }
 
@@ -92,10 +101,14 @@ async function fetchReport(endpoint, params, res, retryCount = 0) {
         res.send(Buffer.from(pdfBuffer));
 
     } catch (err) {
-        console.error("RAPORT ERROR:", err);
-        // Zwracamy błąd do frontendu dopiero, gdy wszystkie próby zawiodą
+        console.error("RAPORT ERROR:", err.message);
+        // Zwracamy błąd JSON tylko jeśli nagłówki nie zostały jeszcze wysłane
         if (!res.headersSent) {
-            res.status(500).json({ error: "Błąd generowania raportu", details: err.message });
+            res.status(500).json({ 
+                error: "Błąd generowania raportu", 
+                details: err.message,
+                tip: "Serwis raportowy jest przeciążony lub blokuje połączenie. Spróbuj ponownie za chwilę."
+            });
         }
     }
 }
@@ -523,6 +536,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
