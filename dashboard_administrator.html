@@ -369,78 +369,17 @@
         }
 
         // --- inicjalizacja selectów banków i kategorii (wywoływana z loadAuxiliary)
-        async function loadReportSelectors(){
-          const bankSel = document.getElementById('r_q_bank');
-          const catSel = document.getElementById('r_q_cat');
-          bankSel.innerHTML = (window._banksOptions ? '<option value="">Wszystkie banki</option>' + window._banksOptions : '<option value="">Brak</option>');
-          catSel.innerHTML = (window._catsOptions ? '<option value="">Wszystkie kategorie</option>' + window._catsOptions : '<option value="">Brak</option>');
-        }
+      
 
         // helper do pobrania PDF i wymuszenia pobrania w przeglądarce
-        async function fetchPdfAndDownload(url){
-          try{
-            const resp = await fetch(url, { method: 'GET' });
-            if(!resp.ok){
-              // spróbuj odczytać json z błędem
-              let err = {};
-              try { err = await resp.json(); } catch(e){ /* ignore */ }
-              alert('Błąd: ' + (err.error || resp.status));
-              return;
-            }
-            const blob = await resp.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            // suggested file name from header if present
-            const cd = resp.headers.get('content-disposition') || '';
-            const match = /filename="(.+)"/.exec(cd);
-            a.download = match ? match[1] : 'raport.pdf';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(blobUrl);
-          }catch(err){
-            alert('Błąd pobierania raportu: ' + (err.message || err));
-          }
-        }
-
+ 
         // podpięcie przycisków raportów
-        document.getElementById('r_users_btn').addEventListener('click', async ()=>{
-          const rola = document.getElementById('r_users_role').value;
-          const email = document.getElementById('r_users_email').value.trim();
-          const p = new URLSearchParams();
-          if(rola) p.set('rola', rola);
-          if(email) p.set('email', email);
-          await fetchPdfAndDownload(API_BASE + '/reports/users?' + p.toString());
-        });
+   
 
-        document.getElementById('r_q_btn').addEventListener('click', async ()=>{
-          const id_banku = document.getElementById('r_q_bank').value;
-          const id_kategorii = document.getElementById('r_q_cat').value;
-          const p = new URLSearchParams();
-          if(id_kategorii) p.set('id_kategorii', id_kategorii);
-          if(id_banku) p.set('id_banku', id_banku);
-          await fetchPdfAndDownload(API_BASE + '/reports/questions-stats?' + p.toString());
-        });
+     
 
-        document.getElementById('r_t_btn').addEventListener('click', async ()=>{
-          const start = document.getElementById('r_t_start').value;
-          const end = document.getElementById('r_t_end').value;
-          const p = new URLSearchParams();
-          if(start) p.set('start', start);
-          if(end) p.set('end', end);
-          await fetchPdfAndDownload(API_BASE + '/reports/tests-grouped?' + p.toString());
-        });
 
-        document.getElementById('r_f_btn').addEventListener('click', async ()=>{
-          const id_testu = document.getElementById('r_f_test_id').value;
-          const id_uzytkownika = document.getElementById('r_f_user_id').value;
-          if(!id_testu){ alert('Podaj ID testu'); return; }
-          const p = new URLSearchParams();
-          p.set('id_testu', id_testu);
-          if(id_uzytkownika) p.set('id_uzytkownika', id_uzytkownika);
-          await fetchPdfAndDownload(API_BASE + '/reports/test-form?' + p.toString());
-        });
+    
 
         // ---------- UŻYTKOWNICY CRUD ----------
         const usersTableBody = document.querySelector('#usersTable tbody');
