@@ -45,75 +45,79 @@ app.use(cors({
 app.use(bodyParser.json({ limit: "5mb" }));
 // ===================== RAPORTY — PROXY DO FASTREPORT ====================
 
-const FASTREPORT_URL = "https://fastreport-service.onrender.com"; // Adres Twojego mikroserwisu
+const FASTREPORT_URL = "https://fastreport-service.onrender.com"; // Adres Twojego mikroserwisu C#
 
-// Funkcja pomocnicza do pobierania PDF
+// Funkcja pomocnicza do pobierania PDF z mikroserwisu
 async function fetchReport(endpoint, params, res) {
     try {
-        // Budowanie URL z parametrami (np. ?year=2024&category=SQL)
+        // Budowanie URL do serwisu C#
         const url = new URL(`${FASTREPORT_URL}${endpoint}`);
-        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+        
+        // Przepisanie parametrów z zapytania
+        Object.keys(params).forEach(key => {
+            if (params[key] !== undefined && params[key] !== null) {
+                url.searchParams.append(key, params[key]);
+            }
+        });
 
-        console.log(`Generowanie raportu: ${url.toString()}`);
+        console.log(`[Proxy] Generowanie raportu: ${url.toString()}`);
         const response = await fetch(url.toString());
 
         if (!response.ok) {
             const errText = await response.text();
-            throw new Error(`FastReport Error ${response.status}: ${errText}`);
+            throw new Error(`FastReport Service Error ${response.status}: ${errText}`);
         }
 
         const pdfBuffer = await response.arrayBuffer();
 
-        // Ustawienie nagłówków, aby przeglądarka wiedziała, że to PDF
+        // Ustawienie nagłówków dla przeglądarki
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", "inline; filename=raport.pdf");
         
-        // Wysłanie bufora jako Buffer Node.js
         res.send(Buffer.from(pdfBuffer));
 
     } catch (err) {
         console.error("RAPORT ERROR:", err);
+        // Zwracamy JSON z błędem, żeby frontend mógł go wyświetlić w alert()
         res.status(500).json({ error: "Błąd generowania raportu", details: err.message });
     }
 }
 
 // ---------------------------------------------------------
-// 1. Raport Statystyk Pytań (Wykres + Filtrowanie)
-// Wymagania: Wykres, Kryteria (id_banku, id_kategorii)
+// 1. Raport Lista Użytkowników (wymagany przez HTML)
+// URL frontendu: /api/reports/users?rola=...&email=...
+// ---------------------------------------------------------
+app.get("/api/reports/users", (req, res) => {
+    const { rola, email } = req.query;
+    // Przekierowujemy do endpointu C#: /reports/users
+    fetchReport("/reports/users", { rola, email }, res);
+});
+
+// ---------------------------------------------------------
+// 2. Raport Statystyki Pytań (Wykres)
+// URL frontendu: /api/reports/questions-stats?id_banku=...
 // ---------------------------------------------------------
 app.get("/api/reports/questions-stats", (req, res) => {
-    // Pobieramy parametry z URL (query string)
     const { id_banku, id_kategorii } = req.query;
-    
-    // Przekazujemy do funkcji proxy
     fetchReport("/reports/questions-stats", { id_banku, id_kategorii }, res);
 });
 
 // ---------------------------------------------------------
-// 2. Raport Wyników Studentów (Grupowanie)
-// Wymagania: Grupowanie (wg Testu/Daty), Kryteria (rok, id_studenta)
+// 3. Raport Testy Pogrupowane (Grupowanie)
+// URL frontendu: /api/reports/tests-grouped?start=...&end=...
 // ---------------------------------------------------------
-app.get("/api/reports/student-results", (req, res) => {
-    const { year, student_id } = req.query;
-    fetchReport("/reports/student-results", { year, student_id }, res);
+app.get("/api/reports/tests-grouped", (req, res) => {
+    const { start, end } = req.query;
+    fetchReport("/reports/tests-grouped", { start, end }, res);
 });
 
 // ---------------------------------------------------------
-// 3. Raport Karty Egzaminacyjnej (Formularz)
-// Wymagania: Formularz, Kryteria (id_studenta, id_testu)
+// 4. Formularz Oceny (Formularz / Karta)
+// URL frontendu: /api/reports/test-form?id_testu=...
 // ---------------------------------------------------------
-app.get("/api/reports/exam-card", (req, res) => {
-    const { id_studenta, id_testu } = req.query;
-    fetchReport("/reports/exam-card", { id_studenta, id_testu }, res);
-});
-
-// ---------------------------------------------------------
-// 4. Raport Aktywności Systemu (Tabela prosta)
-// Wymagania: Kryteria (data_od, data_do)
-// ---------------------------------------------------------
-app.get("/api/reports/system-activity", (req, res) => {
-    const { date_from, date_to } = req.query;
-    fetchReport("/reports/system-activity", { date_from, date_to }, res);
+app.get("/api/reports/test-form", (req, res) => {
+    const { id_testu, id_uzytkownika } = req.query;
+    fetchReport("/reports/test-form", { id_testu, id_uzytkownika }, res);
 });
 
 // -----------------------------------
@@ -502,6 +506,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
