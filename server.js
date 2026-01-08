@@ -45,10 +45,11 @@ app.use(cors({
 app.use(bodyParser.json({ limit: "5mb" }));
 // ===================== RAPORTY — PROXY DO FASTREPORT ====================
 
-const FASTREPORT_URL = "https://fastreport-service.onrender.com"; // Adres Twojego mikroserwisu C#
+// ===================== RAPORTY — PROXY Z RETRY POLICY ====================
 
-// Funkcja pomocnicza do pobierania PDF z mikroserwisu
-// Ulepszona funkcja pobierania raportu z mechanizmem Retry
+const FASTREPORT_URL = "https://fastreport-service.onrender.com"; // Adres Twojego mikroserwisu
+
+// Ulepszona funkcja z mechanizmem ponawiania (Retry)
 async function fetchReport(endpoint, params, res, retryCount = 0) {
     try {
         const url = new URL(`${FASTREPORT_URL}${endpoint}`);
@@ -58,21 +59,25 @@ async function fetchReport(endpoint, params, res, retryCount = 0) {
             }
         });
 
-        console.log(`[Proxy] Generowanie raportu (próba ${retryCount + 1}): ${url.toString()}`);
+        // Logujemy próbę (przydatne do debugowania)
+        console.log(`[Proxy] Próba ${retryCount + 1}: ${url.toString()}`);
 
         const response = await fetch(url.toString(), {
             headers: {
-                // Udajemy przeglądarkę, aby Render nie blokował nas jako "bota"
+                // Udajemy przeglądarkę, aby Render nie traktował nas jak bota
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AdminDashboard/1.0"
             }
         });
 
-        // JEŚLI DOSTANIEMY 429 (Too Many Requests) -> CZEKAMY I PONAWIAMY
+        // --- KLUCZOWA ZMIANA: OBSŁUGA BŁĘDU 429 ---
         if (response.status === 429 && retryCount < 3) {
-            console.warn(`[Proxy] Wykryto Rate Limit (429). Czekam 1.5s przed ponowieniem...`);
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Czekaj 1.5 sekundy
-            return fetchReport(endpoint, params, res, retryCount + 1); // Rekurencja (spróbuj ponownie)
+            console.warn(`[Proxy] Wykryto limit zapytań (429). Czekam 2 sekundy...`);
+            // Czekamy 2000 ms (2 sekundy)
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Rekurencyjnie próbujemy ponownie
+            return fetchReport(endpoint, params, res, retryCount + 1);
         }
+        // -------------------------------------------
 
         if (!response.ok) {
             const errText = await response.text();
@@ -83,11 +88,12 @@ async function fetchReport(endpoint, params, res, retryCount = 0) {
 
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", "inline; filename=raport.pdf");
+        
         res.send(Buffer.from(pdfBuffer));
 
     } catch (err) {
         console.error("RAPORT ERROR:", err);
-        // Jeśli po 3 próbach nadal błąd, zwracamy go do klienta
+        // Zwracamy błąd do frontendu dopiero, gdy wszystkie próby zawiodą
         if (!res.headersSent) {
             res.status(500).json({ error: "Błąd generowania raportu", details: err.message });
         }
@@ -517,6 +523,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
