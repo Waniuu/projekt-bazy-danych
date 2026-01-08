@@ -215,67 +215,57 @@
                 </div>
 
                 <!-- RAPORTY -->
-                <div id="pane-raporty" class="card" style="display:none;">
-                  <div style="display:flex;justify-content:space-between;align-items:center">
-                    <h2>Raporty</h2>
-                    <div class="flex">
-                      <button id="refreshReports" class="btn ghost">Odśwież</button>
-                    </div>
-                  </div>
+              <div id="tab-raporty" class="tab-content" style="display:none;">
+    <h2 style="margin-bottom:20px;">Generator Raportów</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        
+        <div class="card">
+            <h3>1. Lista Studentów</h3>
+            <p style="font-size:0.9em; opacity:0.7;">Wykaz wszystkich aktywnych studentów w systemie.</p>
+            <div style="margin-top:15px; text-align:right;">
+                <button class="btn btn-primary" onclick="downloadReport('/api/reports/students-list')">
+                    Pobierz PDF
+                </button>
+            </div>
+        </div>
 
-                  <hr style="opacity:0.06" />
+        <div class="card">
+            <h3>2. Wyniki Egzaminu</h3>
+            <p style="font-size:0.9em; opacity:0.7;">Protokół wyników dla wybranego testu.</p>
+            <div style="margin-top:10px;">
+                <label>Wybierz test:</label>
+                <select id="report-test-select" class="form-control" style="margin-bottom:10px;"></select>
+            </div>
+            <div style="text-align:right;">
+                <button class="btn btn-primary" onclick="downloadReportExam()">
+                    Pobierz PDF
+                </button>
+            </div>
+        </div>
 
-                  <!-- 1) Raport Użytkownicy -->
-                  <div style="margin-top:8px;">
-                    <h3>1. Lista użytkowników</h3>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                      <select id="r_users_role">
-                        <option value="">Wszystkie role</option>
-                        <option value="student">Student</option>
-                        <option value="nauczyciel">Nauczyciel</option>
-                        <option value="administrator">Administrator</option>
-                      </select>
-                      <input id="r_users_email" type="text" placeholder="Email zawiera..." />
-                      <button id="r_users_btn" class="btn primary">Pobierz PDF</button>
-                    </div>
-                  </div>
+        <div class="card">
+            <h3>3. Bank Pytań</h3>
+            <p style="font-size:0.9em; opacity:0.7;">Pełna lista pytań pogrupowana kategoriami.</p>
+            <div style="margin-top:15px; text-align:right;">
+                <button class="btn btn-primary" onclick="downloadReport('/api/reports/questions-bank')">
+                    Pobierz PDF
+                </button>
+            </div>
+        </div>
 
-                  <hr style="opacity:0.06" />
+        <div class="card">
+            <h3>4. Statystyka Zdawalności</h3>
+            <p style="font-size:0.9em; opacity:0.7;">Analiza średnich ocen i liczby podejść do testów.</p>
+            <div style="margin-top:15px; text-align:right;">
+                <button class="btn btn-primary" onclick="downloadReport('/api/reports/tests-stats')">
+                    Pobierz PDF
+                </button>
+            </div>
+        </div>
 
-                  <!-- 2) Raport Statystyki pytań -->
-                  <div style="margin-top:8px;">
-                    <h3>2. Statystyki pytań (wykres)</h3>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                      <select id="r_q_bank"></select>
-                      <select id="r_q_cat"></select>
-                      <button id="r_q_btn" class="btn primary">Pobierz PDF</button>
-                    </div>
-                  </div>
-
-                  <hr style="opacity:0.06" />
-
-                  <!-- 3) Raport Testy pogrupowane -->
-                  <div style="margin-top:8px;">
-                    <h3>3. Testy pogrupowane (wg kategorii)</h3>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                      <input id="r_t_start" type="date" />
-                      <input id="r_t_end" type="date" />
-                      <button id="r_t_btn" class="btn primary">Pobierz PDF</button>
-                    </div>
-                  </div>
-
-                  <hr style="opacity:0.06" />
-
-                  <!-- 4) Formularz oceny testu -->
-                  <div style="margin-top:8px;">
-                    <h3>4. Formularz oceny (PDF)</h3>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                      <input id="r_f_test_id" type="number" placeholder="ID testu" />
-                      <input id="r_f_user_id" type="number" placeholder="ID użytkownika (opcjonalnie)" />
-                      <button id="r_f_btn" class="btn primary">Pobierz PDF</button>
-                    </div>
-                  </div>
-                </div>
+    </div>
+</div>
 
                 <!-- PRZEDMIOTY -->
                 <div id="pane-przedmioty" class="card" style="display:none;">
@@ -889,7 +879,50 @@
             // recent-activity: prosty agregat
             document.getElementById('recent-activity').textContent = 'Zaktualizowano: ' + new Date().toLocaleString();
         }
+// Funkcja do pobierania PDF
+    async function downloadReport(url) {
+        try {
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "Generowanie...";
+            btn.disabled = true;
 
+            const res = await fetch(API_URL + url); // API_URL masz zdefiniowane w głównym skrypcie
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || res.statusText);
+            }
+            const blob = await res.blob();
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = "raport.pdf";
+            link.click();
+        } catch (e) {
+            alert("Błąd: " + e.message);
+        } finally {
+            const btn = event.target; // Musimy ponownie pobrać element, jeśli kontekst się zgubił, ale tutaj ok
+            // W prostym HTML event.target działa. Wewnątrz async lepiej zapisać btn wcześniej.
+            // Przywracamy przycisk (zróbmy reload strony dla uproszczenia lub odblokujmy)
+            location.reload(); 
+        }
+    }
+
+    // Specjalna funkcja dla raportu z parametrem (Wyniki Egzaminu)
+    async function downloadReportExam() {
+        const idTestu = document.getElementById('report-test-select').value;
+        if(!idTestu) { alert("Wybierz test!"); return; }
+        await downloadReport(`/api/reports/exam-results?id_testu=${idTestu}`);
+    }
+
+    // Ładowanie listy testów do selecta (dodaj to do initAll w głównym skrypcie)
+    async function loadTestsForReport() {
+        try {
+            const res = await fetch(API_URL + '/api/testy');
+            const tests = await res.json();
+            const select = document.getElementById('report-test-select');
+            select.innerHTML = tests.map(t => `<option value="${t.id_testu}">${t.tytul}</option>`).join('');
+        } catch(e) { console.error(e); }
+    }
         // start
         initAll();
 
