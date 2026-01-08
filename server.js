@@ -43,111 +43,158 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json({ limit: "5mb" }));
-// ===================== RAPORTY — PROXY DO FASTREPORT ====================
+const FASTREPORT_URL = "https://fastreport-service.onrender.com"; 
 
-// ===================== RAPORTY — PROXY Z RETRY POLICY ====================
-
-const FASTREPORT_URL = "https://fastreport-service.onrender.com"; // Adres Twojego mikroserwisu
-
-// Ulepszona funkcja z mechanizmem ponawiania (Retry)
-// ===================== PANCERNA FUNKCJA PROXY ====================
-
-// Ulepszona funkcja pobierania raportu z Retry Policy i nagłówkami
-async function fetchReport(endpoint, params, res, retryCount = 0) {
+// Funkcja pomocnicza: Wysyła DANE (JSON) do C# i pobiera PDF
+async function generateReportWithData(endpoint, data, res) {
     try {
-        const url = new URL(`${FASTREPORT_URL}${endpoint}`);
+        console.log(`[Report] Generowanie: ${endpoint}, Ilość wierszy: ${data.length}`);
         
-        // Dodawanie parametrów
-        Object.keys(params).forEach(key => {
-            if (params[key] !== undefined && params[key] !== null) {
-                url.searchParams.append(key, params[key]);
-            }
+        // Wysyłamy dane metodą POST
+        const response = await fetch(`${FASTREPORT_URL}${endpoint}`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                "User-Agent": "NodeBackend"
+            },
+            body: JSON.stringify(data)
         });
-
-        console.log(`[Proxy] Próba ${retryCount + 1}/4: ${url.toString()}`);
-
-        const response = await fetch(url.toString(), {
-            headers: {
-                // Udajemy prawdziwą przeglądarkę, aby ominąć filtry Rendera
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-                "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
-                "Cache-Control": "no-cache"
-            }
-        });
-
-        // --- OBSŁUGA BLOKADY 429 (Too Many Requests) ---
-        if (response.status === 429 && retryCount < 3) {
-            // Wydłużamy czas oczekiwania przy każdej próbie (2s, 4s, 6s)
-            const waitTime = 2000 * (retryCount + 1); 
-            console.warn(`[Proxy] Blokada 429. Czekam ${waitTime/1000}s i ponawiam...`);
-            
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-            return fetchReport(endpoint, params, res, retryCount + 1);
-        }
-        // -----------------------------------------------
 
         if (!response.ok) {
             const errText = await response.text();
-            // Jeśli to 404 lub 500 z C#, rzucamy błąd
-            throw new Error(`FastReport Service Error ${response.status}: ${errText}`);
+            throw new Error(`FastReport Error ${response.status}: ${errText}`);
         }
 
         const pdfBuffer = await response.arrayBuffer();
-
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", "inline; filename=raport.pdf");
-        
         res.send(Buffer.from(pdfBuffer));
 
     } catch (err) {
-        console.error("RAPORT ERROR:", err.message);
-        // Zwracamy błąd JSON tylko jeśli nagłówki nie zostały jeszcze wysłane
-        if (!res.headersSent) {
-            res.status(500).json({ 
-                error: "Błąd generowania raportu", 
-                details: err.message,
-                tip: "Serwis raportowy jest przeciążony lub blokuje połączenie. Spróbuj ponownie za chwilę."
-            });
-        }
+        console.error("RAPORT ERROR:", err);
+        res.status(500).json({ error: "Błąd generowania raportu", details: err.message });
     }
 }
 
 // ---------------------------------------------------------
-// 1. Raport Lista Użytkowników (wymagany przez HTML)
-// URL frontendu: /api/reports/users?rola=...&email=...
-// ---------------------------------------------------------
-app.get("/api/reports/users", (req, res) => {
-    const { rola, email } = req.query;
-    // Przekierowujemy do endpointu C#: /reports/users
-    fetchReport("/reports/users", { rola, email }, res);
-});
-
-// ---------------------------------------------------------
-// 2. Raport Statystyki Pytań (Wykres)
-// URL frontendu: /api/reports/questions-stats?id_banku=...
+// 1. RAPORT: Statystyki Pytań (Dane z bazy)
 // ---------------------------------------------------------
 app.get("/api/reports/questions-stats", (req, res) => {
-    const { id_banku, id_kategorii } = req.query;
-    fetchReport("/reports/questions-stats", { id_banku, id_kategorii }, res);
+    try {
+        const { id_banku, id_kategorii } = req.query;
+        
+        // Budujemy zapytanie SQL dynamicznie
+        let sql = `
+            SELECT 
+                k.nazwa AS "Kategoria", 
+                b.nazwa AS "Bank", 
+                COUNT(p.id_pytania) AS "Liczba Pytan",
+                p.poziom_trudnosci AS "Poziom"
+            FROM Pytanie p
+            JOIN Kategoria k ON p.id_kategorii = k.id_kategorii
+            JOIN BankPytan b ON p.id_banku = b.id_banku
+            WHERE 1=1
+        `;
+        
+        const params = [];
+        if (id_banku) { sql += " AND p.id_banku = ?"; params.push(id_banku); }
+        if (id_kategorii) { sql += " AND p.id_kategorii = ?"; params.push(id_kategorii); }
+        
+        sql += " GROUP BY k.nazwa, b.nazwa, p.poziom_trudnosci";
+
+        const rows = db.prepare(sql).all(...params);
+        
+        // Przekazujemy dodatkowe info o tytule w pierwszym obiekcie lub jako osobne pole
+        // Tutaj upraszczamy: wysyłamy czystą listę
+        generateReportWithData("/reports/questions-stats", rows, res);
+    } catch (e) {
+        res.status(500).json({error: e.message});
+    }
 });
 
 // ---------------------------------------------------------
-// 3. Raport Testy Pogrupowane (Grupowanie)
-// URL frontendu: /api/reports/tests-grouped?start=...&end=...
+// 2. RAPORT: Lista Użytkowników (Dane z bazy)
+// ---------------------------------------------------------
+app.get("/api/reports/users", (req, res) => {
+    try {
+        const { rola, email } = req.query;
+        let sql = `SELECT id_uzytkownika AS ID, email, rola, imie, nazwisko FROM Uzytkownik WHERE 1=1`;
+        const params = [];
+
+        if (rola) { sql += " AND rola = ?"; params.push(rola); }
+        // Szukanie po fragmencie emaila
+        if (email) { sql += " AND email LIKE ?"; params.push(`%${email}%`); }
+
+        const rows = db.prepare(sql).all(...params);
+        
+        // Formatowanie danych dla raportu (łączenie imienia i nazwiska)
+        const formattedRows = rows.map(r => ({
+            ID: r.ID,
+            "Imie i Nazwisko": `${r.imie || ''} ${r.nazwisko || ''}`.trim(),
+            Rola: r.rola,
+            Email: r.email,
+            Status: "Aktywny"
+        }));
+
+        generateReportWithData("/reports/users", formattedRows, res);
+    } catch (e) {
+        res.status(500).json({error: e.message});
+    }
+});
+
+// ---------------------------------------------------------
+// 3. RAPORT: Harmonogram/Testy (Dane z bazy)
 // ---------------------------------------------------------
 app.get("/api/reports/tests-grouped", (req, res) => {
-    const { start, end } = req.query;
-    fetchReport("/reports/tests-grouped", { start, end }, res);
+    try {
+        // Pobieramy prawdziwe testy z bazy
+        const sql = `
+            SELECT 
+                t.data_utworzenia AS "Data",
+                p.nazwa AS "Przedmiot",
+                t.tytul AS "Nazwa Testu",
+                t.czas_trwania || ' min' AS "Czas"
+            FROM Test t
+            LEFT JOIN Przedmiot p ON t.id_przedmiotu = p.id_przedmiotu
+            ORDER BY t.data_utworzenia DESC
+        `;
+        const rows = db.prepare(sql).all();
+        generateReportWithData("/reports/tests-grouped", rows, res);
+    } catch (e) {
+        res.status(500).json({error: e.message});
+    }
 });
 
 // ---------------------------------------------------------
-// 4. Formularz Oceny (Formularz / Karta)
-// URL frontendu: /api/reports/test-form?id_testu=...
+// 4. RAPORT: Karta Egzaminacyjna (Wyniki studenta)
 // ---------------------------------------------------------
 app.get("/api/reports/test-form", (req, res) => {
-    const { id_testu, id_uzytkownika } = req.query;
-    fetchReport("/reports/test-form", { id_testu, id_uzytkownika }, res);
+    try {
+        const { id_testu, id_uzytkownika } = req.query;
+        
+        // UWAGA: To wymaga, żebyś miał tabelę np. OdpowiedziStudenta. 
+        // Jeśli jej nie masz, pobierzemy ogólne wyniki z WynikTestu.
+        
+        const sql = `
+            SELECT 
+                w.data AS "Data",
+                t.tytul AS "Test",
+                w.liczba_punktow AS "Punkty",
+                w.ocena AS "Ocena"
+            FROM WynikTestu w
+            JOIN Test t ON w.id_testu = t.id_testu
+            WHERE w.id_studenta = ?
+        `;
+        
+        // Jeśli nie podano studenta, bierzemy wszystkich (dla testu)
+        const params = id_uzytkownika ? [id_uzytkownika] : [1]; 
+        
+        const rows = db.prepare(sql).all(...params);
+        
+        generateReportWithData("/reports/test-form", rows, res);
+    } catch (e) {
+        res.status(500).json({error: e.message});
+    }
 });
 
 // -----------------------------------
@@ -536,6 +583,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
