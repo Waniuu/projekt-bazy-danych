@@ -115,7 +115,6 @@ app.get("/api/reports/system-activity", (req, res) => {
     const { date_from, date_to } = req.query;
     fetchReport("/reports/system-activity", { date_from, date_to }, res);
 });
-});
 
 // -----------------------------------
 // POMOCNICZE MAPOWANIE DANYCH
@@ -503,6 +502,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
