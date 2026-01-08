@@ -806,7 +806,7 @@
 
         if (btnStudents && !btnStudents.dataset.bound) {
             btnStudents.addEventListener("click", () =>
-                downloadPdf(API_BASE + "/reports/users", "lista_studentow.pdf")
+                downloadPdf(API_BASE + "/reports/students-list", "lista_studentow.pdf")
             );
             btnStudents.dataset.bound = "1";
         }
