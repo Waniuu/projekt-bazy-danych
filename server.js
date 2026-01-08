@@ -43,36 +43,78 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json({ limit: "5mb" }));
-// ===================== RAPORTY — serwer ====================
+// ===================== RAPORTY — PROXY DO FASTREPORT ====================
 
-app.get("/api/raport/test", async (req, res) => {
+const FASTREPORT_URL = "https://fastreport-service.onrender.com"; // Adres Twojego mikroserwisu
+
+// Funkcja pomocnicza do pobierania PDF
+async function fetchReport(endpoint, params, res) {
     try {
-        const response = await fetch("https://fastreport-service.onrender.com/reports/test");
+        // Budowanie URL z parametrami (np. ?year=2024&category=SQL)
+        const url = new URL(`${FASTREPORT_URL}${endpoint}`);
+        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+        console.log(`Generowanie raportu: ${url.toString()}`);
+        const response = await fetch(url.toString());
 
         if (!response.ok) {
-            throw new Error("FastReportService returned error " + response.status);
+            const errText = await response.text();
+            throw new Error(`FastReport Error ${response.status}: ${errText}`);
         }
 
-        const pdf = await response.arrayBuffer();
+        const pdfBuffer = await response.arrayBuffer();
 
+        // Ustawienie nagłówków, aby przeglądarka wiedziała, że to PDF
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", "inline; filename=raport.pdf");
-
-        res.send(Buffer.from(pdf));
+        
+        // Wysłanie bufora jako Buffer Node.js
+        res.send(Buffer.from(pdfBuffer));
 
     } catch (err) {
-        console.error("PDF ERROR:", err);
-        res.status(500).json({ error: "Błąd generowania PDF: " + err.message });
+        console.error("RAPORT ERROR:", err);
+        res.status(500).json({ error: "Błąd generowania raportu", details: err.message });
     }
+}
+
+// ---------------------------------------------------------
+// 1. Raport Statystyk Pytań (Wykres + Filtrowanie)
+// Wymagania: Wykres, Kryteria (id_banku, id_kategorii)
+// ---------------------------------------------------------
+app.get("/api/reports/questions-stats", (req, res) => {
+    // Pobieramy parametry z URL (query string)
+    const { id_banku, id_kategorii } = req.query;
+    
+    // Przekazujemy do funkcji proxy
+    fetchReport("/reports/questions-stats", { id_banku, id_kategorii }, res);
 });
-// Health check FastReport (wykorzystuje globalny fetch - Node 24 ma global fetch)
-app.get('/api/health/fastreport', async (req, res) => {
-  try {
-    const resp = await fetch(FASTREPORT_URL, { method: 'HEAD' });
-    res.json({ ok: resp.ok, status: resp.status });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: String(err) });
-  }
+
+// ---------------------------------------------------------
+// 2. Raport Wyników Studentów (Grupowanie)
+// Wymagania: Grupowanie (wg Testu/Daty), Kryteria (rok, id_studenta)
+// ---------------------------------------------------------
+app.get("/api/reports/student-results", (req, res) => {
+    const { year, student_id } = req.query;
+    fetchReport("/reports/student-results", { year, student_id }, res);
+});
+
+// ---------------------------------------------------------
+// 3. Raport Karty Egzaminacyjnej (Formularz)
+// Wymagania: Formularz, Kryteria (id_studenta, id_testu)
+// ---------------------------------------------------------
+app.get("/api/reports/exam-card", (req, res) => {
+    const { id_studenta, id_testu } = req.query;
+    fetchReport("/reports/exam-card", { id_studenta, id_testu }, res);
+});
+
+// ---------------------------------------------------------
+// 4. Raport Aktywności Systemu (Tabela prosta)
+// Wymagania: Kryteria (data_od, data_do)
+// ---------------------------------------------------------
+app.get("/api/reports/system-activity", (req, res) => {
+    const { date_from, date_to } = req.query;
+    fetchReport("/reports/system-activity", { date_from, date_to }, res);
+});
 });
 
 // -----------------------------------
@@ -461,6 +503,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
