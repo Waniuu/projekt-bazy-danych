@@ -774,9 +774,6 @@
                 const cats = await (await fetch(API_BASE + '/kategorie')).json().catch(()=>[]);
                 window._catsOptions = cats.map(c=>`<option value="${c.id_kategorii || c.id}">${escapeHtml(c.nazwa)}</option>`).join('');
             } catch(e){ console.warn(e); }
-
-            // teraz zapełnij selekty raportów
-            loadReportSelectors();
         }
 
         // ---------- Helper: escapeHtml ----------
