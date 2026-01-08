@@ -212,25 +212,30 @@
                             <tbody></tbody>
                         </table>
                     </div>
-                </div>
+              
 
                 <!-- RAPORTY -->
-              <div id="tab-raporty" class="tab-content" style="display:none;">
-    <h2 style="margin-bottom:20px;">Generator Raportów</h2>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-        
-        <div class="card">
-            <h3>1. Lista Studentów</h3>
-            <p style="font-size:0.9em; opacity:0.7;">Wykaz wszystkich aktywnych studentów w systemie.</p>
-            <div style="margin-top:15px; text-align:right;">
+                <div id="pane-raporty" class="card" style="display:none;">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <h2>Raporty</h2>
+                    <div class="flex">
+                      <button id="refreshReports" class="btn ghost">Odśwież</button>
+                    </div>
+                  </div>
+
+                  <hr style="opacity:0.06" />
+
+                      <!-- 1) Raport Użytkownicy -->
+                <h3>1. Lista Studentów</h3>
+                <p style="font-size:0.9em; opacity:0.7;">Wykaz wszystkich aktywnych studentów w systemie.</p>
+                <div style="margin-top:15px; text-align:right;">
                 <button class="btn btn-primary" onclick="downloadReport('/api/reports/students-list')">
                     Pobierz PDF
                 </button>
             </div>
-        </div>
+       
 
-        <div class="card">
+ 
             <h3>2. Wyniki Egzaminu</h3>
             <p style="font-size:0.9em; opacity:0.7;">Protokół wyników dla wybranego testu.</p>
             <div style="margin-top:10px;">
@@ -242,9 +247,9 @@
                     Pobierz PDF
                 </button>
             </div>
-        </div>
+     
 
-        <div class="card">
+     
             <h3>3. Bank Pytań</h3>
             <p style="font-size:0.9em; opacity:0.7;">Pełna lista pytań pogrupowana kategoriami.</p>
             <div style="margin-top:15px; text-align:right;">
@@ -254,7 +259,7 @@
             </div>
         </div>
 
-        <div class="card">
+       
             <h3>4. Statystyka Zdawalności</h3>
             <p style="font-size:0.9em; opacity:0.7;">Analiza średnich ocen i liczby podejść do testów.</p>
             <div style="margin-top:15px; text-align:right;">
@@ -262,10 +267,10 @@
                     Pobierz PDF
                 </button>
             </div>
-        </div>
+       
 
-    </div>
-</div>
+ 
+
 
                 <!-- PRZEDMIOTY -->
                 <div id="pane-przedmioty" class="card" style="display:none;">
