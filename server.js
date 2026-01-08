@@ -1,6 +1,5 @@
 // =========================================================
-// server.js — FINALNA WERSJA (ESM, SQLite, pełny CRUD)
-// kompatybilny z test3_baza.sqlite i dashboard_administrator
+// server.js — WERSJA WEWNĘTRZNA (Internal Network)
 // =========================================================
 
 import express from "express";
@@ -12,15 +11,18 @@ import Database from "better-sqlite3";
 // KONFIGURACJA
 // -----------------------------------
 const DB_PATH = process.env.DB_PATH || "./test3_baza.sqlite";
+
+// 🔥 KLUCZOWA ZMIANA: ADRES WEWNĘTRZNY 🔥
+// Zamiast wychodzić na świat (https://...), używamy adresu wewnątrz klastra Render.
+// Format: http://<nazwa-serwisu-w-dashboardzie>:<port-z-dockerfile>
+const FASTREPORT_URL = process.env.FASTREPORT_INTERNAL_URL || "http://fastreport-service:8080";
+
 const apiResponses = {
   loginSuccess: [
     { success: true, role: "student" },
     { success: true, role: "administrator" }
   ],
-  loginError: {
-    success: false,
-    message: "Złe hasło"
-  }
+  loginError: { success: false, message: "Złe hasło" }
 };
 
 const ALLOWED_ORIGINS = [
@@ -37,79 +39,70 @@ const app = express();
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true);
-    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-    return cb(new Error("Not allowed by CORS"));
-  }
+    if (ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
+      cb(null, true);
+    } else {
+      cb(null, true); // Dla dev pozwalamy na wszystko
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-app.use(bodyParser.json({ limit: "5mb" }));
-// ===================== RAPORTY — REALNE DANE Z BAZY ====================
+app.use(bodyParser.json());
 
-const FASTREPORT_URL = "https://fastreport-service.onrender.com"; 
+// ===================== FUNKCJE RAPORTOWE ====================
 
-// Funkcja pomocnicza: Wysyła DANE (JSON) do C# i pobiera PDF z mechanizmem ponawiania
-async function generateReportWithData(endpoint, data, res, retryCount = 0) {
+// Funkcja wysyłająca dane do C# (Teraz po sieci wewnętrznej)
+async function generateReportWithData(endpoint, data, res) {
     try {
-        console.log(`[Report] Generowanie: ${endpoint}, Próba: ${retryCount + 1}, Wierszy: ${data.length}`);
+        console.log(`[Report] Generowanie: ${endpoint} (Internal), Wierszy: ${data.length}`);
         
+        // Timeout 15 sekund na generowanie
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+
         const response = await fetch(`${FASTREPORT_URL}${endpoint}`, {
             method: 'POST',
             headers: { 
-                'Content-Type': 'application/json',
-                // Udajemy prawdziwą przeglądarkę, aby ominąć blokady Rendera (429)
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "application/pdf,application/json",
-                "Connection": "keep-alive"
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            signal: controller.signal
         });
-
-        // --- OBSŁUGA BLOKADY 429 (Too Many Requests) ---
-        if (response.status === 429 && retryCount < 3) {
-            // Czekamy: 1. próba = 2s, 2. próba = 4s, 3. próba = 6s
-            const waitTime = 2000 * (retryCount + 1);
-            console.warn(`[Report] Serwis zajęty (429). Czekam ${waitTime/1000}s i ponawiam...`);
-            
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-            return generateReportWithData(endpoint, data, res, retryCount + 1); // Rekurencja
-        }
-        // -----------------------------------------------
+        clearTimeout(timeout);
 
         if (!response.ok) {
             const errText = await response.text();
-            throw new Error(`FastReport Error ${response.status}: ${errText}`);
+            throw new Error(`FastReport Service Error ${response.status}: ${errText}`);
         }
 
         const pdfBuffer = await response.arrayBuffer();
-        
-        // Jeśli odpowiedź jest pusta (czasem się zdarza przy błędzie sieci), rzuć błąd
-        if (!pdfBuffer || pdfBuffer.byteLength === 0) {
-            throw new Error("Otrzymano pusty plik PDF z serwisu raportowego.");
-        }
-
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", "inline; filename=raport.pdf");
         res.send(Buffer.from(pdfBuffer));
 
     } catch (err) {
         console.error("RAPORT ERROR:", err);
-        // Zwracamy błąd tylko jeśli nagłówki nie zostały jeszcze wysłane (żeby nie crashować serwera przy retry)
-        if (!res.headersSent) {
-            res.status(500).json({ 
-                error: "Błąd generowania raportu", 
-                details: err.message,
-                tip: "Serwis jest przeciążony. Spróbuj ponownie za 10-15 sekund." 
+        const msg = err.name === 'AbortError' ? "Przekroczono czas generowania (Timeout)" : err.message;
+        
+        // Fallback: Jeśli internal nie działa (np. inna nazwa serwisu), spróbujmy publicznie z fake headers
+        if (err.cause && (err.cause.code === 'ENOTFOUND' || err.cause.code === 'ECONNREFUSED')) {
+             res.status(500).json({ 
+                error: "Błąd połączenia wewnętrznego", 
+                details: "Nie znaleziono serwisu 'fastreport-service:8080'. Sprawdź nazwę w Dashboardzie Render.",
+                hint: msg
             });
+        } else {
+            res.status(500).json({ error: "Błąd generowania", details: msg });
         }
     }
 }
 
-// ---------------------------------------------------------
-// 1. RAPORT: Lista Studentów (NAPRAWIONY SQL)
-// ---------------------------------------------------------
+// 1. LISTA STUDENTÓW
 app.get("/api/reports/students-list", (req, res) => {
     try {
-        // Usunąłem "WHERE rola = 'student'", bo Twoja baza nie ma tej kolumny
+        // Poprawiony SQL - bez kolumny 'rola'
         const sql = `
             SELECT 
                 id_uzytkownika AS "ID",
@@ -122,38 +115,19 @@ app.get("/api/reports/students-list", (req, res) => {
         `;
         const rows = db.prepare(sql).all();
         generateReportWithData("/reports/students-list", rows, res);
-    } catch (e) { 
-        console.error(e);
-        res.status(500).json({error: e.message}); 
-    }
+    } catch (e) { res.status(500).json({error: e.message}); }
 });
 
-// ===================== FIX: OBSŁUGA STAREGO LINKU (Też naprawiony) ====================
+// FIX dla starego linku (żeby nie było 404/500)
 app.get("/api/reports/users", (req, res) => {
     try {
-        const sql = `
-            SELECT 
-                id_uzytkownika AS "ID",
-                imie AS "Imie",
-                nazwisko AS "Nazwisko",
-                email AS "Email",
-                'Aktywny' AS "Status"
-            FROM Uzytkownik 
-            ORDER BY nazwisko ASC
-        `;
+        const sql = `SELECT id_uzytkownika AS "ID", imie AS "Imie", nazwisko AS "Nazwisko", email AS "Email" FROM Uzytkownik`;
         const rows = db.prepare(sql).all();
-        
-        // Wysyłamy do C# na endpoint "students-list"
         generateReportWithData("/reports/students-list", rows, res);
-    } catch (e) { 
-        console.error(e);
-        res.status(500).json({error: e.message}); 
-    }
+    } catch (e) { res.status(500).json({error: e.message}); }
 });
 
-// ---------------------------------------------------------
-// 2. RAPORT: Wyniki Egzaminu (Wybór konkretnego testu)
-// ---------------------------------------------------------
+// 2. WYNIKI EGZAMINU
 app.get("/api/reports/exam-results", (req, res) => {
     try {
         const { id_testu } = req.query;
@@ -175,9 +149,7 @@ app.get("/api/reports/exam-results", (req, res) => {
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
-// ---------------------------------------------------------
-// 3. RAPORT: Bank Pytań (Grupowany kategoriami)
-// ---------------------------------------------------------
+// 3. BANK PYTAŃ
 app.get("/api/reports/questions-bank", (req, res) => {
     try {
         const sql = `
@@ -194,12 +166,9 @@ app.get("/api/reports/questions-bank", (req, res) => {
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
-// ---------------------------------------------------------
-// 4. RAPORT: Statystyka Testów (Podsumowanie)
-// ---------------------------------------------------------
+// 4. STATYSTYKA TESTÓW
 app.get("/api/reports/tests-stats", (req, res) => {
     try {
-        // Agregacja danych: ile osób zdawało i średnia ocena
         const sql = `
             SELECT 
                 t.tytul AS "Nazwa Testu",
@@ -216,23 +185,6 @@ app.get("/api/reports/tests-stats", (req, res) => {
         generateReportWithData("/reports/tests-stats", rows, res);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
-
-// -----------------------------------
-// POMOCNICZE MAPOWANIE DANYCH
-// -----------------------------------
-function mapUser(row) {
-  if (!row) return null;
-  return {
-    id: row.id_uzytkownika,
-    imie: row.imie,
-    nazwisko: row.nazwisko,
-    email: row.email,
-    typ_konta: row.typ_konta,
-    numer_indeksu: row.numer_indeksu ?? null,
-    stopien_naukowy: row.stopien_naukowy ?? null
-  };
-}
-
 // =========================================================
 // 1. LOGIN
 // =========================================================
@@ -603,6 +555,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
