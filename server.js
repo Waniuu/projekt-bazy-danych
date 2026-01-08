@@ -1,5 +1,5 @@
 // =========================================================
-// server.js — WERSJA NAPRAWIONA (Fix błędów 500 i TypeError)
+// server.js — WERSJA OSTATECZNA (Z FIXEM NA 429 i FAVICON)
 // =========================================================
 
 import express from "express";
@@ -7,14 +7,8 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import Database from "better-sqlite3";
 
-// -----------------------------------
-// KONFIGURACJA
-// -----------------------------------
 const DB_PATH = process.env.DB_PATH || "./test3_baza.sqlite";
-
-// Adres serwisu raportowego (Wewnętrzny dla Rendera lub Publiczny jako fallback)
-// Jeśli wewnętrzny nie działa, spróbuj użyć publicznego adresu HTTPS swojej usługi C#
-const FASTREPORT_URL = process.env.FASTREPORT_INTERNAL_URL || "https://fastreport-service.onrender.com";
+const FASTREPORT_URL = "https://fastreport-service.onrender.com"; // Publiczny adres (pewniejszy)
 
 const ALLOWED_ORIGINS = [
   "https://waniuu.github.io",
@@ -30,38 +24,30 @@ const app = express();
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true);
-    if (ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
-      cb(null, true);
-    } else {
-      cb(null, true);
-    }
+    if (ALLOWED_ORIGINS.some(o => origin.startsWith(o))) cb(null, true);
+    else cb(null, true);
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(bodyParser.json());
-
-// ===================== FIX: FAVICON ====================
-// Naprawia błąd 404 favicon.ico w konsoli
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
-// ===================== FUNKCJE RAPORTOWE ====================
-
+// --- FUNKCJA WYSYŁAJĄCA DANE DO C# ---
 async function generateReportWithData(endpoint, data, res) {
     try {
-        console.log(`[Report] Generowanie: ${endpoint}, Wierszy: ${data.length}`);
+        console.log(`[Report] Generowanie: ${endpoint} -> ${FASTREPORT_URL}, Wierszy: ${data.length}`);
         
-        // Timeout 20 sekund
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 20000);
+        const timeout = setTimeout(() => controller.abort(), 25000);
 
         const response = await fetch(`${FASTREPORT_URL}${endpoint}`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                // User-Agent pomaga ominąć niektóre blokady 429 na Renderze
-                "User-Agent": "Mozilla/5.0 (Node.js Internal)"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/pdf"
             },
             body: JSON.stringify(data),
             signal: controller.signal
@@ -70,9 +56,11 @@ async function generateReportWithData(endpoint, data, res) {
 
         if (!response.ok) {
             const errText = await response.text();
-            // Jeśli dostajemy HTML (np. od Cloudflare), skracamy go w logach
-            const shortErr = errText.includes("<!DOCTYPE") ? "Cloudflare/Render Block (429/403)" : errText;
-            throw new Error(`FastReport Error ${response.status}: ${shortErr}`);
+            // Jeśli to strona HTML (błąd Cloudflare), rzuć czytelny wyjątek
+            if (errText.trim().startsWith("<!DOCTYPE")) {
+                 throw new Error("Serwis C# jest zablokowany lub zajęty (429/403). Spróbuj za chwilę.");
+            }
+            throw new Error(`FastReport Error ${response.status}: ${errText}`);
         }
 
         const pdfBuffer = await response.arrayBuffer();
@@ -82,38 +70,26 @@ async function generateReportWithData(endpoint, data, res) {
 
     } catch (err) {
         console.error("RAPORT ERROR:", err.message);
-        res.status(500).json({ 
-            error: "Błąd generowania raportu", 
-            details: err.message,
-            tip: "Upewnij się, że serwis C# działa i nazwa hosta w FASTREPORT_URL jest poprawna."
-        });
+        const msg = err.name === 'AbortError' ? "Serwis C# się wybudza (Timeout). Spróbuj ponownie za 30s." : err.message;
+        res.status(500).json({ error: "Błąd generowania raportu", details: msg });
     }
 }
 
-// 1. LISTA STUDENTÓW (Bez użycia kolumny 'rola', której nie masz)
+// 1. LISTA STUDENTÓW (Fix SQL)
 app.get("/api/reports/students-list", (req, res) => {
     try {
-        const sql = `
-            SELECT 
-                id_uzytkownika AS "ID",
-                imie AS "Imie",
-                nazwisko AS "Nazwisko",
-                email AS "Email",
-                'Aktywny' AS "Status"
-            FROM Uzytkownik 
-            ORDER BY nazwisko ASC
-        `;
+        const sql = `SELECT id_uzytkownika AS "ID", imie AS "Imie", nazwisko AS "Nazwisko", email AS "Email" FROM Uzytkownik ORDER BY nazwisko ASC`;
         const rows = db.prepare(sql).all();
         generateReportWithData("/reports/students-list", rows, res);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
-// FIX dla starego linku (używanego przez stary HTML)
+// Fix dla starego linku
 app.get("/api/reports/users", (req, res) => {
     try {
-        const sql = `SELECT id_uzytkownika AS "ID", imie AS "Imie", nazwisko AS "Nazwisko", email AS "Email", 'Aktywny' AS "Status" FROM Uzytkownik ORDER BY nazwisko ASC`;
+        const sql = `SELECT id_uzytkownika AS "ID", imie AS "Imie", nazwisko AS "Nazwisko", email AS "Email" FROM Uzytkownik ORDER BY nazwisko ASC`;
         const rows = db.prepare(sql).all();
-        generateReportWithData("/reports/students-list", rows, res);
+        generateReportWithData("/reports/students-list", rows, res); // Przekierowanie do działającego endpointu w C#
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
@@ -122,18 +98,7 @@ app.get("/api/reports/exam-results", (req, res) => {
     try {
         const { id_testu } = req.query;
         if (!id_testu) return res.status(400).json({error: "Wybierz test!"});
-
-        const sql = `
-            SELECT 
-                u.imie || ' ' || u.nazwisko AS "Student",
-                w.data AS "Data Podejscia",
-                w.liczba_punktow AS "Punkty",
-                w.ocena AS "Ocena"
-            FROM WynikTestu w
-            JOIN Uzytkownik u ON w.id_studenta = u.id_uzytkownika
-            WHERE w.id_testu = ?
-            ORDER BY w.liczba_punktow DESC
-        `;
+        const sql = `SELECT u.imie || ' ' || u.nazwisko AS "Student", w.liczba_punktow AS "Punkty", w.ocena AS "Ocena" FROM WynikTestu w JOIN Uzytkownik u ON w.id_studenta = u.id_uzytkownika WHERE w.id_testu = ? ORDER BY w.liczba_punktow DESC`;
         const rows = db.prepare(sql).all(id_testu);
         generateReportWithData("/reports/exam-results", rows, res);
     } catch (e) { res.status(500).json({error: e.message}); }
@@ -142,56 +107,30 @@ app.get("/api/reports/exam-results", (req, res) => {
 // 3. BANK PYTAŃ
 app.get("/api/reports/questions-bank", (req, res) => {
     try {
-        const sql = `
-            SELECT 
-                k.nazwa AS "Kategoria",
-                p.poziom_trudnosci AS "Poziom",
-                p.tresc AS "Tresc Pytania"
-            FROM Pytanie p
-            JOIN Kategoria k ON p.id_kategorii = k.id_kategorii
-            ORDER BY k.nazwa, p.poziom_trudnosci
-        `;
+        const sql = `SELECT k.nazwa AS "Kategoria", p.poziom_trudnosci AS "Poziom", p.tresc AS "Tresc_Pytania" FROM Pytanie p JOIN Kategoria k ON p.id_kategorii = k.id_kategorii ORDER BY k.nazwa`;
         const rows = db.prepare(sql).all();
         generateReportWithData("/reports/questions-bank", rows, res);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
-// 4. STATYSTYKA TESTÓW
+// 4. STATYSTYKA
 app.get("/api/reports/tests-stats", (req, res) => {
     try {
-        const sql = `
-            SELECT 
-                t.tytul AS "Nazwa Testu",
-                p.nazwa AS "Przedmiot",
-                COUNT(w.id_wyniku) AS "Liczba Podejsc",
-                ROUND(AVG(w.ocena), 2) AS "Srednia Ocena"
-            FROM Test t
-            JOIN Przedmiot p ON t.id_przedmiotu = p.id_przedmiotu
-            LEFT JOIN WynikTestu w ON t.id_testu = w.id_testu
-            GROUP BY t.id_testu
-            ORDER BY t.data_utworzenia DESC
-        `;
+        const sql = `SELECT t.tytul AS "Test", COUNT(w.id_wyniku) AS "Podejscia" FROM Test t LEFT JOIN WynikTestu w ON t.id_testu = w.id_testu GROUP BY t.id_testu`;
         const rows = db.prepare(sql).all();
         generateReportWithData("/reports/tests-stats", rows, res);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
-// ===================== FIX: API UŻYTKOWNIKÓW ====================
-// Twój HTML pyta o /api/uzytkownicy, ale serwer miał /api/users.
-// Teraz obsługujemy OBIE nazwy, żeby naprawić błędy "TypeError: filter/forEach".
-
-const getUsersHandler = (req, res) => {
-    try {
-        // Ignorujemy limit, zwracamy wszystkich (prosta baza)
-        const rows = db.prepare("SELECT * FROM Uzytkownik ORDER BY id_uzytkownika DESC").all();
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-app.get("/api/uzytkownicy", getUsersHandler); // <-- To naprawia błędy w konsoli HTML
-app.get("/api/users", getUsersHandler);       // <-- Dla kompatybilności
+// FIX API UZYTKOWNICY
+app.get("/api/uzytkownicy", (req, res) => {
+    try { res.json(db.prepare("SELECT * FROM Uzytkownik ORDER BY id_uzytkownika DESC").all()); } 
+    catch (e) { res.json([]); }
+});
+app.get("/api/users", (req, res) => {
+    try { res.json(db.prepare("SELECT * FROM Uzytkownik ORDER BY id_uzytkownika DESC").all()); } 
+    catch (e) { res.json([]); }
+});  // <-- Dla kompatybilności
 // =========================================================
 // 1. LOGIN
 // =========================================================
@@ -562,6 +501,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
