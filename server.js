@@ -107,9 +107,8 @@ async function generateReportWithData(endpoint, data, res, retryCount = 0) {
 // ---------------------------------------------------------
 // 1. RAPORT: Lista Studentów (Prosty)
 // ---------------------------------------------------------
-app.get("/api/reports/students-list", (req, res) => {
+app.get("/api/reports/users", (req, res) => {
     try {
-        // Pobieramy tylko studentów
         const sql = `
             SELECT 
                 id_uzytkownika AS "ID",
@@ -122,6 +121,8 @@ app.get("/api/reports/students-list", (req, res) => {
             ORDER BY nazwisko ASC
         `;
         const rows = db.prepare(sql).all();
+        
+        // Wysyłamy do C# na endpoint "students-list" (bo taki masz w C#)
         generateReportWithData("/reports/students-list", rows, res);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
@@ -578,6 +579,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
