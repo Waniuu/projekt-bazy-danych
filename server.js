@@ -47,19 +47,33 @@ app.use(bodyParser.json({ limit: "5mb" }));
 
 const FASTREPORT_URL = "https://fastreport-service.onrender.com"; 
 
-// Funkcja pomocnicza do wysyłania danych do C#
-async function generateReportWithData(endpoint, data, res) {
+// Funkcja pomocnicza: Wysyła DANE (JSON) do C# i pobiera PDF z mechanizmem ponawiania
+async function generateReportWithData(endpoint, data, res, retryCount = 0) {
     try {
-        console.log(`[Report] Generowanie: ${endpoint}, Wierszy: ${data.length}`);
+        console.log(`[Report] Generowanie: ${endpoint}, Próba: ${retryCount + 1}, Wierszy: ${data.length}`);
         
         const response = await fetch(`${FASTREPORT_URL}${endpoint}`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                "User-Agent": "NodeBackend" // Ważne dla Rendera
+                // Udajemy prawdziwą przeglądarkę, aby ominąć blokady Rendera (429)
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/pdf,application/json",
+                "Connection": "keep-alive"
             },
             body: JSON.stringify(data)
         });
+
+        // --- OBSŁUGA BLOKADY 429 (Too Many Requests) ---
+        if (response.status === 429 && retryCount < 3) {
+            // Czekamy: 1. próba = 2s, 2. próba = 4s, 3. próba = 6s
+            const waitTime = 2000 * (retryCount + 1);
+            console.warn(`[Report] Serwis zajęty (429). Czekam ${waitTime/1000}s i ponawiam...`);
+            
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            return generateReportWithData(endpoint, data, res, retryCount + 1); // Rekurencja
+        }
+        // -----------------------------------------------
 
         if (!response.ok) {
             const errText = await response.text();
@@ -67,13 +81,26 @@ async function generateReportWithData(endpoint, data, res) {
         }
 
         const pdfBuffer = await response.arrayBuffer();
+        
+        // Jeśli odpowiedź jest pusta (czasem się zdarza przy błędzie sieci), rzuć błąd
+        if (!pdfBuffer || pdfBuffer.byteLength === 0) {
+            throw new Error("Otrzymano pusty plik PDF z serwisu raportowego.");
+        }
+
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", "inline; filename=raport.pdf");
         res.send(Buffer.from(pdfBuffer));
 
     } catch (err) {
         console.error("RAPORT ERROR:", err);
-        res.status(500).json({ error: "Błąd generowania raportu", details: err.message });
+        // Zwracamy błąd tylko jeśli nagłówki nie zostały jeszcze wysłane (żeby nie crashować serwera przy retry)
+        if (!res.headersSent) {
+            res.status(500).json({ 
+                error: "Błąd generowania raportu", 
+                details: err.message,
+                tip: "Serwis jest przeciążony. Spróbuj ponownie za 10-15 sekund." 
+            });
+        }
     }
 }
 
@@ -551,6 +578,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
