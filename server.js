@@ -48,20 +48,31 @@ app.use(bodyParser.json({ limit: "5mb" }));
 const FASTREPORT_URL = "https://fastreport-service.onrender.com"; // Adres Twojego mikroserwisu C#
 
 // Funkcja pomocnicza do pobierania PDF z mikroserwisu
-async function fetchReport(endpoint, params, res) {
+// Ulepszona funkcja pobierania raportu z mechanizmem Retry
+async function fetchReport(endpoint, params, res, retryCount = 0) {
     try {
-        // Budowanie URL do serwisu C#
         const url = new URL(`${FASTREPORT_URL}${endpoint}`);
-        
-        // Przepisanie parametrów z zapytania
         Object.keys(params).forEach(key => {
             if (params[key] !== undefined && params[key] !== null) {
                 url.searchParams.append(key, params[key]);
             }
         });
 
-        console.log(`[Proxy] Generowanie raportu: ${url.toString()}`);
-        const response = await fetch(url.toString());
+        console.log(`[Proxy] Generowanie raportu (próba ${retryCount + 1}): ${url.toString()}`);
+
+        const response = await fetch(url.toString(), {
+            headers: {
+                // Udajemy przeglądarkę, aby Render nie blokował nas jako "bota"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AdminDashboard/1.0"
+            }
+        });
+
+        // JEŚLI DOSTANIEMY 429 (Too Many Requests) -> CZEKAMY I PONAWIAMY
+        if (response.status === 429 && retryCount < 3) {
+            console.warn(`[Proxy] Wykryto Rate Limit (429). Czekam 1.5s przed ponowieniem...`);
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Czekaj 1.5 sekundy
+            return fetchReport(endpoint, params, res, retryCount + 1); // Rekurencja (spróbuj ponownie)
+        }
 
         if (!response.ok) {
             const errText = await response.text();
@@ -70,16 +81,16 @@ async function fetchReport(endpoint, params, res) {
 
         const pdfBuffer = await response.arrayBuffer();
 
-        // Ustawienie nagłówków dla przeglądarki
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", "inline; filename=raport.pdf");
-        
         res.send(Buffer.from(pdfBuffer));
 
     } catch (err) {
         console.error("RAPORT ERROR:", err);
-        // Zwracamy JSON z błędem, żeby frontend mógł go wyświetlić w alert()
-        res.status(500).json({ error: "Błąd generowania raportu", details: err.message });
+        // Jeśli po 3 próbach nadal błąd, zwracamy go do klienta
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Błąd generowania raportu", details: err.message });
+        }
     }
 }
 
@@ -506,6 +517,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
