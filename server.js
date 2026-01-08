@@ -105,8 +105,30 @@ async function generateReportWithData(endpoint, data, res, retryCount = 0) {
 }
 
 // ---------------------------------------------------------
-// 1. RAPORT: Lista Studentów (Prosty)
+// 1. RAPORT: Lista Studentów (NAPRAWIONY SQL)
 // ---------------------------------------------------------
+app.get("/api/reports/students-list", (req, res) => {
+    try {
+        // Usunąłem "WHERE rola = 'student'", bo Twoja baza nie ma tej kolumny
+        const sql = `
+            SELECT 
+                id_uzytkownika AS "ID",
+                imie AS "Imie",
+                nazwisko AS "Nazwisko",
+                email AS "Email",
+                'Aktywny' AS "Status"
+            FROM Uzytkownik 
+            ORDER BY nazwisko ASC
+        `;
+        const rows = db.prepare(sql).all();
+        generateReportWithData("/reports/students-list", rows, res);
+    } catch (e) { 
+        console.error(e);
+        res.status(500).json({error: e.message}); 
+    }
+});
+
+// ===================== FIX: OBSŁUGA STAREGO LINKU (Też naprawiony) ====================
 app.get("/api/reports/users", (req, res) => {
     try {
         const sql = `
@@ -117,14 +139,16 @@ app.get("/api/reports/users", (req, res) => {
                 email AS "Email",
                 'Aktywny' AS "Status"
             FROM Uzytkownik 
-            WHERE rola = 'student'
             ORDER BY nazwisko ASC
         `;
         const rows = db.prepare(sql).all();
         
-        // Wysyłamy do C# na endpoint "students-list" (bo taki masz w C#)
+        // Wysyłamy do C# na endpoint "students-list"
         generateReportWithData("/reports/students-list", rows, res);
-    } catch (e) { res.status(500).json({error: e.message}); }
+    } catch (e) { 
+        console.error(e);
+        res.status(500).json({error: e.message}); 
+    }
 });
 
 // ---------------------------------------------------------
@@ -579,6 +603,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
