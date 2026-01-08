@@ -215,59 +215,39 @@
               
 
                 <!-- RAPORTY -->
-                <div id="pane-raporty" class="card" style="display:none;">
-                  <div style="display:flex;justify-content:space-between;align-items:center">
-                    <h2>Raporty</h2>
-                    <div class="flex">
-                      <button id="refreshReports" class="btn ghost">Odśwież</button>
-                    </div>
-                  </div>
+               <!-- RAPORTY -->
+<div id="pane-raporty" class="card" style="display:none;">
+  <h2>Raporty</h2>
 
-                  <hr style="opacity:0.06" />
+  <div class="report-block">
+    <h3>1. Lista studentów</h3>
+    <p>Wykaz wszystkich aktywnych studentów.</p>
+    <button id="reportStudentsBtn" class="btn primary">Pobierz PDF</button>
+  </div>
 
-                      <!-- 1) Raport Użytkownicy -->
-                <h3>1. Lista Studentów</h3>
-                <p style="font-size:0.9em; opacity:0.7;">Wykaz wszystkich aktywnych studentów w systemie.</p>
-                <div style="margin-top:15px; text-align:right;">
-                <button class="btn btn-primary" onclick="downloadReport('/api/reports/students-list')">
-                    Pobierz PDF
-                </button>
-            </div>
-       
+  <hr />
 
- 
-            <h3>2. Wyniki Egzaminu</h3>
-            <p style="font-size:0.9em; opacity:0.7;">Protokół wyników dla wybranego testu.</p>
-            <div style="margin-top:10px;">
-                <label>Wybierz test:</label>
-                <select id="report-test-select" class="form-control" style="margin-bottom:10px;"></select>
-            </div>
-            <div style="text-align:right;">
-                <button class="btn btn-primary" onclick="downloadReportExam()">
-                    Pobierz PDF
-                </button>
-            </div>
-     
+  <div class="report-block">
+    <h3>2. Wyniki egzaminu</h3>
+    <select id="report-test-select"></select>
+    <button id="reportExamBtn" class="btn primary">Pobierz PDF</button>
+  </div>
 
-     
-            <h3>3. Bank Pytań</h3>
-            <p style="font-size:0.9em; opacity:0.7;">Pełna lista pytań pogrupowana kategoriami.</p>
-            <div style="margin-top:15px; text-align:right;">
-                <button class="btn btn-primary" onclick="downloadReport('/api/reports/questions-bank')">
-                    Pobierz PDF
-                </button>
-            </div>
-        </div>
+  <hr />
 
-       
-            <h3>4. Statystyka Zdawalności</h3>
-            <p style="font-size:0.9em; opacity:0.7;">Analiza średnich ocen i liczby podejść do testów.</p>
-            <div style="margin-top:15px; text-align:right;">
-                <button class="btn btn-primary" onclick="downloadReport('/api/reports/tests-stats')">
-                    Pobierz PDF
-                </button>
-            </div>
-       
+  <div class="report-block">
+    <h3>3. Bank pytań</h3>
+    <button id="reportQuestionsBtn" class="btn primary">Pobierz PDF</button>
+  </div>
+
+  <hr />
+
+  <div class="report-block">
+    <h3>4. Statystyka zdawalności</h3>
+    <button id="reportStatsBtn" class="btn primary">Pobierz PDF</button>
+  </div>
+</div>
+
 
  
 
@@ -938,7 +918,49 @@
 
     })();
     </script>
+<script>
+/* === RAPORTY PDF – GLOBALNE FUNKCJE === */
 
+const API_BASE = "https://projekt-bazy-danych-backend.onrender.com/api";
+
+async function downloadPdf(url, filename = "raport.pdf") {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Błąd generowania raportu");
+
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+document.getElementById("reportStudentsBtn")
+  .addEventListener("click", () =>
+    downloadPdf(`${API_BASE}/reports/users`, "lista_studentow.pdf")
+  );
+
+document.getElementById("reportQuestionsBtn")
+  .addEventListener("click", () =>
+    downloadPdf(`${API_BASE}/reports/questions-bank`, "bank_pytan.pdf")
+  );
+
+document.getElementById("reportStatsBtn")
+  .addEventListener("click", () =>
+    downloadPdf(`${API_BASE}/reports/tests-stats`, "statystyka_zdawalnosci.pdf")
+  );
+
+document.getElementById("reportExamBtn")
+  .addEventListener("click", () => {
+    const id = document.getElementById("report-test-select").value;
+    if (!id) return alert("Wybierz test");
+    downloadPdf(`${API_BASE}/reports/exam-results?id_testu=${id}`, "wyniki_egzaminu.pdf");
+  });
+</script>
     <!-- zachowujemy oryginalne skrypty templatemo -->
     <script src="templatemo-noir-scripts.js"></script>
 </body>
