@@ -80,13 +80,18 @@ app.get("/api/reports/students-list", (req, res) => {
     try {
         const sql = `
             SELECT 
-                imie, nazwisko, email, 'Aktywny' as status
+                id_uzytkownika AS "ID", 
+                imie AS "Imie", 
+                nazwisko AS "Nazwisko", 
+                email AS "Email",
+                'Aktywny' AS "Status"
             FROM Uzytkownik 
             WHERE typ_konta = 'student' 
             ORDER BY nazwisko ASC
         `;
         const rows = db.prepare(sql).all();
-        res.json(rows); // Zwracamy JSON, nie PDF
+        // WAŻNE: Musi być wywołanie tej funkcji, a nie res.json(rows)!
+        generateReportWithData("/reports/students-list", rows, res);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
@@ -628,6 +633,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
