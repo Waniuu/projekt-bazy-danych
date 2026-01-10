@@ -1000,7 +1000,13 @@ async function downloadPdf(url, filename = "raport.pdf") {
     modal.addEventListener('click', (ev)=>{
         if(ev.target === modal) closeModal();
     });
-
+    window.adminEditUser = adminEditUser;
+    window.adminDeleteUser = adminDeleteUser;
+    window.deleteCategory = deleteCategory;
+    window.deleteBank = deleteBank;
+    window.editQuestion = editQuestion;
+    window.deleteQuestion = deleteQuestion;
+    window.deletePrzedmiot = deletePrzedmiot;
 })();
 </script>
 
