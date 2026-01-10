@@ -5,21 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Panel Studenta</title>
     <link rel="stylesheet" href="templatemo-noir-fashion.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    
     <style>
-    /* --- Ogólne poprawki i layout podobny do index.html featured-hero --- */
+    /* UPROSZCZONY LAYOUT - brak podziału na kolumny */
     .featured-hero {
-        display: grid;
-        grid-template-columns: 1fr 420px;
-        gap: 36px;
-        align-items: start;
-    }
-
-    @media (max-width: 980px) {
-        .featured-hero {
-            grid-template-columns: 1fr;
-        }
+        display: block; /* Zmieniono z grid na block */
+        width: 100%;
     }
 
     /* KARTA DANYCH STUDENTA */
@@ -45,17 +36,19 @@
         font-size: 20px;
     }
 
-    /* OSTATNIE WYNIKI – GRID (karty po lewej) */
+    /* OSTATNIE WYNIKI – GRID */
+    /* Teraz zajmują całą szerokość i jest ich więcej w rzędzie */
     #wynikiContainer {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 18px;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Szersze karty */
+        gap: 20px;
+        margin-top: 20px;
     }
 
     /* KARTA WYNIKU */
     .result-card {
         background: rgba(255,255,255,0.06);
-        padding: 14px;
+        padding: 20px;
         border-radius: 14px;
         border: 1px solid rgba(255,255,255,0.08);
         color: white;
@@ -65,18 +58,20 @@
     .result-card:hover {
         transform: translateY(-3px);
         box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+        background: rgba(255,255,255,0.1);
     }
 
     .result-title {
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 700;
         color: #ff3366;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
+        min-height: 44px; /* Żeby karty były równe przy długich tytułach */
     }
 
     .result-line {
         margin-bottom: 6px;
-        font-size: 14px;
+        font-size: 15px;
         color: #e9e9e9;
     }
     .result-points { color: #ff3366; font-weight: 700; }
@@ -84,75 +79,21 @@
     .kategoria-naglowek {
         width: 100%;
         grid-column: 1/-1;
-        margin-top: 10px;
+        margin-top: 30px;
+        margin-bottom: 10px;
         color: #ff3366;
-        font-size: 18px;
+        font-size: 22px;
         font-weight: 700;
         border-bottom: 1px solid #ff336666;
-        padding-bottom: 6px;
+        padding-bottom: 8px;
     }
 
-    /* --- Panel statystyk (po prawej) --- */
-    .featured-image-section {
-        display: flex;
-        justify-content: center;
-    }
-
-    .featured-image-grid {
-        width: 100%;
-        max-width: 420px;
-    }
-
-    .stats-panel {
-        background: rgba(255,255,255,0.06);
-        border-radius: 16px;
-        padding: 18px;
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255,255,255,0.12);
-        box-shadow: 0 6px 22px rgba(0,0,0,0.35);
-        color: white;
-    }
-
-    .stats-title {
-        color: #ff3366;
-        font-size: 18px;
-        margin-bottom: 8px;
-        font-weight: 700;
-    }
-
-    .progress-bar-bg {
-        width: 100%;
-        height: 16px;
-        border-radius: 10px;
-        background: rgba(255,255,255,0.12);
-        overflow: hidden;
-        margin-top: 8px;
-    }
-    .progress-bar-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #ff3366 0%, #ff6699 100%);
-        width: 0%;
-        border-radius: 10px;
-        transition: width .8s cubic-bezier(.2,.9,.3,1);
-    }
-
-    .rank-list { margin-top: 10px; }
-    .rank-item {
-        margin-bottom: 8px;
-        font-size: 14px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .rank-item .pos { width: 22px; display:inline-block; color:#ffd6e3; font-weight:700; }
-
-    .canvas-container { margin-top: 14px; width:100%; height:180px; }
-    canvas#resultsChart { width:100% !important; height:180px !important; }
+    /* --- Panel statystyk ZOSTAŁ USUNIĘTY --- */
 
     /* drobne elementy */
-    .label { color:#ff9ab7; font-weight:700; font-size:13px; }
-    h2 { margin-top: 6px; color: #fff; }
-    p.section-subtitle { color: #dcdcdc; margin-bottom: 14px; }
+    .label { color:#ff9ab7; font-weight:700; font-size:14px; display:block; margin-bottom:5px; }
+    h2 { margin-top: 0; color: #fff; font-size: 32px;}
+    p.section-subtitle { color: #dcdcdc; margin-bottom: 20px; font-size: 16px; }
     </style>
 </head>
 <body>
@@ -197,7 +138,7 @@
                 <p><b>Nazwisko:</b> <span id="studentNazwisko">—</span></p>
                 <p><b>Email:</b> <span id="studentEmail">—</span></p>
                 <p><b>Numer indeksu:</b> <span id="studentIndeks">—</span></p>
-                <p><b>Średnia ocen:</b> <span id="studentSrednia" style="color:#ff3366;font-weight:700;">—</span></p>
+                <p><b>Średnia ocen:</b> <span id="studentSrednia" style="color:#ff3366;font-weight:700;">Obliczam...</span></p>
             </div>
         </div>
     </div>
@@ -215,11 +156,7 @@
 
 <section class="featured">
     <div class="featured-container">
-        <!-- Tutaj układ identyczny do index.html featured-hero -->
-        <div class="featured-hero">
-
-            <!-- LEWA: wyniki -->
-            <div class="featured-content">
+        <div class="featured-hero"> <div class="featured-content" style="width: 100%;">
                 <span class="label">Ucz się bez limitu</span>
                 <h2>Ostatnie wyniki</h2>
                 <p class="section-subtitle">Historia twoich testów</p>
@@ -229,27 +166,7 @@
                 </div>
             </div>
 
-            <!-- PRAWA: panel (zamiast grafiki) -->
-            <div class="featured-image-section">
-                <div class="featured-image-grid">
-                    <div class="stats-panel" id="statsPanel">
-                        <div class="stats-title">Progres nauki</div>
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
-                        </div>
-
-                        <div class="stats-title" style="margin-top:16px;">Ranking kategorii</div>
-                        <div class="rank-list" id="rankList">Brak danych</div>
-
-                        <div class="stats-title" style="margin-top:16px;">Wykres wyników</div>
-                        <div class="canvas-container">
-                            <canvas id="resultsChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div> <!-- /featured-hero -->
+            </div> 
     </div>
 </section>
 
@@ -282,25 +199,16 @@ async function loadStudentInfo(userId) {
         document.getElementById("studentNazwisko").textContent = data.nazwisko || "—";
         document.getElementById("studentEmail").textContent = data.email || "—";
         document.getElementById("studentIndeks").textContent = data.numer_indeksu ?? "—";
+        
+        // Średnia zostanie uzupełniona w loadResults(), bo stamtąd mamy oceny
     } catch (e) {
         console.warn(e);
     }
 }
 
 /* -------------------------
-   Wyniki, grupowanie, rendering kart i statystyk
+   Wyniki, grupowanie, rendering kart
    ------------------------- */
-
-let resultsChartInstance = null;
-
-function clearStats() {
-    document.getElementById("progressFill").style.width = "0%";
-    document.getElementById("rankList").innerHTML = "Brak danych";
-    if (resultsChartInstance) {
-        try { resultsChartInstance.destroy(); } catch(e) {}
-        resultsChartInstance = null;
-    }
-}
 
 function renderResultsCards(wyniki) {
     const wynikiDiv = document.getElementById("wynikiContainer");
@@ -311,10 +219,10 @@ function renderResultsCards(wyniki) {
         return;
     }
 
-    // grupuj według nazwy testu (kategorii widocznej w twoich danych)
+    // grupuj według nazwy testu (kategorii)
     const grupy = {};
     wyniki.forEach(w => {
-        const key = w.nazwa_testu || "Inne";
+        const key = w.nazwa_testu || "Inne"; // Używamy pola nazwa_testu z API
         if (!grupy[key]) grupy[key] = [];
         grupy[key].push(w);
     });
@@ -331,8 +239,8 @@ function renderResultsCards(wyniki) {
 
             wynikiDiv.insertAdjacentHTML('beforeend', `
                 <div class="result-card">
-                    <div class="result-title">${w.nazwa_testu}</div>
-                    <div class="result-line">Ocena: ⭐ ${ocena}</div>
+                    <div class="result-title">${w.nazwa_testu || "Test"}</div>
+                    <div class="result-line">Ocena: ⭐ <span style="font-size:1.2em;font-weight:bold">${ocena}</span></div>
                     <div class="result-line">Punkty: <span class="result-points">${pkt}</span></div>
                     <div class="result-line">Data: ${dataDisplay}</div>
                 </div>
@@ -341,119 +249,36 @@ function renderResultsCards(wyniki) {
     });
 }
 
-function updateStats(wyniki) {
-    // zabezpieczenia
-    if (!wyniki || !wyniki.length) {
-        clearStats();
+// NOWA FUNKCJA DO OBLICZANIA ŚREDNIEJ
+function calculateAverage(wyniki) {
+    if (!wyniki || wyniki.length === 0) {
+        document.getElementById("studentSrednia").textContent = "Brak ocen";
         return;
     }
 
-    // OCENY jako liczby
-    const oceny = wyniki.map(w => Number(w.ocena)).filter(n => !isNaN(n));
-    if (!oceny.length) {
-        clearStats();
-        return;
-    }
+    let suma = 0;
+    let licznik = 0;
 
-    // średnia (0-100 zakładam że ocena jest w skali 0-10 lub 0-100; aby zrobić pasek jako procent,
-    // spróbujemy wykryć skalę: jeśli max oceny <= 10 użyjemy *10, jeśli max>10 przyjmujemy max jako 100)
-    const maxOcena = Math.max(...oceny);
-    const avgRaw = oceny.reduce((a,b)=>a+b,0) / oceny.length;
-    let avgPercent = 0;
-    if (maxOcena <= 10) {
-        avgPercent = (avgRaw / 10) * 100;
-    } else if (maxOcena <= 100) {
-        avgPercent = avgRaw;
-    } else {
-        // fallback
-        avgPercent = Math.min(100, avgRaw);
-    }
-
-    document.getElementById("progressFill").style.width = `${Math.round(avgPercent)}%`;
-
-    // RANKING KATEGORII (po nazwie_testu)
-    const kategorie = {};
     wyniki.forEach(w => {
-        const key = w.nazwa_testu || "Inne";
-        if (!kategorie[key]) kategorie[key] = [];
-        const val = Number(w.ocena);
-        if (!isNaN(val)) kategorie[key].push(val);
-    });
-
-    const ranking = Object.entries(kategorie)
-        .map(([kat, arr]) => ({ kat, avg: arr.reduce((a,b)=>a+b,0)/arr.length }))
-        .sort((a,b)=> b.avg - a.avg);
-
-    const rankDiv = document.getElementById("rankList");
-    rankDiv.innerHTML = "";
-    if (!ranking.length) {
-        rankDiv.textContent = "Brak danych";
-    } else {
-        ranking.forEach((r,i) => {
-            rankDiv.insertAdjacentHTML('beforeend', `
-                <div class="rank-item">
-                    <div><span class="pos">${i+1}.</span> ${r.kat}</div>
-                    <div style="color:#ff3366;font-weight:700">${r.avg.toFixed(1)}</div>
-                </div>
-            `);
-        });
-    }
-
-    // WYKRES - uporządkuj po dacie (jeśli data parsowalna), inaczej po kolejności
-    let sorted = [...wyniki];
-    if (wyniki.every(w => !isNaN(Date.parse(w.data)))) {
-        sorted.sort((a,b)=> new Date(a.data) - new Date(b.data));
-    }
-
-    const labels = sorted.map(w => w.data || "");
-    const dataPoints = sorted.map(w => Number(w.ocena) || 0);
-
-    // zniszcz poprzedni wykres
-    if (resultsChartInstance) {
-        try { resultsChartInstance.destroy(); } catch(e){ }
-        resultsChartInstance = null;
-    }
-
-    const ctx = document.getElementById('resultsChart').getContext('2d');
-    resultsChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Oceny',
-                data: dataPoints,
-                borderWidth: 3,
-                tension: 0.3,
-                fill: false,
-                pointRadius: 4,
-                pointBackgroundColor: '#ff3366',
-                borderColor: '#ff3366'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { labels: { color: "white" } },
-                tooltip: { mode: 'index', intersect: false }
-            },
-            scales: {
-                x: {
-                    ticks: { color: "white", maxRotation: 20, minRotation: 0 },
-                    grid: { color: 'rgba(255,255,255,0.04)' }
-                },
-                y: {
-                    ticks: { color: "white" },
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    beginAtZero: true
-                }
-            }
+        // Konwertujemy ocenę na liczbę (zakładamy format "4", "4.5" lub "5")
+        const ocena = parseFloat(w.ocena);
+        if (!isNaN(ocena) && ocena > 0) {
+            suma += ocena;
+            licznik++;
         }
     });
+
+    if (licznik > 0) {
+        const srednia = (suma / licznik).toFixed(2); // Dwa miejsca po przecinku
+        document.getElementById("studentSrednia").textContent = srednia;
+    } else {
+        document.getElementById("studentSrednia").textContent = "—";
+    }
 }
 
+
 /* -------------------------
-   Funkcja ładująca wyniki i wywołująca render + statystyki
+   Funkcja ładująca wyniki i wywołująca render
    ------------------------- */
 async function loadResults(userId) {
     const wynikiDiv = document.getElementById("wynikiContainer");
@@ -466,25 +291,25 @@ async function loadResults(userId) {
 
         if (!wyniki || !wyniki.length) {
             wynikiDiv.innerHTML = "<p>Brak wyników.</p>";
-            clearStats();
+            document.getElementById("studentSrednia").textContent = "Brak ocen";
             return;
         }
 
-        // render karty po lewej
+        // 1. Render kart
         renderResultsCards(wyniki);
 
-        // update panelu po prawej
-        updateStats(wyniki);
+        // 2. Oblicz i wyświetl średnią
+        calculateAverage(wyniki);
 
     } catch (e) {
         console.warn(e);
         wynikiDiv.innerHTML = "<p>Błąd ładowania wyników.</p>";
-        clearStats();
+        document.getElementById("studentSrednia").textContent = "Błąd";
     }
 }
 
 /* -------------------------
-   KATEGORIE (bez zmian, renderuje karty kategorii)
+   KATEGORIE
    ------------------------- */
 async function loadCategories() {
     try {
@@ -515,15 +340,17 @@ async function loadCategories() {
             `);
         });
 
-        grid.insertAdjacentHTML('beforeend', `
-            <div class="collection-card" id="expandCard" style="cursor:pointer;">
-                <div class="collection-thumbnail"><img src="images/default.png"></div>
-                <div class="card-content">
-                    <h3 class="card-title" id="expandLabel">Rozwiń wszystkie kategorie ↓</h3>
-                    <p class="card-subtitle">Kliknij, aby zobaczyć więcej</p>
+        if (rest.length > 0) {
+            grid.insertAdjacentHTML('beforeend', `
+                <div class="collection-card" id="expandCard" style="cursor:pointer;">
+                    <div class="collection-thumbnail"><img src="images/default.png"></div>
+                    <div class="card-content">
+                        <h3 class="card-title" id="expandLabel">Rozwiń wszystkie kategorie ↓</h3>
+                        <p class="card-subtitle">Kliknij, aby zobaczyć więcej</p>
+                    </div>
                 </div>
-            </div>
-        `);
+            `);
+        }
 
         rest.forEach(cat => {
             const imgName = normalizeName(cat.nazwa);
@@ -565,8 +392,13 @@ async function initDashboard() {
     if (!user) return logout();
 
     const userId = user.id;
+    // Ładujemy dane (bez średniej)
     loadStudentInfo(userId);
+    
+    // Ładujemy kategorie
     await loadCategories();
+    
+    // Ładujemy wyniki I OBLICZAMY ŚREDNIĄ
     await loadResults(userId);
 }
 
