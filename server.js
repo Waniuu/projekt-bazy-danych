@@ -75,31 +75,18 @@ async function generateReportWithData(endpoint, data, res) {
     }
 }
 
-// 1. LISTA STUDENTÓW (Fix SQL)
+// 1. LISTA STUDENTÓW
 app.get("/api/reports/students-list", (req, res) => {
     try {
-        // UŻYWAMY KOLUMNY 'typ_konta', KTÓRA ISTNIEJE W BAZIE
         const sql = `
             SELECT 
-                id_uzytkownika AS "ID", 
-                imie AS "Imie", 
-                nazwisko AS "Nazwisko", 
-                email AS "Email",
-                'Aktywny' AS "Status"
+                imie, nazwisko, email, 'Aktywny' as status
             FROM Uzytkownik 
             WHERE typ_konta = 'student' 
             ORDER BY nazwisko ASC
         `;
         const rows = db.prepare(sql).all();
-        generateReportWithData("/reports/students-list", rows, res);
-    } catch (e) { res.status(500).json({error: e.message}); }
-});
-// Fix dla starego linku
-app.get("/api/reports/users", (req, res) => {
-    try {
-        const sql = `SELECT id_uzytkownika AS "ID", imie AS "Imie", nazwisko AS "Nazwisko", email AS "Email" FROM Uzytkownik ORDER BY nazwisko ASC`;
-        const rows = db.prepare(sql).all();
-        generateReportWithData("/reports/students-list", rows, res); // Przekierowanie do działającego endpointu w C#
+        res.json(rows); // Zwracamy JSON, nie PDF
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
@@ -108,27 +95,48 @@ app.get("/api/reports/exam-results", (req, res) => {
     try {
         const { id_testu } = req.query;
         if (!id_testu) return res.status(400).json({error: "Wybierz test!"});
-        const sql = `SELECT u.imie || ' ' || u.nazwisko AS "Student", w.liczba_punktow AS "Punkty", w.ocena AS "Ocena" FROM WynikTestu w JOIN Uzytkownik u ON w.id_studenta = u.id_uzytkownika WHERE w.id_testu = ? ORDER BY w.liczba_punktow DESC`;
+        
+        // Pobieramy też nazwę testu, żeby wyświetlić w nagłówku PDF
+        const testInfo = db.prepare("SELECT tytul FROM Test WHERE id_testu = ?").get(id_testu);
+        const title = testInfo ? testInfo.tytul : "Nieznany test";
+
+        const sql = `
+            SELECT u.imie, u.nazwisko, w.liczba_punktow, w.ocena 
+            FROM WynikTestu w 
+            JOIN Uzytkownik u ON w.id_studenta = u.id_uzytkownika 
+            WHERE w.id_testu = ? 
+            ORDER BY w.liczba_punktow DESC
+        `;
         const rows = db.prepare(sql).all(id_testu);
-        generateReportWithData("/reports/exam-results", rows, res);
+        
+        res.json({ title, rows }); // Zwracamy tytuł i wyniki
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
 // 3. BANK PYTAŃ
 app.get("/api/reports/questions-bank", (req, res) => {
     try {
-        const sql = `SELECT k.nazwa AS "Kategoria", p.poziom_trudnosci AS "Poziom", p.tresc AS "Tresc_Pytania" FROM Pytanie p JOIN Kategoria k ON p.id_kategorii = k.id_kategorii ORDER BY k.nazwa`;
+        const sql = `
+            SELECT k.nazwa AS kategoria, p.poziom_trudnosci, p.tresc 
+            FROM Pytanie p 
+            JOIN Kategoria k ON p.id_kategorii = k.id_kategorii 
+            ORDER BY k.nazwa
+        `;
         const rows = db.prepare(sql).all();
-        generateReportWithData("/reports/questions-bank", rows, res);
+        res.json(rows);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
-
 // 4. STATYSTYKA
 app.get("/api/reports/tests-stats", (req, res) => {
     try {
-        const sql = `SELECT t.tytul AS "Test", COUNT(w.id_wyniku) AS "Podejscia" FROM Test t LEFT JOIN WynikTestu w ON t.id_testu = w.id_testu GROUP BY t.id_testu`;
+        const sql = `
+            SELECT t.tytul, COUNT(w.id_wyniku) AS podejscia 
+            FROM Test t 
+            LEFT JOIN WynikTestu w ON t.id_testu = w.id_testu 
+            GROUP BY t.id_testu
+        `;
         const rows = db.prepare(sql).all();
-        generateReportWithData("/reports/tests-stats", rows, res);
+        res.json(rows);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
@@ -620,6 +628,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
