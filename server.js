@@ -530,23 +530,40 @@ app.get("/api/pytania-z-odpowiedziami", (req, res) => {
 });
 
 // C. Zapisywanie wyniku (Koniec testu)
+// C. Zapisywanie wyniku z logiką ocen 1-6
 app.post("/api/zapisz-wynik", (req, res) => {
     try {
-        const { id_studenta, id_testu, liczba_punktow } = req.body;
+        // Odbieramy zdobyte punkty ORAZ maksymalne możliwe punkty
+        const { id_studenta, id_testu, liczba_punktow, maks_punktow } = req.body;
 
-        // Obliczamy ocenę (prosta logika: >50% = 3.0, itd. - dostosuj wg potrzeb)
-        // Tutaj wpisujemy na sztywno lub obliczamy
-        const ocena = liczba_punktow > 0 ? 5 : 2; 
+        // Zabezpieczenie przed dzieleniem przez zero
+        const max = maks_punktow || 1; 
+        const points = liczba_punktow || 0;
+
+        // Obliczamy procent
+        const percentage = (points / max) * 100;
+
+        // Wyliczamy ocenę wg skali (możesz tu zmienić progi)
+        let ocena;
+        if (percentage >= 100) ocena = "6";      // Celujący (100%)
+        else if (percentage >= 90) ocena = "5";  // Bardzo dobry (90-99%)
+        else if (percentage >= 75) ocena = "4";  // Dobry (75-89%)
+        else if (percentage >= 50) ocena = "3";  // Dostateczny (50-74%)
+        else if (percentage >= 30) ocena = "2";  // Dopuszczający (30-49%)
+        else ocena = "1";                        // Niedostateczny (<30%)
+
+        console.log(`Zapis wyniku: ${points}/${max} (${percentage.toFixed(1)}%) -> Ocena: ${ocena}`);
 
         const stmt = db.prepare(`
             INSERT INTO WynikTestu (id_studenta, id_testu, data, liczba_punktow, ocena)
             VALUES (?, ?, DATE('now'), ?, ?)
         `);
         
-        stmt.run(id_studenta, id_testu, liczba_punktow, ocena);
+        stmt.run(id_studenta, id_testu, points, ocena);
 
-        res.json({ success: true, message: "Wynik zapisany" });
+        res.json({ success: true, message: "Wynik zapisany", ocena: ocena });
     } catch (e) {
+        console.error("Błąd zapisu wyniku:", e.message);
         res.status(500).json({ error: e.message });
     }
 });
@@ -601,6 +618,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
