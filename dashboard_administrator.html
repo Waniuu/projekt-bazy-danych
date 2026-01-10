@@ -859,7 +859,7 @@ const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAA
 
         doc.save(fileName);
     }
-    function initReports() {
+  function initReports() {
         // 1. LISTA STUDENTÓW
         const btnStudents = document.getElementById("reportStudentsBtn");
         if (btnStudents) {
@@ -868,9 +868,8 @@ const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAA
                     const res = await fetch(API_BASE + "/reports/students-list");
                     const data = await res.json();
                     
-                    // Mapowanie danych do tabeli (dodajemy Lp.)
                     const rows = data.map((row, index) => [
-                        index + 1, // Lp.
+                        index + 1,
                         row.imie,
                         row.nazwisko,
                         row.email,
@@ -886,7 +885,36 @@ const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAA
                 } catch(e) { alert("Błąd pobierania danych: " + e.message); }
             });
         }
-       // 3. BANK PYTAŃ
+
+        // 2. WYNIKI EGZAMINU (TERAZ POPRAWNIE WEWNĄTRZ FUNKCJI)
+        const btnExam = document.getElementById("reportExamBtn");
+        if (btnExam) {
+            btnExam.addEventListener("click", async () => {
+                const id = document.getElementById("report-test-select").value;
+                if (!id) return alert("Wybierz test");
+
+                try {
+                    const res = await fetch(API_BASE + `/reports/exam-results?id_testu=${id}`);
+                    const data = await res.json();
+                    
+                    const rows = data.rows.map((row, index) => [
+                        index + 1,
+                        row.imie + " " + row.nazwisko,
+                        row.liczba_punktow,
+                        row.ocena
+                    ]);
+
+                    generateStyledPDF(
+                        `Wyniki egzaminu: ${data.title}`, 
+                        ["Lp.", "Student", "Punkty", "Ocena"], 
+                        rows, 
+                        "wyniki_egzaminu.pdf"
+                    );
+                } catch(e) { alert("Błąd: " + e.message); }
+            });
+        }
+
+        // 3. BANK PYTAŃ
         const btnQuestions = document.getElementById("reportQuestionsBtn");
         if (btnQuestions) {
             btnQuestions.addEventListener("click", async () => {
@@ -910,7 +938,8 @@ const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAA
                 } catch(e) { alert("Błąd: " + e.message); }
             });
         }
-       // 4. STATYSTYKA
+
+        // 4. STATYSTYKA
         const btnStats = document.getElementById("reportStatsBtn");
         if (btnStats) {
             btnStats.addEventListener("click", async () => {
@@ -933,36 +962,6 @@ const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAA
                 } catch(e) { alert("Błąd: " + e.message); }
             });
         }
-    }
-    // 2. WYNIKI EGZAMINU
-    const btnExam = document.getElementById("reportExamBtn");
-        if (btnExam) {
-            btnExam.addEventListener("click", async () => {
-                const id = document.getElementById("report-test-select").value;
-                if (!id) return alert("Wybierz test");
-
-                try {
-                    const res = await fetch(API_BASE + `/reports/exam-results?id_testu=${id}`);
-                    const data = await res.json();
-                    
-                    // data ma postać: { title: "Nazwa Testu", rows: [...] }
-                    const rows = data.rows.map((row, index) => [
-                        index + 1,
-                        row.imie + " " + row.nazwisko,
-                        row.liczba_punktow,
-                        row.ocena
-                    ]);
-
-                    generateStyledPDF(
-                        `Wyniki egzaminu: ${data.title}`, 
-                        ["Lp.", "Student", "Punkty", "Ocena"], 
-                        rows, 
-                        "wyniki_egzaminu.pdf"
-                    );
-                } catch(e) { alert("Błąd: " + e.message); }
-            });
-        }
-
     }
 
     // ---------- Helper: escapeHtml ----------
