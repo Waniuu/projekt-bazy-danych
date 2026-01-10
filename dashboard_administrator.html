@@ -6,8 +6,6 @@
     <title>Dashboard Administrator — System generowania testów</title>
     <!-- zachowujemy oryginalny styl -->
     <link rel="stylesheet" href="templatemo-noir-fashion.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
         /* Dodatkowe drobne style dla panelu admina (kompatybilne z motywem) */
         .admin-container { max-width: 1200px; margin: 32px auto; padding: 24px; }
@@ -799,171 +797,43 @@
             console.warn('Raporty: nie udało się załadować testów', e);
         }
     }
-const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAABlBMVEUAAAD///+l2Z/dAAAAAXRSTlMAQObYZgAAAFBLREFUeNrtwTEBAAAAwqD1T20JT6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPkMQAB7NrDFAAAAABJRU5ErkJggg==";
 
-    async function generateStyledPDF(reportTitle, columns, dataRows, fileName) {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-
-        // 1. NAGŁÓWEK "SYSTEM GENEROWANIA TESTÓW"
-        // Opcjonalnie: dodaj logo (jeśli masz prawdziwe base64, odkomentuj linię niżej)
-        // doc.addImage(LOGO_BASE64, 'PNG', 14, 10, 10, 10); 
-        
-        doc.setFontSize(18);
-        doc.setTextColor(40);
-        doc.text("System Generowania Testów", 14, 22);
-        
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text("Raport wygenerowany: " + new Date().toLocaleString(), 14, 28);
-
-        // 2. TYTUŁ KONKRETNEGO RAPORTU
-        doc.setFontSize(14);
-        doc.setTextColor(0);
-        doc.text(reportTitle, 14, 40);
-
-        // 3. TABELA (STYL EXCELOWY)
-        doc.autoTable({
-            startY: 45,
-            head: [columns],
-            body: dataRows,
-            theme: 'grid', // To daje styl "Excel" (kratka)
-            headStyles: { 
-                fillColor: [255, 51, 102], // Twój kolor #ff3366
-                textColor: 255,
-                fontStyle: 'bold'
-            },
-            styles: {
-                fontSize: 10,
-                cellPadding: 3,
-                lineColor: [200, 200, 200],
-                lineWidth: 0.1
-            },
-            alternateRowStyles: {
-                fillColor: [245, 245, 245] // Co drugi wiersz szary
-            },
-            // Dodajemy numerację (Lp.) automatycznie
-            didParseCell: function(data) {
-                // Tu można dodać logikę
-            }
-        });
-
-        // 4. STOPKA
-        const pageCount = doc.internal.getNumberOfPages();
-        for(let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text('Strona ' + i + ' z ' + pageCount, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10, {align:'right'});
-        }
-
-        doc.save(fileName);
-    }
   function initReports() {
-        // 1. LISTA STUDENTÓW
         const btnStudents = document.getElementById("reportStudentsBtn");
-        if (btnStudents) {
-            btnStudents.addEventListener("click", async () => {
-                try {
-                    const res = await fetch(API_BASE + "/reports/students-list");
-                    const data = await res.json();
-                    
-                    const rows = data.map((row, index) => [
-                        index + 1,
-                        row.imie,
-                        row.nazwisko,
-                        row.email,
-                        row.status
-                    ]);
-
-                    generateStyledPDF(
-                        "Lista Studentów", 
-                        ["Lp.", "Imię", "Nazwisko", "Email", "Status"], 
-                        rows, 
-                        "lista_studentow.pdf"
-                    );
-                } catch(e) { alert("Błąd pobierania danych: " + e.message); }
-            });
-        }
-
-        // 2. WYNIKI EGZAMINU (TERAZ POPRAWNIE WEWNĄTRZ FUNKCJI)
-        const btnExam = document.getElementById("reportExamBtn");
-        if (btnExam) {
-            btnExam.addEventListener("click", async () => {
-                const id = document.getElementById("report-test-select").value;
-                if (!id) return alert("Wybierz test");
-
-                try {
-                    const res = await fetch(API_BASE + `/reports/exam-results?id_testu=${id}`);
-                    const data = await res.json();
-                    
-                    const rows = data.rows.map((row, index) => [
-                        index + 1,
-                        row.imie + " " + row.nazwisko,
-                        row.liczba_punktow,
-                        row.ocena
-                    ]);
-
-                    generateStyledPDF(
-                        `Wyniki egzaminu: ${data.title}`, 
-                        ["Lp.", "Student", "Punkty", "Ocena"], 
-                        rows, 
-                        "wyniki_egzaminu.pdf"
-                    );
-                } catch(e) { alert("Błąd: " + e.message); }
-            });
-        }
-
-        // 3. BANK PYTAŃ
         const btnQuestions = document.getElementById("reportQuestionsBtn");
-        if (btnQuestions) {
-            btnQuestions.addEventListener("click", async () => {
-                try {
-                    const res = await fetch(API_BASE + "/reports/questions-bank");
-                    const data = await res.json();
-                    
-                    const rows = data.map((row, index) => [
-                        index + 1,
-                        row.kategoria,
-                        row.poziom_trudnosci,
-                        row.tresc
-                    ]);
-
-                    generateStyledPDF(
-                        "Bank Pytań", 
-                        ["Lp.", "Kategoria", "Poziom", "Treść pytania"], 
-                        rows, 
-                        "bank_pytan.pdf"
-                    );
-                } catch(e) { alert("Błąd: " + e.message); }
-            });
-        }
-
-        // 4. STATYSTYKA
         const btnStats = document.getElementById("reportStatsBtn");
-        if (btnStats) {
-            btnStats.addEventListener("click", async () => {
-                try {
-                    const res = await fetch(API_BASE + "/reports/tests-stats");
-                    const data = await res.json();
-                    
-                    const rows = data.map((row, index) => [
-                        index + 1,
-                        row.tytul,
-                        row.podejscia
-                    ]);
+        const btnExam = document.getElementById("reportExamBtn");
 
-                    generateStyledPDF(
-                        "Statystyka Zdawalności i Popularności", 
-                        ["Lp.", "Nazwa Testu", "Liczba podejść"], 
-                        rows, 
-                        "statystyki.pdf"
-                    );
-                } catch(e) { alert("Błąd: " + e.message); }
-            });
+        if (btnStudents && !btnStudents.dataset.bound) {
+            btnStudents.addEventListener("click", () =>
+                downloadPdf(API_BASE + "/reports/students-list", "lista_studentow.pdf")
+            );
+            btnStudents.dataset.bound = "1";
+                    }
+
+        if (btnQuestions && !btnQuestions.dataset.bound) {
+            btnQuestions.addEventListener("click", () =>
+                downloadPdf(API_BASE + "/reports/questions-bank", "bank_pytan.pdf")
+            );
+            btnQuestions.dataset.bound = "1";
         }
-    }
-
+      if (btnStats && !btnStats.dataset.bound) {
+            btnStats.addEventListener("click", () =>
+                downloadPdf(API_BASE + "/reports/tests-stats", "statystyka_zdawalnosci.pdf")
+            );
+            btnStats.dataset.bound = "1";
+      }   if (btnExam && !btnExam.dataset.bound) {
+            btnExam.addEventListener("click", () => {
+                    const id = document.getElementById("report-test-select").value;
+                if (!id) return alert("Wybierz test");
+                downloadPdf(
+                    API_BASE + `/reports/exam-results?id_testu=${id}`,
+                    "wyniki_egzaminu.pdf"
+                );
+                  });
+            btnExam.dataset.bound = "1";
+        }
+  }
     // ---------- Helper: escapeHtml ----------
     function escapeHtml(s){
         if(s === null || s === undefined) return '';
