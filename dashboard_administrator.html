@@ -764,19 +764,32 @@
     }
 
     // ================== RAPORTY ==================
-    async function downloadPdf(url, filename = "raport.pdf") {
+async function downloadPdf(url, filename = "raport.pdf") {
         try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error("Błąd generowania raportu");
-            const blob = await res.blob();
+            // DODAJEMY LOSOWY PARAMETR CZASU, ŻEBY OMINĄĆ CACHE 304
+            const finalUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+            
+            console.log("Pobieranie z URL:", finalUrl); // Zobaczysz to w konsoli
 
+            const res = await fetch(finalUrl);
+            
+            if (!res.ok) {
+                const errJson = await res.json().catch(() => ({})); 
+                throw new Error(errJson.details || "Błąd generowania raportu (Status: " + res.status + ")");
+            }
+
+            const blob = await res.blob();
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
             a.download = filename;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
             URL.revokeObjectURL(a.href);
+
         } catch (e) {
-            alert(e.message);
+            console.error(e);
+            alert("Błąd: " + e.message);
         }
     }
 
