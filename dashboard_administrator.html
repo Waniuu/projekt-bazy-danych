@@ -32,9 +32,25 @@
         .search-input { width:100%; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--text-color); }
         .right-col { display:flex; flex-direction:column; gap:16px; }
         .section-title-small { font-size:16px; margin-bottom:6px; }
+        /* --- Dodaj to w sekcji <style> --- */
+.report-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+.report-row input, .report-row select {
+    flex: 1;
+    min-width: 140px;
+}
+.report-row button {
+    flex: 0 0 auto;
+}
         /* Raports tweaks */
         #pane-raporty .btn { min-width:120px; }
         #pane-raporty select, #pane-raporty input { min-width:160px; }
+        
         /* responsiveness */
         @media (max-width: 900px) {
             .admin-grid { grid-template-columns: 1fr; }
@@ -220,34 +236,73 @@
 
     <div class="report-block">
         <h3>1. Lista studentów</h3>
-        <p>Wykaz wszystkich aktywnych studentów.</p>
-        <button id="reportStudentsBtn" class="btn primary">Pobierz PDF</button>
+        <p class="small-muted">Filtrowanie i sortowanie listy studentów.</p>
+        <div class="report-row">
+            <input type="text" id="rep-stud-search" placeholder="Szukaj (imię, nazwisko)...">
+            <select id="rep-stud-sort">
+                <option value="nazwisko">Sortuj: Nazwisko A-Z</option>
+                <option value="imie">Sortuj: Imię A-Z</option>
+            </select>
+            <button id="reportStudentsBtn" class="btn primary">Pobierz PDF</button>
+        </div>
     </div>
 
-    <hr />
+    <hr style="border-color:rgba(255,255,255,0.05); margin:15px 0;" />
 
     <div class="report-block">
         <h3>2. Wyniki egzaminu</h3>
-        <select id="report-test-select"></select>
-        <button id="reportExamBtn" class="btn primary">Pobierz PDF</button>
+        <p class="small-muted">Wyniki dla konkretnego testu z progiem oceny.</p>
+        <div class="report-row">
+            <select id="report-test-select">
+                <option value="">Ładowanie testów...</option>
+            </select>
+            <select id="rep-exam-grade">
+                <option value="">Wszystkie oceny</option>
+                <option value="3">Ocena 3.0 i wyżej</option>
+                <option value="4">Ocena 4.0 i wyżej</option>
+                <option value="5">Tylko oceny 5.0 i 6.0</option>
+            </select>
+            <button id="reportExamBtn" class="btn primary">Pobierz PDF</button>
+        </div>
     </div>
 
-    <hr />
+    <hr style="border-color:rgba(255,255,255,0.05); margin:15px 0;" />
 
     <div class="report-block">
         <h3>3. Bank pytań</h3>
-        <button id="reportQuestionsBtn" class="btn primary">Pobierz PDF</button>
+        <p class="small-muted">Wykaz pytań wg kategorii i trudności.</p>
+        <div class="report-row">
+            <select id="rep-quest-cat">
+                <option value="">Wszystkie kategorie</option>
+            </select>
+            <select id="rep-quest-level">
+                <option value="">Wszystkie poziomy</option>
+                <option value="łatwy">Łatwy</option>
+                <option value="średni">Średni</option>
+                <option value="trudny">Trudny</option>
+            </select>
+            <button id="reportQuestionsBtn" class="btn primary">Pobierz PDF</button>
+        </div>
     </div>
 
-    <hr />
+    <hr style="border-color:rgba(255,255,255,0.05); margin:15px 0;" />
 
     <div class="report-block">
         <h3>4. Statystyka zdawalności</h3>
-        <button id="reportStatsBtn" class="btn primary">Pobierz PDF</button>
+        <p class="small-muted">Analiza popularności testów w zakresie dat.</p>
+        <div class="report-row">
+            <div style="flex:1">
+                <label class="small-muted">Data od:</label>
+                <input type="date" id="rep-stats-from">
+            </div>
+            <div style="flex:1">
+                <label class="small-muted">Data do:</label>
+                <input type="date" id="rep-stats-to">
+            </div>
+            <button id="reportStatsBtn" class="btn primary" style="align-self:flex-end">Pobierz PDF</button>
+        </div>
     </div>
 </div>
- 
-
 
                 <!-- PRZEDMIOTY -->
                 <div id="pane-przedmioty" class="card" style="display:none;">
@@ -744,22 +799,31 @@
         if(resp.ok){ listPrzedmioty(); initAll(); } else alert('Błąd usuwania');
     }
 
-    // ---------- Inicjalizacja list pomocniczych ----------
-    async function loadAuxiliary(){
-        // nauczyciele do selecta
+ async function loadAuxiliary(){
+        // Nauczyciele do przedmiotów
         try {
             const users = await (await fetch(API_BASE + '/uzytkownicy')).json().catch(()=>[]);
             const teachers = users.filter(u => u.typ_konta === 'nauczyciel');
             const sel = document.getElementById('przedmiotNauczyciel');
-            sel.innerHTML = '<option value="">Brak</option>' + teachers.map(t=>`<option value="${t.email}">${escapeHtml(t.imie + ' ' + t.nazwisko)}</option>`).join('');
+            if(sel) sel.innerHTML = '<option value="">Brak</option>' + teachers.map(t=>`<option value="${t.email}">${escapeHtml(t.imie + ' ' + t.nazwisko)}</option>`).join('');
         } catch(e){ console.warn(e); }
 
-        // banks & cats options
+        // Banki
         try {
             const banks = await (await fetch(API_BASE + '/banki')).json().catch(()=>[]);
             window._banksOptions = banks.map(b=>`<option value="${b.id_banku || b.id}">${escapeHtml(b.nazwa)}</option>`).join('');
+        } catch(e){ console.warn(e); }
+
+        // Kategorie (teraz wypełniamy też select w Raporcie nr 3)
+        try {
             const cats = await (await fetch(API_BASE + '/kategorie')).json().catch(()=>[]);
             window._catsOptions = cats.map(c=>`<option value="${c.id_kategorii || c.id}">${escapeHtml(c.nazwa)}</option>`).join('');
+            
+            // Wypełnij select w sekcji Raportów
+            const repCatSel = document.getElementById('rep-quest-cat');
+            if(repCatSel) {
+                repCatSel.innerHTML = '<option value="">Wszystkie kategorie</option>' + window._catsOptions;
+            }
         } catch(e){ console.warn(e); }
     }
 
@@ -818,43 +882,80 @@ async function downloadPdf(url, filename = "raport.pdf") {
         }
     }
 
-    function initReports() {
+   function initReports() {
+        // 1. Studenci
         const btnStudents = document.getElementById("reportStudentsBtn");
-        const btnQuestions = document.getElementById("reportQuestionsBtn");
-        const btnStats = document.getElementById("reportStatsBtn");
-        const btnExam = document.getElementById("reportExamBtn");
+        if (btnStudents) {
+            // Usuwamy stary listener (klonując przycisk)
+            const newBtn = btnStudents.cloneNode(true);
+            btnStudents.parentNode.replaceChild(newBtn, btnStudents);
+            
+            newBtn.addEventListener("click", () => {
+                const search = document.getElementById('rep-stud-search').value.trim();
+                const sort = document.getElementById('rep-stud-sort').value;
+                
+                const params = new URLSearchParams();
+                if(search) params.append('search', search);
+                if(sort) params.append('sort', sort);
 
-        if (btnStudents && !btnStudents.dataset.bound) {
-            btnStudents.addEventListener("click", () =>
-                downloadPdf(API_BASE + "/reports/students-list", "lista_studentow.pdf")
-            );
-            btnStudents.dataset.bound = "1";
-        }
-
-        if (btnQuestions && !btnQuestions.dataset.bound) {
-            btnQuestions.addEventListener("click", () =>
-                downloadPdf(API_BASE + "/reports/questions-bank", "bank_pytan.pdf")
-            );
-            btnQuestions.dataset.bound = "1";
-        }
-
-        if (btnStats && !btnStats.dataset.bound) {
-            btnStats.addEventListener("click", () =>
-                downloadPdf(API_BASE + "/reports/tests-stats", "statystyka_zdawalnosci.pdf")
-            );
-            btnStats.dataset.bound = "1";
-        }
-
-        if (btnExam && !btnExam.dataset.bound) {
-            btnExam.addEventListener("click", () => {
-                const id = document.getElementById("report-test-select").value;
-                if (!id) return alert("Wybierz test");
-                downloadPdf(
-                    API_BASE + `/reports/exam-results?id_testu=${id}`,
-                    "wyniki_egzaminu.pdf"
-                );
+                downloadPdf(API_BASE + "/reports/students-list?" + params.toString(), "lista_studentow.pdf");
             });
-            btnExam.dataset.bound = "1";
+        }
+
+        // 2. Wyniki Egzaminu
+        const btnExam = document.getElementById("reportExamBtn");
+        if (btnExam) {
+            const newBtn = btnExam.cloneNode(true);
+            btnExam.parentNode.replaceChild(newBtn, btnExam);
+
+            newBtn.addEventListener("click", () => {
+                const id = document.getElementById("report-test-select").value;
+                const minOcena = document.getElementById("rep-exam-grade").value;
+
+                if (!id) return alert("Wybierz test z listy!");
+
+                const params = new URLSearchParams();
+                params.append('id_testu', id);
+                if(minOcena) params.append('min_ocena', minOcena);
+
+                downloadPdf(API_BASE + "/reports/exam-results?" + params.toString(), "wyniki_egzaminu.pdf");
+            });
+        }
+
+        // 3. Bank Pytań
+        const btnQuestions = document.getElementById("reportQuestionsBtn");
+        if (btnQuestions) {
+            const newBtn = btnQuestions.cloneNode(true);
+            btnQuestions.parentNode.replaceChild(newBtn, btnQuestions);
+
+            newBtn.addEventListener("click", () => {
+                const idKat = document.getElementById("rep-quest-cat").value;
+                const poziom = document.getElementById("rep-quest-level").value;
+
+                const params = new URLSearchParams();
+                if(idKat) params.append('id_kategorii', idKat);
+                if(poziom) params.append('poziom', poziom);
+
+                downloadPdf(API_BASE + "/reports/questions-bank?" + params.toString(), "bank_pytan.pdf");
+            });
+        }
+
+        // 4. Statystyki
+        const btnStats = document.getElementById("reportStatsBtn");
+        if (btnStats) {
+            const newBtn = btnStats.cloneNode(true);
+            btnStats.parentNode.replaceChild(newBtn, btnStats);
+
+            newBtn.addEventListener("click", () => {
+                const dOd = document.getElementById("rep-stats-from").value;
+                const dDo = document.getElementById("rep-stats-to").value;
+
+                const params = new URLSearchParams();
+                if(dOd) params.append('data_od', dOd);
+                if(dDo) params.append('data_do', dDo);
+
+                downloadPdf(API_BASE + "/reports/tests-stats?" + params.toString(), "statystyka_zdawalnosci.pdf");
+            });
         }
     }
 
