@@ -798,7 +798,7 @@
         }
     }
 
-  function initReports() {
+    function initReports() {
         const btnStudents = document.getElementById("reportStudentsBtn");
         const btnQuestions = document.getElementById("reportQuestionsBtn");
         const btnStats = document.getElementById("reportStatsBtn");
@@ -809,7 +809,7 @@
                 downloadPdf(API_BASE + "/reports/students-list", "lista_studentow.pdf")
             );
             btnStudents.dataset.bound = "1";
-                    }
+        }
 
         if (btnQuestions && !btnQuestions.dataset.bound) {
             btnQuestions.addEventListener("click", () =>
@@ -817,23 +817,27 @@
             );
             btnQuestions.dataset.bound = "1";
         }
-      if (btnStats && !btnStats.dataset.bound) {
+
+        if (btnStats && !btnStats.dataset.bound) {
             btnStats.addEventListener("click", () =>
                 downloadPdf(API_BASE + "/reports/tests-stats", "statystyka_zdawalnosci.pdf")
             );
             btnStats.dataset.bound = "1";
-      }   if (btnExam && !btnExam.dataset.bound) {
+        }
+
+        if (btnExam && !btnExam.dataset.bound) {
             btnExam.addEventListener("click", () => {
-                    const id = document.getElementById("report-test-select").value;
+                const id = document.getElementById("report-test-select").value;
                 if (!id) return alert("Wybierz test");
                 downloadPdf(
                     API_BASE + `/reports/exam-results?id_testu=${id}`,
                     "wyniki_egzaminu.pdf"
                 );
-                  });
+            });
             btnExam.dataset.bound = "1";
         }
-  }
+    }
+
     // ---------- Helper: escapeHtml ----------
     function escapeHtml(s){
         if(s === null || s === undefined) return '';
