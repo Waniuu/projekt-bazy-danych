@@ -76,9 +76,18 @@ async function generateReportWithData(endpoint, data, res) {
 }
 
 // 1. LISTA STUDENTÓW
+// =========================================================
+// RAPORTY (ZAKTUALIZOWANE - MIN. 2 KRYTERIA FILTROWANIA)
+// =========================================================
+
+// 1. LISTA STUDENTÓW
+// Kryteria:
+// 1. search - wyszukiwanie po imieniu lub nazwisku
+// 2. sort - sortowanie po 'imie' lub 'nazwisko'
 app.get("/api/reports/students-list", (req, res) => {
     try {
-        const sql = `
+        const { search, sort } = req.query;
+        let sql = `
             SELECT 
                 id_uzytkownika AS "ID", 
                 imie AS "Imie", 
@@ -87,39 +96,136 @@ app.get("/api/reports/students-list", (req, res) => {
                 'Aktywny' AS "Status"
             FROM Uzytkownik 
             WHERE typ_konta = 'student' 
-            ORDER BY nazwisko ASC
         `;
-        const rows = db.prepare(sql).all();
-        // WAŻNE: Musi być wywołanie tej funkcji, a nie res.json(rows)!
+        
+        const params = [];
+
+        // Kryterium 1: Wyszukiwanie
+        if (search) {
+            sql += ` AND (imie LIKE ? OR nazwisko LIKE ?)`;
+            params.push(`%${search}%`, `%${search}%`);
+        }
+
+        // Kryterium 2: Sortowanie
+        if (sort === 'imie') {
+            sql += ` ORDER BY imie ASC`;
+        } else {
+            sql += ` ORDER BY nazwisko ASC`; // Domyślne
+        }
+
+        const rows = db.prepare(sql).all(...params);
         generateReportWithData("/reports/students-list", rows, res);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
 // 2. WYNIKI EGZAMINU
-// 2. WYNIKI EGZAMINU
+// Kryteria:
+// 1. id_testu - ID konkretnego testu (wymagane)
+// 2. min_ocena - Filtruj wyniki od konkretnej oceny w górę (np. pokaż tylko >= 4)
 app.get("/api/reports/exam-results", (req, res) => {
     try {
-        const { id_testu } = req.query;
+        const { id_testu, min_ocena } = req.query;
         if (!id_testu) return res.status(400).json({error: "Wybierz test!"});
-        const sql = `SELECT u.imie || ' ' || u.nazwisko AS "Student", w.liczba_punktow AS "Punkty", w.ocena AS "Ocena" FROM WynikTestu w JOIN Uzytkownik u ON w.id_studenta = u.id_uzytkownika WHERE w.id_testu = ? ORDER BY w.liczba_punktow DESC`;
-        const rows = db.prepare(sql).all(id_testu);
+
+        let sql = `
+            SELECT 
+                u.imie || ' ' || u.nazwisko AS "Student", 
+                w.liczba_punktow AS "Punkty", 
+                w.ocena AS "Ocena" 
+            FROM WynikTestu w 
+            JOIN Uzytkownik u ON w.id_studenta = u.id_uzytkownika 
+            WHERE w.id_testu = ?
+        `;
+        
+        const params = [id_testu];
+
+        // Kryterium 2: Minimalna ocena
+        if (min_ocena) {
+            sql += ` AND w.ocena >= ?`;
+            params.push(min_ocena);
+        }
+
+        sql += ` ORDER BY w.liczba_punktow DESC`;
+
+        const rows = db.prepare(sql).all(...params);
         generateReportWithData("/reports/exam-results", rows, res);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
 
 // 3. BANK PYTAŃ
+// Kryteria:
+// 1. id_kategorii - Filtrowanie po kategorii pytania
+// 2. poziom - Filtrowanie po poziomie trudności (np. 'łatwy', 'trudny')
 app.get("/api/reports/questions-bank", (req, res) => {
     try {
-        const sql = `SELECT k.nazwa AS "Kategoria", p.poziom_trudnosci AS "Poziom", p.tresc AS "Tresc_Pytania" FROM Pytanie p JOIN Kategoria k ON p.id_kategorii = k.id_kategorii ORDER BY k.nazwa`;
-        const rows = db.prepare(sql).all();
+        const { id_kategorii, poziom } = req.query;
+        
+        let sql = `
+            SELECT 
+                k.nazwa AS "Kategoria", 
+                p.poziom_trudnosci AS "Poziom", 
+                p.tresc AS "Tresc_Pytania" 
+            FROM Pytanie p 
+            JOIN Kategoria k ON p.id_kategorii = k.id_kategorii 
+            WHERE 1=1 
+        `;
+        
+        const params = [];
+
+        // Kryterium 1: Kategoria
+        if (id_kategorii) {
+            sql += ` AND p.id_kategorii = ?`;
+            params.push(id_kategorii);
+        }
+
+        // Kryterium 2: Poziom trudności
+        if (poziom) {
+            sql += ` AND p.poziom_trudnosci = ?`;
+            params.push(poziom);
+        }
+
+        sql += ` ORDER BY k.nazwa`;
+
+        const rows = db.prepare(sql).all(...params);
         generateReportWithData("/reports/questions-bank", rows, res);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
+
 // 4. STATYSTYKA
+// Kryteria:
+// 1. data_od - Data utworzenia testu OD
+// 2. data_do - Data utworzenia testu DO
 app.get("/api/reports/tests-stats", (req, res) => {
     try {
-        const sql = `SELECT t.tytul AS "Test", COUNT(w.id_wyniku) AS "Podejscia" FROM Test t LEFT JOIN WynikTestu w ON t.id_testu = w.id_testu GROUP BY t.id_testu`;
-        const rows = db.prepare(sql).all();
+        const { data_od, data_do } = req.query;
+
+        let sql = `
+            SELECT 
+                t.tytul AS "Test", 
+                t.data_utworzenia AS "Data",
+                COUNT(w.id_wyniku) AS "Podejscia" 
+            FROM Test t 
+            LEFT JOIN WynikTestu w ON t.id_testu = w.id_testu 
+            WHERE 1=1
+        `;
+
+        const params = [];
+
+        // Kryterium 1: Data początkowa
+        if (data_od) {
+            sql += ` AND t.data_utworzenia >= ?`;
+            params.push(data_od);
+        }
+
+        // Kryterium 2: Data końcowa
+        if (data_do) {
+            sql += ` AND t.data_utworzenia <= ?`;
+            params.push(data_do);
+        }
+
+        sql += ` GROUP BY t.id_testu`;
+
+        const rows = db.prepare(sql).all(...params);
         generateReportWithData("/reports/tests-stats", rows, res);
     } catch (e) { res.status(500).json({error: e.message}); }
 });
@@ -613,6 +719,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
