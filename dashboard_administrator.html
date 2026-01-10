@@ -766,30 +766,37 @@
     // ================== RAPORTY ==================
 async function downloadPdf(url, filename = "raport.pdf") {
         try {
-            // DODAJEMY LOSOWY PARAMETR CZASU, ŻEBY OMINĄĆ CACHE 304
+            // Dodaj timestamp, żeby pominąć cache przeglądarki
             const finalUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
-            
-            console.log("Pobieranie z URL:", finalUrl); // Zobaczysz to w konsoli
+            console.log("Pobieram z:", finalUrl);
 
             const res = await fetch(finalUrl);
-            
-            if (!res.ok) {
-                const errJson = await res.json().catch(() => ({})); 
-                throw new Error(errJson.details || "Błąd generowania raportu (Status: " + res.status + ")");
+
+            // Sprawdź czy to nie jest błąd (JSON zamiast PDF)
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                const errData = await res.json();
+                throw new Error(errData.details || errData.error || "Błąd serwera");
             }
 
+            if (!res.ok) throw new Error("Błąd sieci: " + res.status);
+
+            // Pobieramy jako BLOB (plik binarny)
             const blob = await res.blob();
+            
+            // Tworzymy wirtualny link i klikamy go
+            const downloadUrl = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
+            a.href = downloadUrl;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
+            window.URL.revokeObjectURL(downloadUrl);
 
         } catch (e) {
             console.error(e);
-            alert("Błąd: " + e.message);
+            alert("BŁĄD RAPORTU:\n" + e.message);
         }
     }
 
