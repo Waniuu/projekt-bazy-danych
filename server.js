@@ -141,6 +141,22 @@ app.get("/api/users", (req, res) => {
     try { res.json(db.prepare("SELECT * FROM Uzytkownik ORDER BY id_uzytkownika DESC").all()); } 
     catch (e) { res.json([]); }
 });  // <-- Dla kompatybilności
+// -----------------------------------
+// POMOCNICZE MAPOWANIE DANYCH
+// -----------------------------------
+function mapUser(row) {
+  if (!row) return null;
+  return {
+    id: row.id_uzytkownika,
+    imie: row.imie,
+    nazwisko: row.nazwisko,
+    email: row.email,
+    typ_konta: row.typ_konta,
+    numer_indeksu: row.numer_indeksu ?? null,
+    stopien_naukowy: row.stopien_naukowy ?? null
+  };
+}
+
 // =========================================================
 // 1. LOGIN
 // =========================================================
@@ -511,6 +527,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
