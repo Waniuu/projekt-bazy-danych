@@ -586,17 +586,20 @@ app.get("/api/wyniki/:id_uzytkownika", (req, res) => {
   try {
     const id = Number(req.params.id_uzytkownika);
 
+    // POPRAWIONE ZAPYTANIE SQL Z JOINEM
     const sql = `
-  SELECT 
-        id_wyniku,
-        id_studenta,
-        id_testu,
-        data,
-        liczba_punktow,
-        ocena
-      FROM WynikTestu
-      WHERE id_studenta = ?
-      ORDER BY id_wyniku DESC
+      SELECT 
+        w.id_wyniku,
+        w.id_studenta,
+        w.id_testu,
+        w.data,
+        w.liczba_punktow,
+        w.ocena,
+        t.tytul AS nazwa_testu
+      FROM WynikTestu w
+      JOIN Test t ON w.id_testu = t.id_testu
+      WHERE w.id_studenta = ?
+      ORDER BY w.id_wyniku DESC
     `;
 
     const rows = db.prepare(sql).all(id);
@@ -608,7 +611,6 @@ app.get("/api/wyniki/:id_uzytkownika", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 // =========================================================
 // ROOT + START
 // =========================================================
@@ -618,6 +620,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
