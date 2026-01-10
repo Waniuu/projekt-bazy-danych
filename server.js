@@ -475,7 +475,81 @@ app.delete("/api/przedmioty/:id", (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.post("/api/testy/generuj", (req, res) => {
+    try {
+        // Frontend wysyła: { id_szablonu, liczba_pytan }
+        // W prostym modelu po prostu zwracamy ID kategorii jako ID testu
+        // lub tworzymy wpis w tabeli, jeśli taką masz.
+        // Tutaj robimy prosty "pass-through", żeby test ruszył:
+        const { id_szablonu } = req.body;
+        
+        // Zwracamy JSON z id_testu (używamy id_szablonu jako ID testu logicznego)
+        res.json({ 
+            success: true, 
+            id_testu: id_szablonu, 
+            message: "Test rozpoczęty" 
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 
+// B. Pobieranie pytań wraz z odpowiedziami
+app.get("/api/pytania-z-odpowiedziami", (req, res) => {
+    try {
+        const { id_kategorii } = req.query;
+        
+        // 1. Pobieramy pytania z danej kategorii
+        const pytania = db.prepare(`
+            SELECT * FROM Pytanie 
+            WHERE id_kategorii = ? 
+            ORDER BY RANDOM()
+        `).all(id_kategorii);
+
+        // 2. Dla każdego pytania pobieramy odpowiedzi
+        // (Zakładam, że masz tabelę Odpowiedz. Jeśli nie, musisz dostosować SQL)
+        const result = pytania.map(p => {
+            const odpowiedzi = db.prepare(`
+                SELECT tresc, poprawna 
+                FROM Odpowiedz 
+                WHERE id_pytania = ?
+            `).all(p.id_pytania);
+
+            return {
+                ...p,
+                odpowiedzi: odpowiedzi // Frontend oczekuje tablicy obiektów {tresc, poprawna}
+            };
+        });
+
+        res.json(result);
+    } catch (e) {
+        // Jeśli nie masz tabeli Odpowiedz, zwróć błąd
+        console.error("Błąd pobierania pytań:", e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// C. Zapisywanie wyniku (Koniec testu)
+app.post("/api/zapisz-wynik", (req, res) => {
+    try {
+        const { id_studenta, id_testu, liczba_punktow } = req.body;
+
+        // Obliczamy ocenę (prosta logika: >50% = 3.0, itd. - dostosuj wg potrzeb)
+        // Tutaj wpisujemy na sztywno lub obliczamy
+        const ocena = liczba_punktow > 0 ? 5 : 2; 
+
+        const stmt = db.prepare(`
+            INSERT INTO WynikTestu (id_studenta, id_testu, data, liczba_punktow, ocena)
+            VALUES (?, ?, DATE('now'), ?, ?)
+        `);
+        
+        stmt.run(id_studenta, id_testu, liczba_punktow, ocena);
+
+        res.json({ success: true, message: "Wynik zapisany" });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 // =========================================================
 // 7. TESTY — LISTA + GENEROWANIE (masz już generowanie z pliku)
 // =========================================================
@@ -527,6 +601,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
