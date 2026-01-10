@@ -184,9 +184,12 @@ function checkAnswer(answerIndex) {
 async function finishTest() {
     clearInterval(timerInterval);
 
-    const score = points;
-    const total = questions.length;
+    const score = points; // Zdobyte punkty
+    const total = questions.length; // Maksymalne punkty (zakładamy 1 pkt za pytanie)
     const user = JSON.parse(localStorage.getItem("user"));
+
+    // Obliczamy procenty tylko dla wyświetlenia alertu
+    const percent = Math.round((score / total) * 100);
 
     await fetch("https://projekt-bazy-danych-backend.onrender.com/api/zapisz-wynik", {
         method: "POST",
@@ -194,11 +197,12 @@ async function finishTest() {
         body: JSON.stringify({
             id_studenta: user.id,
             id_testu: id_testu_global,
-            liczba_punktow: score
+            liczba_punktow: score,
+            maks_punktow: total // <--- TO JEST NOWOŚĆ, wysyłamy max
         })
     });
 
-    alert(`Test zakończony! Wynik: ${score}/${total}`);
+    alert(`Test zakończony!\nWynik: ${score} / ${total} pkt (${percent}%)`);
     window.location.href = "dashboard_student.html";
 }
 
@@ -239,5 +243,6 @@ async function loadQuestions() {
 
 </body>
 </html>
+
 
 
