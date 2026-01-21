@@ -7,7 +7,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import Database from "better-sqlite3";
 
-const DB_PATH = process.env.DB_PATH || "./test4_baza.sqlite";
+const DB_PATH = process.env.DB_PATH || "./test6_baza.sqlite";
 const FASTREPORT_URL = "https://fastreport-service.onrender.com"; // Publiczny adres (pewniejszy)
 
 const ALLOWED_ORIGINS = [
@@ -723,6 +723,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
