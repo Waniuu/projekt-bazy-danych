@@ -160,44 +160,36 @@ app.get("/api/reports/questions-bank", (req, res) => {
     try {
         const { id_kategorii, poziom } = req.query;
         
-        // ZMIANA SQL: Zamiast listy treści, robimy COUNT i GROUP BY
+        // Bazowe zapytanie SQL (zwraca listę pytań, a nie liczby)
         let sql = `
             SELECT 
-                k.nazwa AS "Label",             -- Oś X wykresu (Nazwa kategorii)
-                COUNT(p.id_pytania) AS "Value"  -- Oś Y wykresu (Ilość pytań)
-            FROM Pytanie p
-            JOIN Kategoria k ON p.id_kategorii = k.id_kategorii
+                k.nazwa AS "Kategoria", 
+                p.poziom_trudnosci AS "Poziom", 
+                p.tresc AS "Tresc_Pytania" 
+            FROM Pytanie p 
+            JOIN Kategoria k ON p.id_kategorii = k.id_kategorii 
             WHERE 1=1 
         `;
         
         const params = [];
 
-        // Kryterium 1: Kategoria (jeśli wybrano jedną, wykres pokaże 1 słupek, jeśli nie - wszystkie)
+        // Kryterium 1: Kategoria
         if (id_kategorii) {
             sql += ` AND p.id_kategorii = ?`;
             params.push(id_kategorii);
         }
 
-        // Kryterium 2: Poziom trudności (np. policz tylko pytania 'trudne' w każdej kategorii)
+        // Kryterium 2: Poziom trudności
         if (poziom) {
             sql += ` AND p.poziom_trudnosci = ?`;
             params.push(poziom);
         }
 
-        // WAŻNE: Grupowanie wyników po nazwie kategorii
-        sql += ` GROUP BY k.nazwa ORDER BY "Value" DESC`;
+        sql += ` ORDER BY k.nazwa`;
 
         const rows = db.prepare(sql).all(...params);
-
-        // Jeśli nie znaleziono danych, zwracamy pustą listę (żeby raport nie wyrzucił błędu)
-        if (rows.length === 0) {
-             // Opcjonalnie: można rzucić błąd lub wysłać pusty zestaw
-             // return res.status(404).json({ message: "Brak pytań dla podanych kryteriów" });
-        }
-
-        // Wysyłamy dane (Label, Value) do FastReport
+        
         generateReportWithData("/reports/questions-bank", rows, res);
-
     } catch (e) { 
         res.status(500).json({error: e.message}); 
     }
@@ -731,6 +723,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server działa na porcie ${PORT}, DB_PATH=${DB_PATH}`));
+
 
 
 
